@@ -35,6 +35,18 @@
 
 .activity-master-grid{display:grid;grid-template-columns:1.2fr 2fr auto;gap:10px;align-items:end}.activity-master-table{min-width:1050px}.activity-master-table input[type="text"]{width:100%;border:1px solid #c8d4df;border-radius:7px;padding:8px 9px;font-size:11px}.activity-master-table input[type="checkbox"]{width:16px;height:16px}.activity-add-box{display:grid;grid-template-columns:minmax(220px,1fr) auto;gap:6px;align-items:center;min-width:330px}.activity-add-box select{width:100%;border:1px solid #c8d4df;border-radius:7px;background:#fff;padding:8px 9px;font-size:10px}.activity-plan-summary{display:flex;flex-wrap:wrap;gap:4px;max-width:380px}.activity-plan-panel{background:#f7fafc;border:1px solid #d9e3eb;border-radius:10px;padding:12px;margin:2px 0 8px}.activity-plan-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:9px}.activity-plan-head b{color:var(--navy);font-size:11px}.activity-assignment-table{width:100%;border-collapse:separate;border-spacing:0;font-size:9px;min-width:1050px}.activity-assignment-table th{background:#eaf1f6;color:#405568;text-align:left;padding:7px;border-bottom:1px solid #d5e0e8;white-space:nowrap}.activity-assignment-table td{padding:7px;border-bottom:1px solid #e8eef3;vertical-align:middle}.activity-assignment-table select,.activity-assignment-table input{width:100%;border:1px solid #c8d4df;border-radius:6px;background:#fff;padding:7px 8px;font-size:10px}.activity-assignment-table .activity-name-select{min-width:220px}.activity-assignment-table .resource-select{min-width:170px}.activity-assignment-table .date-input{min-width:130px}.cmi-plan-row td{background:#f8fbfd;padding:0 8px 8px}.activity-count{font-size:9px;color:var(--muted);margin-top:4px}.draft-pill{background:#fff1cf;color:#8b5a00}.activity-help{font-size:10px;color:var(--muted);line-height:1.5;margin-top:8px}.activity-toolbar{display:flex;gap:6px;align-items:center;flex-wrap:wrap}.activity-master-note{max-width:850px}.allocation-table-v2{min-width:1450px}.allocation-table-v2 td{vertical-align:middle}.allocation-table-v2 .desc{max-width:430px}.used-count{font-variant-numeric:tabular-nums;font-weight:850;color:var(--navy)}
 </style>
+<!-- Supabase -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<script>
+  const SUPABASE_URL = 'https://bihinnobxcpotuctursj.supabase.co';
+  const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_Vf4h_Nmo4Er-oTuCXEXOfg_z5QRCG71';
+
+  const supabaseClient = window.supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_PUBLISHABLE_KEY
+  );
+</script>
 </head>
 <body>
 <div class="app">
