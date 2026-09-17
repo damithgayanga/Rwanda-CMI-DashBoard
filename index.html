@@ -34,20 +34,23 @@
 @media print{.topbar{position:static}.tabs,.toolbar,.filters,.btn,.row-actions,.footer,.bulkbar{display:none!important}.main{max-width:none;padding:10px}.tab{display:block!important;page-break-after:always}.card{box-shadow:none}.table-wrap{max-height:none;overflow:visible}.data-table{min-width:0;font-size:8px}}
 
 .activity-master-grid{display:grid;grid-template-columns:1.2fr 2fr auto;gap:10px;align-items:end}.activity-master-table{min-width:1050px}.activity-master-table input[type="text"]{width:100%;border:1px solid #c8d4df;border-radius:7px;padding:8px 9px;font-size:11px}.activity-master-table input[type="checkbox"]{width:16px;height:16px}.activity-add-box{display:grid;grid-template-columns:minmax(220px,1fr) auto;gap:6px;align-items:center;min-width:330px}.activity-add-box select{width:100%;border:1px solid #c8d4df;border-radius:7px;background:#fff;padding:8px 9px;font-size:10px}.activity-plan-summary{display:flex;flex-wrap:wrap;gap:4px;max-width:380px}.activity-plan-panel{background:#f7fafc;border:1px solid #d9e3eb;border-radius:10px;padding:12px;margin:2px 0 8px}.activity-plan-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:9px}.activity-plan-head b{color:var(--navy);font-size:11px}.activity-assignment-table{width:100%;border-collapse:separate;border-spacing:0;font-size:9px;min-width:1050px}.activity-assignment-table th{background:#eaf1f6;color:#405568;text-align:left;padding:7px;border-bottom:1px solid #d5e0e8;white-space:nowrap}.activity-assignment-table td{padding:7px;border-bottom:1px solid #e8eef3;vertical-align:middle}.activity-assignment-table select,.activity-assignment-table input{width:100%;border:1px solid #c8d4df;border-radius:6px;background:#fff;padding:7px 8px;font-size:10px}.activity-assignment-table .activity-name-select{min-width:220px}.activity-assignment-table .resource-select{min-width:170px}.activity-assignment-table .date-input{min-width:130px}.cmi-plan-row td{background:#f8fbfd;padding:0 8px 8px}.activity-count{font-size:9px;color:var(--muted);margin-top:4px}.draft-pill{background:#fff1cf;color:#8b5a00}.activity-help{font-size:10px;color:var(--muted);line-height:1.5;margin-top:8px}.activity-toolbar{display:flex;gap:6px;align-items:center;flex-wrap:wrap}.activity-master-note{max-width:850px}.allocation-table-v2{min-width:1450px}.allocation-table-v2 td{vertical-align:middle}.allocation-table-v2 .desc{max-width:430px}.used-count{font-variant-numeric:tabular-nums;font-weight:850;color:var(--navy)}
+.hl-gantt-row.wbs-row{background:#edf4f8}.hl-gantt-label .wbs-activity-indent{width:14px;display:inline-block}.hl-gantt-label .wbs-resource-indent{width:40px;display:inline-block}
+
+.resource-master-grid{display:grid;grid-template-columns:minmax(220px,1.1fr) minmax(260px,1.6fr) auto;gap:10px;align-items:end}.resource-master-table{min-width:900px}.resource-master-table input[type="text"]{width:100%;border:1px solid #c8d4df;border-radius:7px;padding:8px 9px;font-size:11px}.resource-master-table input[type="checkbox"]{width:16px;height:16px}.resource-db-status{font-size:10px;color:var(--muted);margin-top:8px}.resource-db-status.error{color:var(--red);font-weight:700}.resource-db-status.good{color:var(--green);font-weight:700}
 </style>
+
 <!-- Supabase -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
 <script>
   const SUPABASE_URL = 'https://bihinnobxcpotuctursj.supabase.co';
   const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_Vf4h_Nmo4Er-oTuCXEXOfg_z5QRCG71';
-
   const supabaseClient = window.supabase.createClient(
     SUPABASE_URL,
     SUPABASE_PUBLISHABLE_KEY
   );
+
   async function testSupabaseConnection() {
-    const { data, error } = await supabaseClient
+    const { error } = await supabaseClient
       .from('cmis')
       .select('id')
       .limit(1);
@@ -61,6 +64,7 @@
 
   testSupabaseConnection();
 </script>
+
 </head>
 <body>
 <div class="app">
@@ -170,6 +174,17 @@
    <div class="org-band">Remote — Full Time Secondments · CMI Measurement incl. CostX, Take Off, Marked Up Drawings & Measurement Sheets</div>
   </div>
  </div>
+ <div class="section-title" style="margin-top:22px"><h2>Resources</h2><span class="note">Shared resource master stored in Supabase. Add, edit or remove resources here.</span></div>
+ <div class="card">
+  <div class="callout"><b>Resource master:</b> changes made here are saved to the shared Supabase database and are visible to other users of the live dashboard.</div>
+  <div class="resource-master-grid" style="margin-top:14px">
+   <div class="field"><label>Resource Name</label><input id="newResourceName" placeholder="e.g. Jane Smith"></div>
+   <div class="field"><label>Role / Position</label><input id="newResourceRole" placeholder="e.g. Senior Quantity Surveyor · Off-site Resource 4"></div>
+   <button class="btn good" id="addResourceMasterBtn" type="button">+ Add Resource</button>
+  </div>
+  <div class="resource-db-status" id="resourceDbStatus">Loading shared resources…</div>
+  <div class="table-wrap" style="margin-top:12px;max-height:55vh"><table class="data-table resource-master-table"><thead><tr><th>Resource Name</th><th>Role / Position</th><th style="width:90px">Active</th><th style="width:170px">Actions</th></tr></thead><tbody id="resourceMasterBody"></tbody></table></div>
+ </div>
 </section>
 
 <section class="tab" id="tab-process">
@@ -233,7 +248,7 @@ const HIGH_LEVEL_TEMPLATE=[
  {id:'investigate-closed',group:'Other CMI Reviews',countSource:'Investigated',activity:'Further Investigate Closed CMIs',startDate:'2026-09-01',targetDate:'2026-10-16',resources:['Orville Mathew Gayatin']},
  {id:'included-review',group:'Other CMI Reviews',countSource:'Included',activity:'Technical and Commercial Clearance',startDate:'2026-09-01',targetDate:'2026-10-30',resources:['Orville Mathew Gayatin','Chamara Ranasinghe']}
 ];
-let state=loadState();let filteredRegister=[];let selectedAllocation=new Set();let expandedHighLevelActivities=new Set();let expandedCmiActivities=new Set();
+let state=loadState();let filteredRegister=[];let selectedAllocation=new Set();let expandedHighLevelActivities=new Set();let collapsedHighLevelGroups=new Set();let expandedCmiActivities=new Set();
 
 function clone(x){return JSON.parse(JSON.stringify(x))}
 function ensureShape(s){
@@ -326,6 +341,38 @@ function renderDelivery(){document.getElementById('targetDateInput').value=state
 function renderDeliveryTable(){const rows=planned().sort((a,b)=>(a.startDate||'9999').localeCompare(b.startDate||'9999')||({High:0,Medium:1,Low:2,Unvalued:3}[calcPriority(a)]-({High:0,Medium:1,Low:2,Unvalued:3}[calcPriority(b)])));document.getElementById('deliveryBody').innerHTML=rows.map(r=>`<tr><td><b>${esc(r.cmiNo)}</b></td><td class="desc">${esc(r.description)}</td><td>${priorityPill(calcPriority(r))}</td><td class="money">${money(r.initialEstimate)}</td><td>${esc(r.siteResource)}</td><td>${esc(r.offsiteResource)}</td><td>${fmtDate(r.startDate)}</td><td>${fmtDate(r.targetDate)}</td><td>${fmtDate(r.finishDate)}</td><td>${deliveryPill(r.deliveryStatus)}</td><td class="money">${money(r.deliveryValue)}</td><td><div class="row-actions"><button class="iconbtn" onclick="goProgress('${r.id}')">Progress</button><button class="iconbtn" onclick="removeFromPlan('${r.id}')">Remove</button></div></td></tr>`).join('')||'<tr><td colspan="12" class="muted">No CMIs have been added to the Delivery Plan yet. Use Resource Allocation first.</td></tr>'}
 function removeFromPlan(id){const r=state.records.find(x=>x.id===id);if(!r)return;if(confirm('Remove this CMI from the Delivery Plan? Resource assignments will be retained.')){r.inDeliveryPlan=false;saveState()}}
 function renderGantt(){const rows=planned().filter(r=>r.startDate&&r.targetDate);const box=document.getElementById('ganttChart');if(!rows.length){box.innerHTML='<div class="callout">No planned CMIs with start and target dates yet.</div>';document.getElementById('ganttSummary').textContent='';return}let min=new Date(Math.min(...rows.map(r=>new Date(r.startDate+'T00:00:00').getTime()))),max=new Date(Math.max(...rows.map(r=>new Date((r.finishDate||r.targetDate)+'T00:00:00').getTime())));min.setDate(min.getDate()-2);max.setDate(max.getDate()+3);const days=Math.max(1,Math.ceil((max-min)/86400000)+1),dayw=Math.max(5,Math.min(18,900/days)),timelineW=days*dayw;const weeks=[];for(let d=new Date(min);d<=max;d.setDate(d.getDate()+1)){if(d.getDay()===1){const left=Math.floor((d-min)/86400000)*dayw;weeks.push(`<div class="weekmark" style="left:${left}px">${d.toLocaleDateString('en-NZ',{day:'2-digit',month:'short'})}</div>`)}}let html=`<div class="gantt-head"><div>CMI</div><div>Description</div><div>Site</div><div>Off-site</div><div class="gantt-scale" style="width:${timelineW}px">${weeks.join('')}</div></div>`;const order={High:0,Medium:1,Low:2,Unvalued:3};rows.sort((a,b)=>a.startDate.localeCompare(b.startDate)||order[calcPriority(a)]-order[calcPriority(b)]).forEach(r=>{const st=new Date(r.startDate+'T00:00:00'),en=new Date((r.finishDate||r.targetDate)+'T00:00:00'),left=Math.max(0,Math.floor((st-min)/86400000)*dayw),width=Math.max(dayw,Math.ceil((en-st)/86400000+1)*dayw),cls=r.deliveryStatus==='Submitted to Client'?'submitted':r.deliveryStatus==='Completed'?'completed':r.deliveryStatus==='To be Started'?'pending':'';html+=`<div class="gantt-row"><div class="gantt-info"><b>${esc(r.cmiNo)}</b><br>${priorityPill(calcPriority(r))}</div><div class="gantt-info">${esc(r.description)}</div><div class="gantt-info">${esc(r.siteResource)}</div><div class="gantt-info">${esc(r.offsiteResource)}</div><div class="gantt-timeline" style="--dayw:${dayw}px;width:${timelineW}px"><div class="gantt-bar ${cls}" style="left:${left}px;width:${width}px" title="${esc(r.deliveryStatus)} · ${r.startDate} to ${r.finishDate||r.targetDate}">${esc(r.deliveryStatus)}</div></div></div>`});box.innerHTML=html;document.getElementById('ganttSummary').textContent=`${rows.length} dated planned CMIs · timeline ${dateISO(min)} to ${dateISO(max)}`}
+let supabaseResources=[];
+function setResourceDbStatus(message,type=''){const el=document.getElementById('resourceDbStatus');if(!el)return;el.textContent=message;el.className='resource-db-status'+(type?' '+type:'')}
+async function loadResourcesFromSupabase(){
+ const body=document.getElementById('resourceMasterBody');if(body)body.innerHTML='<tr><td colspan="4" class="muted">Loading shared resources…</td></tr>';
+ const {data,error}=await supabaseClient.from('resources').select('id,resource_name,role,active,is_deleted,updated_at').eq('is_deleted',false).order('resource_name',{ascending:true});
+ if(error){console.error('Unable to load resources:',error);setResourceDbStatus('Unable to load resources from Supabase. '+(error.message||''),'error');if(body)body.innerHTML='<tr><td colspan="4" class="muted">Unable to load shared resources.</td></tr>';return}
+ supabaseResources=data||[];setResourceDbStatus(`${supabaseResources.length} shared resource${supabaseResources.length===1?'':'s'} loaded.`,'good');renderResourceMaster();
+}
+function renderResourceMaster(){
+ const body=document.getElementById('resourceMasterBody');if(!body)return;
+ body.innerHTML=(supabaseResources||[]).map(r=>`<tr data-resource-master="${r.id}"><td><input type="text" data-rm-field="resource_name" value="${esc(r.resource_name||'')}"></td><td><input type="text" data-rm-field="role" value="${esc(r.role||'')}"></td><td style="text-align:center"><input type="checkbox" data-rm-field="active" ${r.active!==false?'checked':''}></td><td><div class="row-actions"><button class="btn primary" type="button" onclick="saveResourceMaster(${Number(r.id)})">Save</button><button class="btn danger" type="button" onclick="deleteResourceMaster(${Number(r.id)})">Delete</button></div></td></tr>`).join('')||'<tr><td colspan="4" class="muted">No shared resources yet. Add the first resource above.</td></tr>';
+}
+async function addResourceMaster(){
+ const n=document.getElementById('newResourceName'),r=document.getElementById('newResourceRole');const name=(n?.value||'').trim(),role=(r?.value||'').trim();if(!name){alert('Enter a resource name.');n?.focus();return}
+ setResourceDbStatus('Saving resource…');
+ const {data:existing,error:lookupError}=await supabaseClient.from('resources').select('id,resource_name,is_deleted').ilike('resource_name',name).limit(1);
+ if(lookupError){setResourceDbStatus('Unable to check existing resources. '+lookupError.message,'error');return}
+ let error;
+ if(existing&&existing.length){if(existing[0].is_deleted){({error}=await supabaseClient.from('resources').update({resource_name:name,role,active:true,is_deleted:false}).eq('id',existing[0].id));}else{alert('That resource already exists.');setResourceDbStatus('Resource was not added.','');return}}
+ else{({error}=await supabaseClient.from('resources').insert({resource_name:name,role,active:true,is_deleted:false}));}
+ if(error){console.error('Unable to add resource:',error);setResourceDbStatus('Unable to add resource. '+error.message,'error');return}
+ n.value='';if(r)r.value='';await loadResourcesFromSupabase();
+}
+async function saveResourceMaster(id){
+ const tr=document.querySelector(`[data-resource-master="${id}"]`);if(!tr)return;const name=tr.querySelector('[data-rm-field="resource_name"]').value.trim(),role=tr.querySelector('[data-rm-field="role"]').value.trim(),active=tr.querySelector('[data-rm-field="active"]').checked;if(!name){alert('Resource name cannot be blank.');return}
+ setResourceDbStatus('Saving changes…');const {error}=await supabaseClient.from('resources').update({resource_name:name,role,active}).eq('id',id);if(error){console.error('Unable to update resource:',error);setResourceDbStatus('Unable to save resource. '+error.message,'error');return}await loadResourcesFromSupabase();
+}
+async function deleteResourceMaster(id){
+ const item=(supabaseResources||[]).find(x=>Number(x.id)===Number(id));if(!item)return;if(!confirm(`Delete "${item.resource_name}" from the resource list?`))return;setResourceDbStatus('Removing resource…');const {error}=await supabaseClient.from('resources').update({is_deleted:true,active:false}).eq('id',id);if(error){console.error('Unable to delete resource:',error);setResourceDbStatus('Unable to delete resource. '+error.message,'error');return}await loadResourcesFromSupabase();
+}
+function renderOrganisation(){renderResourceMaster()}
+
 function renderResources(){const cards=[['Chamara Ranasinghe','Site Resource 1','Client liaison and commercial closure of CMI impact.','Site-based · mobilised from beginning Sep 2026'],['Dinuka Maduranga','Site Resource 2','Liaise with measurement team and finalise CMI submission.','Site-based · mobilised from beginning Sep 2026'],['Orville Mathew Gayatin','Site Resource 3','Initial judgement/value for UR items; investigate Included in Other CMIs and To be Investigated.','Site-based · UMC JV'],['Kosala Gamage','Off-site Resource 1','Site liaison; deliver assessments; valuation after measurement; QA/QC and delivery quality.','Started 9 Sep 2026 · 4 completed by 16 Sep'],['Damith Samarasinghe','Off-site Resource 2','CMI measurement; prepare BOQ and markup drawings.','Starts 21 Sep 2026'],['Devmini Amarasinghe','Off-site Resource 3','CMI measurement; prepare BOQ and markup drawings.','Starts 21 Sep 2026']];document.getElementById('resourceCards').innerHTML=cards.map(c=>`<div class="resource"><div class="type">${c[1]}</div><b>${c[0]}</b><p>${c[2]}</p><div class="badge-note">${c[3]}</div></div>`).join('')}
 
 function progressFilters(){const q=document.getElementById('pSearch').value.trim().toLowerCase(),ds=document.getElementById('pDeliveryStatus').value,p=document.getElementById('pPriority').value,sr=document.getElementById('pSite').value,or=document.getElementById('pOffsite').value,due=document.getElementById('pOverdue').value;return planned().filter(r=>{const hay=[r.cmiNo,r.description,r.location].join(' ').toLowerCase(),dd=daysFromToday(r.targetDate),acts=r.cmiActivities||[],sm=!sr||acts.some(a=>a.siteResource===sr)||r.siteResource===sr,om=!or||acts.some(a=>a.offsiteResource===or)||r.offsiteResource===or;return(!q||hay.includes(q))&&(!ds||r.deliveryStatus===ds)&&(!p||calcPriority(r)===p)&&sm&&om&&(!due||(due==='overdue'&&r.targetDate&&!completedDelivery(r)&&dd<0)||(due==='due7'&&r.targetDate&&!completedDelivery(r)&&dd>=0&&dd<=7))})}
@@ -337,7 +384,7 @@ function goProgress(id){document.querySelectorAll('.tabbtn').forEach(x=>x.classL
 function renderQuality(){const recs=state.records,groups={};recs.forEach(r=>(groups[r.cmiKey]??=[]).push(r));const multi=Object.values(groups).filter(g=>g.length>1),tbs=recs.filter(r=>r.status==='To be Submitted'),unv=tbs.filter(r=>calcPriority(r)==='Unvalued').length,unalloc=recs.filter(r=>ACTIONABLE.has(r.status)&&!r.inDeliveryPlan).length;document.getElementById('qualityMetrics').innerHTML=`<div class="metric-line"><span>Populated log rows</span><b>${recs.length}</b></div><div class="metric-line"><span>Unique CMI references</span><b>${Object.keys(groups).length}</b></div><div class="metric-line"><span>Multi-line CMI references</span><b>${multi.length}</b></div><div class="metric-line"><span>To be Submitted — unvalued</span><b>${unv}</b></div><div class="metric-line"><span>Actionable items not yet planned</span><b>${unalloc}</b></div>`;document.getElementById('duplicateBody').innerHTML=multi.sort((a,b)=>b.length-a.length).map(g=>{const sts=uniq(g.map(x=>x.status)),known=sum(g.filter(x=>x.initialEstimate!==null).map(x=>x.initialEstimate));return `<tr><td><b>CMI ${esc(g[0].cmiKey)}</b></td><td>${g.length}</td><td>${sts.map(statusPill).join(' ')}</td><td class="money">${money(known)}</td><td>${sts.length>1?'<span class="pill investigate">Mixed statuses — track by work item</span>':'Multiple source rows'}</td></tr>`}).join('')}
 
 function renderDashboard(){renderKpis();renderBars();renderDeliverySnapshot();renderResourcePerformance();renderTop()}
-function renderActiveTab(){const active=document.querySelector('.tabbtn.active')?.dataset.tab||'dashboard';if(active==='dashboard')renderDashboard();else if(active==='register')renderRegister();else if(active==='activities')renderActivityList();else if(active==='allocation')renderAllocation();else if(active==='delivery')renderDelivery();else if(active==='progress')renderProgress();else if(active==='quality')renderQuality()}
+function renderActiveTab(){const active=document.querySelector('.tabbtn.active')?.dataset.tab||'dashboard';if(active==='dashboard')renderDashboard();else if(active==='register')renderRegister();else if(active==='activities')renderActivityList();else if(active==='allocation')renderAllocation();else if(active==='delivery')renderDelivery();else if(active==='progress')renderProgress();else if(active==='organisation')renderOrganisation();else if(active==='quality')renderQuality()}
 function renderAll(){setHeader();populateFilters();renderDashboard();renderActiveTab()}
 function openEdit(id){const r=state.records.find(x=>x.id===id);if(!r)return;document.getElementById('modalTitle').textContent='Edit CMI Register';const map={eId:r.id,eCmiNo:r.cmiNo,eReference:r.reference,eDescription:r.description,eCmiDate:r.cmiDate,eStatus:r.status,eAsset:r.assetCode,eLocation:r.location,eInitial:r.initialEstimate??'',eSubmittedValue:r.submittedValue??'',eSubmittedDate:r.submittedDate,eAgreedDate:r.agreedDate,eRemarks:r.remarks,eNotes:r.notes};Object.entries(map).forEach(([i,v])=>document.getElementById(i).value=v);document.getElementById('editModal').classList.add('open')}
 function openAdd(){document.getElementById('modalTitle').textContent='Add New CMI';document.getElementById('editForm').reset();document.getElementById('eId').value='';document.getElementById('eStatus').value='To be Submitted';document.getElementById('editModal').classList.add('open')}
@@ -347,6 +394,36 @@ function download(name,text,type='text/plain'){const b=new Blob([text],{type}),a
 function csvEscape(v){const s=String(v??'');return /[",\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s}
 function exportCsv(rows,name){const h=['CMI No','Reference','Description','CMI Date','Asset Code','Location','Initial Estimate','Submitted Value','Register Status','Priority','Site Resource','Off-site Resource','In Delivery Plan','Delivery Status','Delivery Value','Start Date','Target Date','Finish Date','Progress %','Progress Notes'];const lines=[h.join(',')];rows.forEach(r=>lines.push([r.cmiNo,r.reference,r.description,r.cmiDate,r.assetCode,r.location,moneyText(r.initialEstimate),moneyText(r.submittedValue),r.status,calcPriority(r),r.siteResource,r.offsiteResource,r.inDeliveryPlan?'Yes':'No',r.deliveryStatus,moneyText(r.deliveryValue),r.startDate,r.targetDate,r.finishDate,r.progressPct,r.progressNotes].map(csvEscape).join(',')));download(name,'\ufeff'+lines.join('\n'),'text/csv;charset=utf-8')}
 
+// WBS delivery-plan view: CMI priority group → activity → assigned resource.
+function highLevelGroupKey(a){return `${a.group}|${a.countSource}`}
+function toggleHighLevelGroup(key){collapsedHighLevelGroups.has(key)?collapsedHighLevelGroups.delete(key):collapsedHighLevelGroups.add(key);renderHighLevelGantt()}
+function renderHighLevelGantt(){
+ const box=document.getElementById('highLevelGantt');if(!box)return;
+ const rows=state.meta.highLevelPlan.filter(a=>a.startDate&&a.targetDate);
+ if(!rows.length){box.innerHTML='<div class="callout">No high-level activities have dates yet. Set them in Resource Allocation.</div>';return}
+ const start=new Date('2026-09-01T00:00:00');let latest=new Date(state.meta.defaultDeliveryTarget+'T00:00:00');
+ rows.forEach(a=>{const d=new Date((a.finishDate||a.targetDate)+'T00:00:00');if(d>latest)latest=d});latest.setDate(latest.getDate()+6);
+ const totalDays=Math.max(7,Math.ceil((latest-start)/86400000)+1),weeks=Math.ceil(totalDays/7),weekw=92,timelineW=weeks*weekw;
+ let marks='';for(let i=0;i<weeks;i++){const d=new Date(start);d.setDate(d.getDate()+i*7);marks+=`<div class="hl-weekmark" style="left:${i*weekw}px">W/C ${d.toLocaleDateString('en-NZ',{day:'2-digit',month:'short'})}</div>`}
+ const barMetrics=a=>{const st=new Date(a.startDate+'T00:00:00'),en=new Date((a.finishDate||a.targetDate)+'T00:00:00');return {st,en,left:Math.max(0,((st-start)/86400000)/7*weekw),width:Math.max(10,(((en-st)/86400000+1)/7)*weekw)}};
+ const groups=new Map();rows.forEach(a=>{const key=highLevelGroupKey(a);if(!groups.has(key))groups.set(key,[]);groups.get(key).push(a)});
+ let html=`<div class="hl-gantt-head"><div>WBS Activity / Resource</div><div>Dates</div><div class="hl-scale" style="width:${timelineW}px">${marks}</div></div>`;
+ groups.forEach((activities,key)=>{
+   const first=activities[0],open=!collapsedHighLevelGroups.has(key),starts=activities.map(a=>a.startDate).sort(),ends=activities.map(a=>a.finishDate||a.targetDate).sort(),parent={...first,startDate:starts[0],targetDate:ends[ends.length-1]};
+   const pm=barMetrics(parent),resourceCount=new Set(activities.flatMap(a=>a.resources||[])).size;
+   html+=`<div class="hl-gantt-row wbs-row"><div class="hl-gantt-label"><button class="toggle" onclick="toggleHighLevelGroup('${esc(key)}')">${open?'−':'+'}</button><div><div class="hl-group-tag">Level 1 · CMI group</div><div class="hl-activity-name">${esc(highLevelLabel(first))}</div><div class="badge-note">${activities.length} activit${activities.length===1?'y':'ies'} · ${resourceCount} assigned resource${resourceCount===1?'':'s'}</div></div></div><div class="hl-datecell">${fmtDate(parent.startDate)}<br>to ${fmtDate(parent.targetDate)}</div><div class="hl-timeline" style="--weekw:${weekw}px;width:${timelineW}px"><div class="hl-bar ${highLevelBarClass(first)}" style="left:${pm.left}px;width:${pm.width}px" title="${esc(highLevelLabel(first))}">${activities.length} activities</div></div></div>`;
+   if(!open)return;
+   activities.forEach(a=>{
+     const m=barMetrics(a),activityOpen=expandedHighLevelActivities.has(a.id),resources=a.resources||[];
+     html+=`<div class="hl-gantt-row activity-row"><div class="hl-gantt-label"><span class="wbs-activity-indent"></span><button class="toggle" onclick="toggleHighLevelActivity('${a.id}')">${activityOpen?'−':'+'}</button><div><div class="hl-group-tag">Level 2 · activity</div><div class="hl-activity-name">${esc(a.activity)}</div><div class="badge-note">${resources.length} resource${resources.length===1?'':'s'} assigned · ${Number(a.progressPct)||0}%</div></div></div><div class="hl-datecell">${fmtDate(a.startDate)}<br>to ${fmtDate(a.targetDate)}</div><div class="hl-timeline" style="--weekw:${weekw}px;width:${timelineW}px"><div class="hl-bar ${highLevelBarClass(a)}" style="left:${m.left}px;width:${m.width}px" title="${esc(a.activity)} · ${a.startDate} to ${a.targetDate}">${esc(a.status)} · ${Number(a.progressPct)||0}%</div></div></div>`;
+     if(!activityOpen)return;
+     if(!resources.length){html+=`<div class="hl-gantt-row resource-row"><div class="hl-gantt-label"><span class="wbs-resource-indent"></span><span class="muted">Level 3 · no resource assigned</span></div><div class="hl-datecell">—</div><div class="hl-timeline" style="--weekw:${weekw}px;width:${timelineW}px"></div></div>`}
+     resources.forEach(n=>{html+=`<div class="hl-gantt-row resource-row"><div class="hl-gantt-label"><span class="wbs-resource-indent"></span><div><div class="hl-group-tag">Level 3 · resource</div><b>${esc(n)}</b><div class="resource-role">${esc(RESOURCE_ROLES[n]||'')}</div></div></div><div class="hl-datecell">${fmtDate(a.startDate)}<br>to ${fmtDate(a.targetDate)}</div><div class="hl-timeline" style="--weekw:${weekw}px;width:${timelineW}px"><div class="hl-bar hl-resource-bar" style="left:${m.left}px;width:${m.width}px" title="${esc(n)} · ${esc(a.activity)}">${esc(n)}</div></div></div>`})
+   });
+ });
+ box.innerHTML=html;const c=highLevelCounts(),summary=document.getElementById('highLevelGanttSummary');if(summary)summary.textContent=`WBS: CMI group → activity → resource · High ${c.High} · Medium ${c.Medium} · Low ${c.Low} · Unvalued To be Submitted ${c.Unvalued} · To be Submitted & UR ${c.UR} · To be Investigated ${c.Investigated} · Included in Other CMIs ${c.Included}`;
+}
+
 // Events
 const flowFitBtn=document.getElementById('flowFitBtn');if(flowFitBtn){flowFitBtn.addEventListener('click',()=>{const w=document.getElementById('processWrap');w.classList.toggle('fit');flowFitBtn.textContent=w.classList.contains('fit')?'Actual Size':'Fit to Width'})}
 document.querySelectorAll('.tabbtn').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('.tabbtn').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.getElementById('tab-'+b.dataset.tab).classList.add('active');renderActiveTab()}));
@@ -355,10 +432,12 @@ document.querySelectorAll('.tabbtn').forEach(b=>b.addEventListener('click',()=>{
 ['pSearch','pDeliveryStatus','pPriority','pSite','pOffsite','pOverdue'].forEach(id=>document.getElementById(id).addEventListener('input',renderProgress));
 document.getElementById('saveHighLevelPlanBtn').addEventListener('click',saveHighLevelAllocation);document.getElementById('saveActivityProgressBtn').addEventListener('click',saveActivityProgress);
 document.getElementById('addActivityMasterBtn').addEventListener('click',addActivityMaster);
+const addResourceMasterBtn=document.getElementById('addResourceMasterBtn');if(addResourceMasterBtn)addResourceMasterBtn.addEventListener('click',addResourceMaster);
 document.getElementById('addCmiBtn').addEventListener('click',openAdd);document.getElementById('modalClose').addEventListener('click',closeModal);document.getElementById('modalCancel').addEventListener('click',closeModal);document.getElementById('modalSave').addEventListener('click',saveEdit);document.getElementById('editModal').addEventListener('click',e=>{if(e.target.id==='editModal')closeModal()});
 document.getElementById('exportCsvBtn').addEventListener('click',()=>exportCsv(filteredRegister,'CMI_Filtered_Register.csv'));document.getElementById('deliveryExportBtn').addEventListener('click',()=>exportCsv(planned(),'CMI_Delivery_Plan.csv'));document.getElementById('exportJsonBtn').addEventListener('click',()=>download('CMI_Dashboard_Backup.json',JSON.stringify(state,null,2),'application/json'));
 document.getElementById('resetBtn').addEventListener('click',()=>{if(confirm('Reset all local edits and restore the uploaded Excel data?')){try{localStorage.removeItem(STORAGE_KEY)}catch(e){}state=ensureShape({meta:clone(SOURCE.meta),records:clone(SOURCE.records)});selectedAllocation.clear();renderAll()}});
 ['targetDateInput','capacityInput','preCompletedInput','fullTeamInput'].forEach(id=>document.getElementById(id).addEventListener('change',()=>{state.meta.defaultDeliveryTarget=document.getElementById('targetDateInput').value||state.meta.defaultDeliveryTarget;state.meta.weeklyCapacity=Number(document.getElementById('capacityInput').value)||12;state.meta.preTrackerCompleted=Number(document.getElementById('preCompletedInput').value)||0;state.meta.fullOffsiteTeamStart=document.getElementById('fullTeamInput').value||state.meta.fullOffsiteTeamStart;saveState()}));
 renderAll();
+loadResourcesFromSupabase();
 </script>
 </body></html>
