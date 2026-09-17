@@ -36,7 +36,7 @@
 .activity-master-grid{display:grid;grid-template-columns:1.2fr 2fr auto;gap:10px;align-items:end}.activity-master-table{min-width:1050px}.activity-master-table input[type="text"]{width:100%;border:1px solid #c8d4df;border-radius:7px;padding:8px 9px;font-size:11px}.activity-master-table input[type="checkbox"]{width:16px;height:16px}.activity-add-box{display:grid;grid-template-columns:minmax(220px,1fr) auto;gap:6px;align-items:center;min-width:330px}.activity-add-box select{width:100%;border:1px solid #c8d4df;border-radius:7px;background:#fff;padding:8px 9px;font-size:10px}.activity-plan-summary{display:flex;flex-wrap:wrap;gap:4px;max-width:380px}.activity-plan-panel{background:#f7fafc;border:1px solid #d9e3eb;border-radius:10px;padding:12px;margin:2px 0 8px}.activity-plan-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:9px}.activity-plan-head b{color:var(--navy);font-size:11px}.activity-assignment-table{width:100%;border-collapse:separate;border-spacing:0;font-size:9px;min-width:1050px}.activity-assignment-table th{background:#eaf1f6;color:#405568;text-align:left;padding:7px;border-bottom:1px solid #d5e0e8;white-space:nowrap}.activity-assignment-table td{padding:7px;border-bottom:1px solid #e8eef3;vertical-align:middle}.activity-assignment-table select,.activity-assignment-table input{width:100%;border:1px solid #c8d4df;border-radius:6px;background:#fff;padding:7px 8px;font-size:10px}.activity-assignment-table .activity-name-select{min-width:220px}.activity-assignment-table .resource-select{min-width:170px}.activity-assignment-table .date-input{min-width:130px}.cmi-plan-row td{background:#f8fbfd;padding:0 8px 8px}.activity-count{font-size:9px;color:var(--muted);margin-top:4px}.draft-pill{background:#fff1cf;color:#8b5a00}.activity-help{font-size:10px;color:var(--muted);line-height:1.5;margin-top:8px}.activity-toolbar{display:flex;gap:6px;align-items:center;flex-wrap:wrap}.activity-master-note{max-width:850px}.allocation-table-v2{min-width:1450px}.allocation-table-v2 td{vertical-align:middle}.allocation-table-v2 .desc{max-width:430px}.used-count{font-variant-numeric:tabular-nums;font-weight:850;color:var(--navy)}
 .hl-gantt-row.wbs-row{background:#edf4f8}.hl-gantt-label .wbs-activity-indent{width:14px;display:inline-block}.hl-gantt-label .wbs-resource-indent{width:40px;display:inline-block}
 
-.resource-master-grid{display:grid;grid-template-columns:minmax(220px,1.1fr) minmax(260px,1.6fr) auto;gap:10px;align-items:end}.resource-master-table{min-width:900px}.resource-master-table input[type="text"]{width:100%;border:1px solid #c8d4df;border-radius:7px;padding:8px 9px;font-size:11px}.resource-master-table input[type="checkbox"]{width:16px;height:16px}.resource-db-status{font-size:10px;color:var(--muted);margin-top:8px}.resource-db-status.error{color:var(--red);font-weight:700}.resource-db-status.good{color:var(--green);font-weight:700}
+.resource-master-grid{display:grid;grid-template-columns:minmax(220px,1.1fr) minmax(220px,1.2fr) minmax(150px,.7fr) auto;gap:10px;align-items:end}.resource-master-table{min-width:900px}.resource-master-table input[type="text"]{width:100%;border:1px solid #c8d4df;border-radius:7px;padding:8px 9px;font-size:11px}.resource-master-table input[type="checkbox"]{width:16px;height:16px}.resource-db-status{font-size:10px;color:var(--muted);margin-top:8px}.resource-db-status.error{color:var(--red);font-weight:700}.resource-db-status.good{color:var(--green);font-weight:700}
 </style>
 
 <!-- Supabase -->
@@ -80,12 +80,12 @@
  <nav class="tabs">
   <button class="tabbtn active" data-tab="dashboard">Executive Dashboard</button>
   <button class="tabbtn" data-tab="register">CMI Register</button>
-  <button class="tabbtn" data-tab="activities">Activity List</button>
-  <button class="tabbtn" data-tab="allocation">Resource Allocation</button>
+  <button class="tabbtn" data-tab="process">CMI Process Flow</button>
+  <button class="tabbtn" data-tab="organisation">Change Management Organisation</button>
   <button class="tabbtn" data-tab="delivery">Delivery Plan</button>
   <button class="tabbtn" data-tab="progress">Progress Update</button>
-  <button class="tabbtn" data-tab="organisation">Organisation</button>
-  <button class="tabbtn" data-tab="process">CMI Process Flow</button>
+  <button class="tabbtn" data-tab="activities">Activity List</button>
+  <button class="tabbtn" data-tab="allocation">Resource Allocation</button>
   <button class="tabbtn" data-tab="quality">Data Review</button>
  </nav>
 </header>
@@ -163,7 +163,7 @@
 </section>
 
 <section class="tab" id="tab-organisation">
- <div class="section-title"><h2>CMI Delivery Organisation</h2><span class="note">DMD / UMC JV CMI administration, valuation, reporting and negotiation structure.</span></div>
+ <div class="section-title"><h2>Change Management Organisation</h2><span class="note">DMD / UMC JV CMI administration, valuation, reporting and negotiation structure.</span></div>
  <div class="org-layout">
   <div class="org-chart">
    <div class="org-node"><div class="company-tag">UMC JV</div><b>Jason Mark Swatton</b><span>Contracts and Commercial Director</span></div><div class="org-line"></div>
@@ -178,12 +178,13 @@
  <div class="card">
   <div class="callout"><b>Resource master:</b> changes made here are saved to the shared Supabase database and are visible to other users of the live dashboard.</div>
   <div class="resource-master-grid" style="margin-top:14px">
-   <div class="field"><label>Resource Name</label><input id="newResourceName" placeholder="e.g. Jane Smith"></div>
-   <div class="field"><label>Role / Position</label><input id="newResourceRole" placeholder="e.g. Senior Quantity Surveyor · Off-site Resource 4"></div>
+   <div class="field"><label>Name</label><input id="newResourceName" placeholder="e.g. Jane Smith"></div>
+   <div class="field"><label>Designation</label><input id="newResourceRole" placeholder="e.g. Senior Quantity Surveyor"></div>
+   <div class="field"><label>Location</label><select id="newResourceLocation"><option value="On-Site">On-Site</option><option value="Off-Site">Off-Site</option></select></div>
    <button class="btn good" id="addResourceMasterBtn" type="button">+ Add Resource</button>
   </div>
   <div class="resource-db-status" id="resourceDbStatus">Loading shared resources…</div>
-  <div class="table-wrap" style="margin-top:12px;max-height:55vh"><table class="data-table resource-master-table"><thead><tr><th>Resource Name</th><th>Role / Position</th><th style="width:90px">Active</th><th style="width:170px">Actions</th></tr></thead><tbody id="resourceMasterBody"></tbody></table></div>
+  <div class="table-wrap" style="margin-top:12px;max-height:55vh"><table class="data-table resource-master-table"><thead><tr><th>Name</th><th>Designation</th><th style="width:140px">Location</th><th style="width:90px">Active</th><th style="width:170px">Actions</th></tr></thead><tbody id="resourceMasterBody"></tbody></table></div>
  </div>
 </section>
 
@@ -342,13 +343,13 @@ function renderDeliveryTable(){const rows=planned().sort((a,b)=>(a.startDate||'9
 function removeFromPlan(id){const r=state.records.find(x=>x.id===id);if(!r)return;if(confirm('Remove this CMI from the Delivery Plan? Resource assignments will be retained.')){r.inDeliveryPlan=false;saveState()}}
 function renderGantt(){const rows=planned().filter(r=>r.startDate&&r.targetDate);const box=document.getElementById('ganttChart');if(!rows.length){box.innerHTML='<div class="callout">No planned CMIs with start and target dates yet.</div>';document.getElementById('ganttSummary').textContent='';return}let min=new Date(Math.min(...rows.map(r=>new Date(r.startDate+'T00:00:00').getTime()))),max=new Date(Math.max(...rows.map(r=>new Date((r.finishDate||r.targetDate)+'T00:00:00').getTime())));min.setDate(min.getDate()-2);max.setDate(max.getDate()+3);const days=Math.max(1,Math.ceil((max-min)/86400000)+1),dayw=Math.max(5,Math.min(18,900/days)),timelineW=days*dayw;const weeks=[];for(let d=new Date(min);d<=max;d.setDate(d.getDate()+1)){if(d.getDay()===1){const left=Math.floor((d-min)/86400000)*dayw;weeks.push(`<div class="weekmark" style="left:${left}px">${d.toLocaleDateString('en-NZ',{day:'2-digit',month:'short'})}</div>`)}}let html=`<div class="gantt-head"><div>CMI</div><div>Description</div><div>Site</div><div>Off-site</div><div class="gantt-scale" style="width:${timelineW}px">${weeks.join('')}</div></div>`;const order={High:0,Medium:1,Low:2,Unvalued:3};rows.sort((a,b)=>a.startDate.localeCompare(b.startDate)||order[calcPriority(a)]-order[calcPriority(b)]).forEach(r=>{const st=new Date(r.startDate+'T00:00:00'),en=new Date((r.finishDate||r.targetDate)+'T00:00:00'),left=Math.max(0,Math.floor((st-min)/86400000)*dayw),width=Math.max(dayw,Math.ceil((en-st)/86400000+1)*dayw),cls=r.deliveryStatus==='Submitted to Client'?'submitted':r.deliveryStatus==='Completed'?'completed':r.deliveryStatus==='To be Started'?'pending':'';html+=`<div class="gantt-row"><div class="gantt-info"><b>${esc(r.cmiNo)}</b><br>${priorityPill(calcPriority(r))}</div><div class="gantt-info">${esc(r.description)}</div><div class="gantt-info">${esc(r.siteResource)}</div><div class="gantt-info">${esc(r.offsiteResource)}</div><div class="gantt-timeline" style="--dayw:${dayw}px;width:${timelineW}px"><div class="gantt-bar ${cls}" style="left:${left}px;width:${width}px" title="${esc(r.deliveryStatus)} · ${r.startDate} to ${r.finishDate||r.targetDate}">${esc(r.deliveryStatus)}</div></div></div>`});box.innerHTML=html;document.getElementById('ganttSummary').textContent=`${rows.length} dated planned CMIs · timeline ${dateISO(min)} to ${dateISO(max)}`}
 const DEFAULT_SHARED_RESOURCES=[
- {resource_name:'Michael Dullaghan',role:'Change Manager · In Country — Full Time Secondment'},
- {resource_name:'Chamara Ranasinghe',role:'Senior Consultant · Site Resource 1'},
- {resource_name:'Dinuka Maduranga',role:'Senior Consultant · Site Resource 2'},
- {resource_name:'Orville Mathew Gayatin',role:'Senior Quantity Surveyor · Site Resource 3'},
- {resource_name:'Kosala Gamage',role:'Senior Quantity Surveyor · Off-site Resource 1'},
- {resource_name:'Damith Samarasinghe',role:'Quantity Surveyor · Off-site Resource 2'},
- {resource_name:'Devmini Amarasinghe',role:'Quantity Surveyor · Off-site Resource 3'}
+ {resource_name:'Michael Dullaghan',designation:'Change Manager',location:'On-Site'},
+ {resource_name:'Chamara Ranasinghe',designation:'Senior Consultant',location:'On-Site'},
+ {resource_name:'Dinuka Maduranga',designation:'Senior Consultant',location:'On-Site'},
+ {resource_name:'Orville Mathew Gayatin',designation:'Senior Quantity Surveyor',location:'On-Site'},
+ {resource_name:'Kosala Gamage',designation:'Senior Quantity Surveyor',location:'Off-Site'},
+ {resource_name:'Damith Samarasinghe',designation:'Quantity Surveyor',location:'Off-Site'},
+ {resource_name:'Devmini Amarasinghe',designation:'Quantity Surveyor',location:'Off-Site'}
 ];
 async function ensureDefaultResourcesInSupabase(){
  const {data,error}=await supabaseClient.from('resources').select('id,resource_name,role,is_deleted');
@@ -357,45 +358,78 @@ async function ensureDefaultResourcesInSupabase(){
  const inserts=[];const updates=[];
  DEFAULT_SHARED_RESOURCES.forEach(d=>{
   const existing=byName.get(d.resource_name.toLowerCase());
-  if(!existing)inserts.push({...d,active:true,is_deleted:false});
-  else if(!existing.is_deleted && !(existing.role||'').trim())updates.push({id:existing.id,role:d.role});
+  const packedRole=`${d.designation}|||${d.location}`;
+  if(!existing)inserts.push({resource_name:d.resource_name,role:packedRole,active:true,is_deleted:false});
+  else if(existing.is_deleted)updates.push({id:existing.id,role:packedRole,restore:true});
+  else if(existing.role!==packedRole)updates.push({id:existing.id,role:packedRole,restore:false});
  });
  if(inserts.length){
   const {error:insertError}=await supabaseClient.from('resources').insert(inserts);
   if(insertError)console.error('Unable to seed resources:',insertError);
  }
  for(const u of updates){
-  const {error:updateError}=await supabaseClient.from('resources').update({role:u.role}).eq('id',u.id);
-  if(updateError)console.error('Unable to add resource designation:',updateError);
+  const patch={role:u.role};
+  if(u.restore){patch.is_deleted=false;patch.active=true}
+  const {error:updateError}=await supabaseClient.from('resources').update(patch).eq('id',u.id);
+  if(updateError)console.error('Unable to update default resource:',updateError);
  }
 }
 let supabaseResources=[];
 function setResourceDbStatus(message,type=''){const el=document.getElementById('resourceDbStatus');if(!el)return;el.textContent=message;el.className='resource-db-status'+(type?' '+type:'')}
 async function loadResourcesFromSupabase(){
  await ensureDefaultResourcesInSupabase();
- const body=document.getElementById('resourceMasterBody');if(body)body.innerHTML='<tr><td colspan="4" class="muted">Loading shared resources…</td></tr>';
+ const body=document.getElementById('resourceMasterBody');if(body)body.innerHTML='<tr><td colspan="5" class="muted">Loading shared resources…</td></tr>';
  const {data,error}=await supabaseClient.from('resources').select('id,resource_name,role,active,is_deleted,updated_at').eq('is_deleted',false).order('resource_name',{ascending:true});
- if(error){console.error('Unable to load resources:',error);setResourceDbStatus('Unable to load resources from Supabase. '+(error.message||''),'error');if(body)body.innerHTML='<tr><td colspan="4" class="muted">Unable to load shared resources.</td></tr>';return}
+ if(error){console.error('Unable to load resources:',error);setResourceDbStatus('Unable to load resources from Supabase. '+(error.message||''),'error');if(body)body.innerHTML='<tr><td colspan="5" class="muted">Unable to load shared resources.</td></tr>';return}
  supabaseResources=data||[];setResourceDbStatus(`${supabaseResources.length} shared resource${supabaseResources.length===1?'':'s'} loaded.`,'good');renderResourceMaster();
 }
+function unpackResourceRole(value){
+ const raw=(value||'').trim();
+ if(raw.includes('|||')){
+  const parts=raw.split('|||');
+  return{designation:(parts.shift()||'').trim(),location:(parts.join('|||')||'').trim()||'On-Site'};
+ }
+ const lower=raw.toLowerCase();
+ const location=(lower.includes('off-site')||lower.includes('off site')||lower.includes('remote'))?'Off-Site':'On-Site';
+ const designation=(raw.split(' · ')[0]||raw).trim();
+ return{designation,location};
+}
+function packResourceRole(designation,location){return `${(designation||'').trim()}|||${location||'On-Site'}`}
 function renderResourceMaster(){
  const body=document.getElementById('resourceMasterBody');if(!body)return;
- body.innerHTML=(supabaseResources||[]).map(r=>`<tr data-resource-master="${r.id}"><td><input type="text" data-rm-field="resource_name" value="${esc(r.resource_name||'')}"></td><td><input type="text" data-rm-field="role" value="${esc(r.role||'')}"></td><td style="text-align:center"><input type="checkbox" data-rm-field="active" ${r.active!==false?'checked':''}></td><td><div class="row-actions"><button class="btn primary" type="button" onclick="saveResourceMaster(${Number(r.id)})">Save</button><button class="btn danger" type="button" onclick="deleteResourceMaster(${Number(r.id)})">Delete</button></div></td></tr>`).join('')||'<tr><td colspan="4" class="muted">No shared resources yet. Add the first resource above.</td></tr>';
+ body.innerHTML=(supabaseResources||[]).map(r=>{
+  const parsed=unpackResourceRole(r.role);
+  return `<tr data-resource-master="${r.id}"><td><input type="text" data-rm-field="resource_name" value="${esc(r.resource_name||'')}"></td><td><input type="text" data-rm-field="designation" value="${esc(parsed.designation)}"></td><td><select data-rm-field="location"><option value="On-Site" ${parsed.location==='On-Site'?'selected':''}>On-Site</option><option value="Off-Site" ${parsed.location==='Off-Site'?'selected':''}>Off-Site</option></select></td><td style="text-align:center"><input type="checkbox" data-rm-field="active" ${r.active!==false?'checked':''}></td><td><div class="row-actions"><button class="btn primary" type="button" onclick="saveResourceMaster(${Number(r.id)})">Save</button><button class="btn danger" type="button" onclick="deleteResourceMaster(${Number(r.id)})">Delete</button></div></td></tr>`;
+ }).join('')||'<tr><td colspan="5" class="muted">No shared resources yet. Add the first resource above.</td></tr>';
 }
 async function addResourceMaster(){
- const n=document.getElementById('newResourceName'),r=document.getElementById('newResourceRole');const name=(n?.value||'').trim(),role=(r?.value||'').trim();if(!name){alert('Enter a resource name.');n?.focus();return}
+ const n=document.getElementById('newResourceName'),r=document.getElementById('newResourceRole'),l=document.getElementById('newResourceLocation');
+ const name=(n?.value||'').trim(),designation=(r?.value||'').trim(),location=l?.value||'On-Site';
+ if(!name){alert('Enter a resource name.');n?.focus();return}
  setResourceDbStatus('Saving resource…');
  const {data:existing,error:lookupError}=await supabaseClient.from('resources').select('id,resource_name,is_deleted').ilike('resource_name',name).limit(1);
  if(lookupError){setResourceDbStatus('Unable to check existing resources. '+lookupError.message,'error');return}
- let error;
- if(existing&&existing.length){if(existing[0].is_deleted){({error}=await supabaseClient.from('resources').update({resource_name:name,role,active:true,is_deleted:false}).eq('id',existing[0].id));}else{alert('That resource already exists.');setResourceDbStatus('Resource was not added.','');return}}
- else{({error}=await supabaseClient.from('resources').insert({resource_name:name,role,active:true,is_deleted:false}));}
+ const role=packResourceRole(designation,location);let error;
+ if(existing&&existing.length){
+  if(existing[0].is_deleted){({error}=await supabaseClient.from('resources').update({resource_name:name,role,active:true,is_deleted:false}).eq('id',existing[0].id));}
+  else{alert('That resource already exists.');setResourceDbStatus('Resource was not added.','');return}
+ }else{
+  ({error}=await supabaseClient.from('resources').insert({resource_name:name,role,active:true,is_deleted:false}));
+ }
  if(error){console.error('Unable to add resource:',error);setResourceDbStatus('Unable to add resource. '+error.message,'error');return}
- n.value='';if(r)r.value='';await loadResourcesFromSupabase();
+ n.value='';if(r)r.value='';if(l)l.value='On-Site';await loadResourcesFromSupabase();
 }
 async function saveResourceMaster(id){
- const tr=document.querySelector(`[data-resource-master="${id}"]`);if(!tr)return;const name=tr.querySelector('[data-rm-field="resource_name"]').value.trim(),role=tr.querySelector('[data-rm-field="role"]').value.trim(),active=tr.querySelector('[data-rm-field="active"]').checked;if(!name){alert('Resource name cannot be blank.');return}
- setResourceDbStatus('Saving changes…');const {error}=await supabaseClient.from('resources').update({resource_name:name,role,active}).eq('id',id);if(error){console.error('Unable to update resource:',error);setResourceDbStatus('Unable to save resource. '+error.message,'error');return}await loadResourcesFromSupabase();
+ const tr=document.querySelector(`[data-resource-master="${id}"]`);if(!tr)return;
+ const name=tr.querySelector('[data-rm-field="resource_name"]').value.trim();
+ const designation=tr.querySelector('[data-rm-field="designation"]').value.trim();
+ const location=tr.querySelector('[data-rm-field="location"]').value;
+ const active=tr.querySelector('[data-rm-field="active"]').checked;
+ if(!name){alert('Resource name cannot be blank.');return}
+ setResourceDbStatus('Saving changes…');
+ const {error}=await supabaseClient.from('resources').update({resource_name:name,role:packResourceRole(designation,location),active}).eq('id',id);
+ if(error){console.error('Unable to update resource:',error);setResourceDbStatus('Unable to save resource. '+error.message,'error');return}
+ await loadResourcesFromSupabase();
 }
 async function deleteResourceMaster(id){
  const item=(supabaseResources||[]).find(x=>Number(x.id)===Number(id));if(!item)return;if(!confirm(`Delete "${item.resource_name}" from the resource list?`))return;setResourceDbStatus('Removing resource…');const {error}=await supabaseClient.from('resources').update({is_deleted:true,active:false}).eq('id',id);if(error){console.error('Unable to delete resource:',error);setResourceDbStatus('Unable to delete resource. '+error.message,'error');return}await loadResourcesFromSupabase();
