@@ -46,6 +46,20 @@
     SUPABASE_URL,
     SUPABASE_PUBLISHABLE_KEY
   );
+  async function testSupabaseConnection() {
+    const { data, error } = await supabaseClient
+      .from('cmis')
+      .select('id')
+      .limit(1);
+
+    if (error) {
+      console.error('Supabase connection failed:', error);
+    } else {
+      console.log('Supabase connection successful');
+    }
+  }
+
+  testSupabaseConnection();
 </script>
 </head>
 <body>
