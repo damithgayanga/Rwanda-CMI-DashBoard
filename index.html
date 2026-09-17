@@ -379,6 +379,7 @@ async function ensureDefaultResourcesInSupabase(){
  }
 }
 let supabaseResources=[];
+let editingResourceMasterId=null;
 function setResourceDbStatus(message,type=''){const el=document.getElementById('resourceDbStatus');if(!el)return;el.textContent=message;el.className='resource-db-status'+(type?' '+type:'')}
 async function loadResourcesFromSupabase(){
  await ensureDefaultResourcesInSupabase();
@@ -419,9 +420,27 @@ function renderResourceMaster(){
  const ordered=[...(supabaseResources||[])].sort((a,b)=>changeResourceSortIndex(a.resource_name)-changeResourceSortIndex(b.resource_name)||(a.resource_name||'').localeCompare(b.resource_name||''));
  body.innerHTML=ordered.map(r=>{
   const parsed=unpackResourceRole(r.role);
-  return `<tr data-resource-master="${r.id}" data-original-resource-name="${esc(r.resource_name||'')}"><td><input type="text" data-rm-field="resource_name" value="${esc(r.resource_name||'')}"></td><td><input type="text" data-rm-field="designation" value="${esc(parsed.designation)}"></td><td><select data-rm-field="location"><option value="On-Site" ${parsed.location==='On-Site'?'selected':''}>On-Site</option><option value="Off-Site" ${parsed.location==='Off-Site'?'selected':''}>Off-Site</option></select></td><td style="text-align:center"><input type="checkbox" data-rm-field="active" ${r.active!==false?'checked':''}></td><td><div class="row-actions"><button class="btn primary" type="button" onclick="saveResourceMaster(${Number(r.id)})">Save</button><button class="btn danger" type="button" onclick="deleteResourceMaster(${Number(r.id)})">Delete</button></div></td></tr>`;
+  const editing=Number(editingResourceMasterId)===Number(r.id);
+  if(editing){
+   return `<tr data-resource-master="${r.id}">
+    <td><input type="text" data-rm-field="resource_name" value="${esc(r.resource_name||'')}"></td>
+    <td><input type="text" data-rm-field="designation" value="${esc(parsed.designation)}"></td>
+    <td><select data-rm-field="location"><option value="On-Site" ${parsed.location==='On-Site'?'selected':''}>On-Site</option><option value="Off-Site" ${parsed.location==='Off-Site'?'selected':''}>Off-Site</option></select></td>
+    <td>${r.active!==false?'Active':'Inactive'}</td>
+    <td><div class="row-actions"><button class="btn primary" type="button" onclick="saveResourceMaster(${Number(r.id)})">Save</button><button class="btn" type="button" onclick="cancelResourceMasterEdit()">Cancel</button></div></td>
+   </tr>`;
+  }
+  return `<tr data-resource-master="${r.id}">
+   <td><b>${esc(r.resource_name||'')}</b></td>
+   <td>${esc(parsed.designation||'')}</td>
+   <td>${esc(parsed.location||'')}</td>
+   <td>${r.active!==false?'Active':'Inactive'}</td>
+   <td><div class="row-actions"><button class="btn primary" type="button" onclick="editResourceMaster(${Number(r.id)})">Edit</button><button class="btn danger" type="button" onclick="deleteResourceMaster(${Number(r.id)})">Delete</button></div></td>
+  </tr>`;
  }).join('')||'<tr><td colspan="5" class="muted">No shared resources yet. Add the first resource above.</td></tr>';
 }
+function editResourceMaster(id){editingResourceMasterId=Number(id);renderResourceMaster()}
+function cancelResourceMasterEdit(){editingResourceMasterId=null;renderResourceMaster()}
 async function addResourceMaster(){
  const n=document.getElementById('newResourceName'),r=document.getElementById('newResourceRole'),l=document.getElementById('newResourceLocation');
  const name=(n?.value||'').trim(),designation=(r?.value||'').trim(),location=l?.value||'On-Site';
@@ -449,6 +468,7 @@ async function saveResourceMaster(id){
  setResourceDbStatus('Saving changes…');
  const {error}=await supabaseClient.from('resources').update({resource_name:name,role:packResourceRole(designation,location),active}).eq('id',id);
  if(error){console.error('Unable to update resource:',error);setResourceDbStatus('Unable to save resource. '+error.message,'error');return}
+ editingResourceMasterId=null;
  await loadResourcesFromSupabase();
 }
 async function deleteResourceMaster(id){
