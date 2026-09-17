@@ -28,7 +28,9 @@
 
 .org-layout{display:grid;grid-template-columns:1.1fr .9fr;gap:18px}
 #tab-organisation.active{display:flex;flex-direction:column;min-height:0;overflow:hidden}
-#tab-organisation .org-page-title{flex:0 0 auto;margin:0 0 10px}
+.org-heading-row{flex:0 0 auto;display:grid;grid-template-columns:minmax(0,1.08fr) minmax(0,.92fr);gap:14px;margin:0 0 8px}
+.org-heading-cell{display:flex;align-items:center;min-width:0}
+.org-heading-cell h2{font-size:17px;margin:0;color:var(--navy);line-height:1.2}
 .org-workspace{flex:1 1 auto;min-height:0;display:grid;grid-template-columns:minmax(0,1.08fr) minmax(0,.92fr);gap:14px;overflow:hidden}
 .org-left-pane,.org-right-pane{min-width:0;min-height:0;overflow:hidden}
 .org-left-pane{display:flex;align-items:flex-start}
@@ -43,9 +45,6 @@
 .org-left-pane .org-tier .org-node:before{top:-12px;height:12px}
 .org-left-pane .org-band{padding:6px 8px;font-size:8px;margin:8px 0 18px}
 .org-right-pane{display:flex;flex-direction:column}
-.org-resource-head{flex:0 0 auto;display:flex;justify-content:space-between;align-items:center;gap:10px;margin:0 0 8px}
-.org-resource-head h2{font-size:17px;margin:0;color:var(--navy)}
-.org-resource-head .note{font-size:9px;color:var(--muted);text-align:right}
 .org-resource-card{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;overflow:hidden;padding:10px}
 .org-resource-card .resource-master-grid{flex:0 0 auto;margin:0;grid-template-columns:minmax(120px,1fr) minmax(150px,1.2fr) 110px auto;gap:8px}
 .org-resource-card .field label{font-size:8px}
@@ -56,7 +55,7 @@
 .org-resource-table-wrap .data-table{font-size:9px;min-width:0}
 .org-resource-table-wrap .data-table th,.org-resource-table-wrap .data-table td{padding:6px 7px}
 .org-resource-table-wrap .row-actions{gap:4px}
-@media(max-width:1100px){.org-workspace{grid-template-columns:1fr}.org-left-pane{display:none}.org-right-pane{height:100%}}.org-chart{background:#fff;border:1px solid var(--line);border-radius:12px;padding:20px}.org-node{border:1px solid #405468;background:#fff;border-radius:7px;padding:10px 12px;text-align:center;margin:auto;max-width:390px}.org-node b{display:block;color:var(--navy);font-size:12px}.org-node span{display:block;font-size:10px;color:#56697b;margin-top:2px}.org-line{height:28px;width:1px;background:#7d8d9c;margin:auto}.org-tier{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;position:relative}.org-tier:before{content:"";position:absolute;left:16.67%;right:16.67%;top:-14px;border-top:1px solid #7d8d9c}.org-tier .org-node{width:100%;position:relative}.org-tier .org-node:before{content:"";position:absolute;top:-15px;left:50%;height:15px;border-left:1px solid #7d8d9c}.org-band{padding:8px 12px;text-align:center;background:#f5e51b;border:1px solid #9b9412;border-radius:5px;color:#b42318;font-weight:850;font-size:10px;margin:12px 0 26px}.org-image{width:100%;border:1px solid var(--line);border-radius:10px;background:#fff}.company-tag{font-size:9px;font-weight:850;letter-spacing:.08em;text-transform:uppercase;color:var(--teal);margin-bottom:3px}
+@media(max-width:1100px){.org-heading-row{grid-template-columns:1fr}.org-heading-cell:first-child{display:none}.org-workspace{grid-template-columns:1fr}.org-left-pane{display:none}.org-right-pane{height:100%}}.org-chart{background:#fff;border:1px solid var(--line);border-radius:12px;padding:20px}.org-node{border:1px solid #405468;background:#fff;border-radius:7px;padding:10px 12px;text-align:center;margin:auto;max-width:390px}.org-node b{display:block;color:var(--navy);font-size:12px}.org-node span{display:block;font-size:10px;color:#56697b;margin-top:2px}.org-line{height:28px;width:1px;background:#7d8d9c;margin:auto}.org-tier{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;position:relative}.org-tier:before{content:"";position:absolute;left:16.67%;right:16.67%;top:-14px;border-top:1px solid #7d8d9c}.org-tier .org-node{width:100%;position:relative}.org-tier .org-node:before{content:"";position:absolute;top:-15px;left:50%;height:15px;border-left:1px solid #7d8d9c}.org-band{padding:8px 12px;text-align:center;background:#f5e51b;border:1px solid #9b9412;border-radius:5px;color:#b42318;font-weight:850;font-size:10px;margin:12px 0 26px}.org-image{width:100%;border:1px solid var(--line);border-radius:10px;background:#fff}.company-tag{font-size:9px;font-weight:850;letter-spacing:.08em;text-transform:uppercase;color:var(--teal);margin-bottom:3px}
 #tab-process.active{display:flex;flex-direction:column;min-height:0;overflow:hidden}
 #tab-process>.section-title{flex:0 0 auto;margin:0 0 10px}
 #tab-process>.card{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;overflow:hidden;padding:12px}
@@ -199,7 +198,10 @@
 </section>
 
 <section class="tab" id="tab-organisation">
- <div class="section-title org-page-title"><h2>Change Management Organisation</h2></div>
+ <div class="org-heading-row">
+  <div class="org-heading-cell"><h2>Change Management Organisation</h2></div>
+  <div class="org-heading-cell"><h2>Change Management Resources</h2></div>
+ </div>
  <div class="org-workspace">
   <div class="org-left-pane">
    <div class="org-chart">
@@ -212,7 +214,6 @@
    </div>
   </div>
   <div class="org-right-pane">
-   <div class="org-resource-head"><h2>Change Management Resources</h2></div>
    <div class="card org-resource-card">
     <div class="resource-master-grid">
      <div class="field"><label>Name</label><input id="newResourceName" placeholder="e.g. Jane Smith"></div>
