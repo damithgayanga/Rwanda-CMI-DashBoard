@@ -459,7 +459,7 @@ function renderResourceMaster(){
     <td><input type="text" data-rm-field="resource_name" value="${esc(r.resource_name||'')}"></td>
     <td><input type="text" data-rm-field="designation" value="${esc(parsed.designation)}"></td>
     <td><select data-rm-field="location"><option value="On-Site" ${parsed.location==='On-Site'?'selected':''}>On-Site</option><option value="Off-Site" ${parsed.location==='Off-Site'?'selected':''}>Off-Site</option></select></td>
-    <td>${r.active!==false?'Active':'Inactive'}</td>
+    <td><select data-rm-field="active"><option value="true" ${r.active!==false?'selected':''}>Active</option><option value="false" ${r.active===false?'selected':''}>Inactive</option></select></td>
     <td><div class="row-actions"><button class="btn primary" type="button" onclick="saveResourceMaster(${Number(r.id)})">Save</button><button class="btn" type="button" onclick="cancelResourceMasterEdit()">Cancel</button></div></td>
    </tr>`;
   }
@@ -496,7 +496,7 @@ async function saveResourceMaster(id){
  const name=tr.querySelector('[data-rm-field="resource_name"]').value.trim();
  const designation=tr.querySelector('[data-rm-field="designation"]').value.trim();
  const location=tr.querySelector('[data-rm-field="location"]').value;
- const active=tr.querySelector('[data-rm-field="active"]').checked;
+ const active=tr.querySelector('[data-rm-field="active"]').value==='true';
  if(!name){alert('Resource name cannot be blank.');return}
  setResourceDbStatus('Saving changes…');
  const {error}=await supabaseClient.from('resources').update({resource_name:name,role:packResourceRole(designation,location),active}).eq('id',id);
