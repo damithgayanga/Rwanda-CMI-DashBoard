@@ -341,9 +341,38 @@ function renderDelivery(){document.getElementById('targetDateInput').value=state
 function renderDeliveryTable(){const rows=planned().sort((a,b)=>(a.startDate||'9999').localeCompare(b.startDate||'9999')||({High:0,Medium:1,Low:2,Unvalued:3}[calcPriority(a)]-({High:0,Medium:1,Low:2,Unvalued:3}[calcPriority(b)])));document.getElementById('deliveryBody').innerHTML=rows.map(r=>`<tr><td><b>${esc(r.cmiNo)}</b></td><td class="desc">${esc(r.description)}</td><td>${priorityPill(calcPriority(r))}</td><td class="money">${money(r.initialEstimate)}</td><td>${esc(r.siteResource)}</td><td>${esc(r.offsiteResource)}</td><td>${fmtDate(r.startDate)}</td><td>${fmtDate(r.targetDate)}</td><td>${fmtDate(r.finishDate)}</td><td>${deliveryPill(r.deliveryStatus)}</td><td class="money">${money(r.deliveryValue)}</td><td><div class="row-actions"><button class="iconbtn" onclick="goProgress('${r.id}')">Progress</button><button class="iconbtn" onclick="removeFromPlan('${r.id}')">Remove</button></div></td></tr>`).join('')||'<tr><td colspan="12" class="muted">No CMIs have been added to the Delivery Plan yet. Use Resource Allocation first.</td></tr>'}
 function removeFromPlan(id){const r=state.records.find(x=>x.id===id);if(!r)return;if(confirm('Remove this CMI from the Delivery Plan? Resource assignments will be retained.')){r.inDeliveryPlan=false;saveState()}}
 function renderGantt(){const rows=planned().filter(r=>r.startDate&&r.targetDate);const box=document.getElementById('ganttChart');if(!rows.length){box.innerHTML='<div class="callout">No planned CMIs with start and target dates yet.</div>';document.getElementById('ganttSummary').textContent='';return}let min=new Date(Math.min(...rows.map(r=>new Date(r.startDate+'T00:00:00').getTime()))),max=new Date(Math.max(...rows.map(r=>new Date((r.finishDate||r.targetDate)+'T00:00:00').getTime())));min.setDate(min.getDate()-2);max.setDate(max.getDate()+3);const days=Math.max(1,Math.ceil((max-min)/86400000)+1),dayw=Math.max(5,Math.min(18,900/days)),timelineW=days*dayw;const weeks=[];for(let d=new Date(min);d<=max;d.setDate(d.getDate()+1)){if(d.getDay()===1){const left=Math.floor((d-min)/86400000)*dayw;weeks.push(`<div class="weekmark" style="left:${left}px">${d.toLocaleDateString('en-NZ',{day:'2-digit',month:'short'})}</div>`)}}let html=`<div class="gantt-head"><div>CMI</div><div>Description</div><div>Site</div><div>Off-site</div><div class="gantt-scale" style="width:${timelineW}px">${weeks.join('')}</div></div>`;const order={High:0,Medium:1,Low:2,Unvalued:3};rows.sort((a,b)=>a.startDate.localeCompare(b.startDate)||order[calcPriority(a)]-order[calcPriority(b)]).forEach(r=>{const st=new Date(r.startDate+'T00:00:00'),en=new Date((r.finishDate||r.targetDate)+'T00:00:00'),left=Math.max(0,Math.floor((st-min)/86400000)*dayw),width=Math.max(dayw,Math.ceil((en-st)/86400000+1)*dayw),cls=r.deliveryStatus==='Submitted to Client'?'submitted':r.deliveryStatus==='Completed'?'completed':r.deliveryStatus==='To be Started'?'pending':'';html+=`<div class="gantt-row"><div class="gantt-info"><b>${esc(r.cmiNo)}</b><br>${priorityPill(calcPriority(r))}</div><div class="gantt-info">${esc(r.description)}</div><div class="gantt-info">${esc(r.siteResource)}</div><div class="gantt-info">${esc(r.offsiteResource)}</div><div class="gantt-timeline" style="--dayw:${dayw}px;width:${timelineW}px"><div class="gantt-bar ${cls}" style="left:${left}px;width:${width}px" title="${esc(r.deliveryStatus)} · ${r.startDate} to ${r.finishDate||r.targetDate}">${esc(r.deliveryStatus)}</div></div></div>`});box.innerHTML=html;document.getElementById('ganttSummary').textContent=`${rows.length} dated planned CMIs · timeline ${dateISO(min)} to ${dateISO(max)}`}
+const DEFAULT_SHARED_RESOURCES=[
+ {resource_name:'Michael Dullaghan',role:'Change Manager · In Country — Full Time Secondment'},
+ {resource_name:'Chamara Ranasinghe',role:'Senior Consultant · Site Resource 1'},
+ {resource_name:'Dinuka Maduranga',role:'Senior Consultant · Site Resource 2'},
+ {resource_name:'Orville Mathew Gayatin',role:'Senior Quantity Surveyor · Site Resource 3'},
+ {resource_name:'Kosala Gamage',role:'Senior Quantity Surveyor · Off-site Resource 1'},
+ {resource_name:'Damith Samarasinghe',role:'Quantity Surveyor · Off-site Resource 2'},
+ {resource_name:'Devmini Amarasinghe',role:'Quantity Surveyor · Off-site Resource 3'}
+];
+async function ensureDefaultResourcesInSupabase(){
+ const {data,error}=await supabaseClient.from('resources').select('id,resource_name,role,is_deleted');
+ if(error){console.error('Unable to check default resources:',error);return}
+ const byName=new Map((data||[]).map(r=>[(r.resource_name||'').trim().toLowerCase(),r]));
+ const inserts=[];const updates=[];
+ DEFAULT_SHARED_RESOURCES.forEach(d=>{
+  const existing=byName.get(d.resource_name.toLowerCase());
+  if(!existing)inserts.push({...d,active:true,is_deleted:false});
+  else if(!existing.is_deleted && !(existing.role||'').trim())updates.push({id:existing.id,role:d.role});
+ });
+ if(inserts.length){
+  const {error:insertError}=await supabaseClient.from('resources').insert(inserts);
+  if(insertError)console.error('Unable to seed resources:',insertError);
+ }
+ for(const u of updates){
+  const {error:updateError}=await supabaseClient.from('resources').update({role:u.role}).eq('id',u.id);
+  if(updateError)console.error('Unable to add resource designation:',updateError);
+ }
+}
 let supabaseResources=[];
 function setResourceDbStatus(message,type=''){const el=document.getElementById('resourceDbStatus');if(!el)return;el.textContent=message;el.className='resource-db-status'+(type?' '+type:'')}
 async function loadResourcesFromSupabase(){
+ await ensureDefaultResourcesInSupabase();
  const body=document.getElementById('resourceMasterBody');if(body)body.innerHTML='<tr><td colspan="4" class="muted">Loading shared resources…</td></tr>';
  const {data,error}=await supabaseClient.from('resources').select('id,resource_name,role,active,is_deleted,updated_at').eq('is_deleted',false).order('resource_name',{ascending:true});
  if(error){console.error('Unable to load resources:',error);setResourceDbStatus('Unable to load resources from Supabase. '+(error.message||''),'error');if(body)body.innerHTML='<tr><td colspan="4" class="muted">Unable to load shared resources.</td></tr>';return}
