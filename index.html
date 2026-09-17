@@ -415,8 +415,7 @@ function renderResourceMaster(){
  const ordered=[...(supabaseResources||[])].sort((a,b)=>changeResourceSortIndex(a.resource_name)-changeResourceSortIndex(b.resource_name)||(a.resource_name||'').localeCompare(b.resource_name||''));
  body.innerHTML=ordered.map(r=>{
   const parsed=unpackResourceRole(r.role);
-  const displayName=changeResourceDisplayName(r.resource_name||'');
-  return `<tr data-resource-master="${r.id}" data-original-resource-name="${esc(r.resource_name||'')}"><td><input type="text" data-rm-field="resource_name" value="${esc(displayName)}"></td><td><input type="text" data-rm-field="designation" value="${esc(parsed.designation)}"></td><td><select data-rm-field="location"><option value="On-Site" ${parsed.location==='On-Site'?'selected':''}>On-Site</option><option value="Off-Site" ${parsed.location==='Off-Site'?'selected':''}>Off-Site</option></select></td><td style="text-align:center"><input type="checkbox" data-rm-field="active" ${r.active!==false?'checked':''}></td><td><div class="row-actions"><button class="btn primary" type="button" onclick="saveResourceMaster(${Number(r.id)})">Save</button><button class="btn danger" type="button" onclick="deleteResourceMaster(${Number(r.id)})">Delete</button></div></td></tr>`;
+  return `<tr data-resource-master="${r.id}" data-original-resource-name="${esc(r.resource_name||'')}"><td><input type="text" data-rm-field="resource_name" value="${esc(r.resource_name||'')}"></td><td><input type="text" data-rm-field="designation" value="${esc(parsed.designation)}"></td><td><select data-rm-field="location"><option value="On-Site" ${parsed.location==='On-Site'?'selected':''}>On-Site</option><option value="Off-Site" ${parsed.location==='Off-Site'?'selected':''}>Off-Site</option></select></td><td style="text-align:center"><input type="checkbox" data-rm-field="active" ${r.active!==false?'checked':''}></td><td><div class="row-actions"><button class="btn primary" type="button" onclick="saveResourceMaster(${Number(r.id)})">Save</button><button class="btn danger" type="button" onclick="deleteResourceMaster(${Number(r.id)})">Delete</button></div></td></tr>`;
  }).join('')||'<tr><td colspan="5" class="muted">No shared resources yet. Add the first resource above.</td></tr>';
 }
 async function addResourceMaster(){
@@ -438,10 +437,7 @@ async function addResourceMaster(){
 }
 async function saveResourceMaster(id){
  const tr=document.querySelector(`[data-resource-master="${id}"]`);if(!tr)return;
- const enteredName=tr.querySelector('[data-rm-field="resource_name"]').value.trim();
- const originalName=tr.dataset.originalResourceName||'';
- const originalDisplay=changeResourceDisplayName(originalName);
- const name=enteredName===originalDisplay?originalName:enteredName;
+ const name=tr.querySelector('[data-rm-field="resource_name"]').value.trim();
  const designation=tr.querySelector('[data-rm-field="designation"]').value.trim();
  const location=tr.querySelector('[data-rm-field="location"]').value;
  const active=tr.querySelector('[data-rm-field="active"]').checked;
