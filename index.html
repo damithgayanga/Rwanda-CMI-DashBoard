@@ -241,6 +241,148 @@
     sharedStateSyncTimer=setTimeout(()=>{saveSharedDashboardState()},250);
   }
 
+  const DELIVERY_ACTIVITY_TABLE = 'cmi_delivery_activities';
+
+  function deliveryActivityKey(r) {
+    return String(r?.cmiKey || normCmi(r?.cmiNo || '')).trim();
+  }
+
+  function applyDeliveryActivityRow(row) {
+    const key=String(row.cmi_key||'').trim();
+    const r=state.records.find(x=>String(x.cmiKey||normCmi(x.cmiNo||''))===key)
+      || state.records.find(x=>String(x.id||'')===String(row.cmi_record_id||''));
+    if(!r)return false;
+    if(!Array.isArray(r.cmiActivities))r.cmiActivities=[];
+    let a=r.cmiActivities.find(x=>String(x.activityId||'')===String(row.activity_id||''));
+    if(!a){
+      a={
+        id:'db-'+key+'-'+String(row.activity_id||'').replace(/[^a-z0-9_-]/gi,'-'),
+        activityId:row.activity_id||'',
+        activityName:row.activity_name||'',
+        siteResource:'',
+        offsiteResource:'',
+        startDate:'',
+        targetDate:'',
+        finishDate:'',
+        actualStartDate:'',
+        actualFinishDate:'',
+        status:'To be Started',
+        progressPct:0,
+        resourceProgress:{},
+        notes:''
+      };
+      r.cmiActivities.push(a);
+    }
+    a.activityId=row.activity_id||a.activityId;
+    a.activityName=row.activity_name||a.activityName;
+    a.siteResource=row.site_resource||'';
+    a.offsiteResource=row.offsite_resource||'';
+    a.startDate=row.planned_start||'';
+    a.targetDate=row.planned_finish||'';
+    a.actualStartDate=row.actual_start||'';
+    a.actualFinishDate=row.actual_finish||'';
+    a.finishDate=row.actual_finish||'';
+    a.progressPct=Math.max(0,Math.min(100,Number(row.progress_pct)||0));
+    if(a.actualFinishDate||a.progressPct>=100)a.status='Completed';
+    else if(a.actualStartDate||a.progressPct>0)a.status='In Progress';
+    else a.status='To be Started';
+    if(!a.resourceProgress||typeof a.resourceProgress!=='object')a.resourceProgress={};
+    uniq([a.siteResource,a.offsiteResource]).filter(Boolean).forEach(n=>a.resourceProgress[n]=a.progressPct);
+    r.inDeliveryPlan=true;
+    return true;
+  }
+
+  async function loadDeliveryActivitiesFromSupabase() {
+    try{
+      const {data,error}=await supabaseClient
+        .from(DELIVERY_ACTIVITY_TABLE)
+        .select('cmi_key,cmi_no,cmi_record_id,activity_id,activity_name,planned_start,planned_finish,actual_start,actual_finish,progress_pct,site_resource,offsite_resource,display_order,updated_at')
+        .order('cmi_key',{ascending:true})
+        .order('display_order',{ascending:true});
+      if(error){
+        console.error('Unable to load Delivery Plan activities from Supabase:',error);
+        return false;
+      }
+      const touched=new Set();
+      (data||[]).forEach(row=>{
+        if(applyDeliveryActivityRow(row))touched.add(String(row.cmi_key||''));
+      });
+      state.records.forEach(r=>{
+        if(touched.has(deliveryActivityKey(r))){
+          rollupCmiActivityPlan(r);
+          rollupCmiProgress(r);
+          r.inDeliveryPlan=true;
+          r.deliveryStatus=derivedDeliveryStatus(r);
+        }
+      });
+      syncHighLevelProgressFromActivities();
+      try{localStorage.setItem(STORAGE_KEY,JSON.stringify(state))}catch(e){}
+      return true;
+    }catch(e){
+      console.error('Delivery Plan activity load failed:',e);
+      return false;
+    }
+  }
+
+  async function saveCmiPlanToSupabase(r) {
+    const key=deliveryActivityKey(r);
+    const activities=(r.cmiActivities||[]).filter(a=>a.activityId);
+    const rows=activities.map((a,i)=>({
+      cmi_key:key,
+      cmi_no:r.cmiNo||('CMI '+key),
+      cmi_record_id:r.id||null,
+      activity_id:a.activityId,
+      activity_name:activityLabel(a),
+      planned_start:a.startDate||null,
+      planned_finish:a.targetDate||null,
+      site_resource:a.siteResource||null,
+      offsite_resource:a.offsiteResource||null,
+      display_order:i+1
+    }));
+    const {data:existing,error:readError}=await supabaseClient
+      .from(DELIVERY_ACTIVITY_TABLE)
+      .select('activity_id')
+      .eq('cmi_key',key);
+    if(readError)throw readError;
+    const keep=new Set(rows.map(x=>x.activity_id));
+    const stale=(existing||[]).map(x=>x.activity_id).filter(id=>!keep.has(id));
+    if(stale.length){
+      const {error:deleteError}=await supabaseClient
+        .from(DELIVERY_ACTIVITY_TABLE)
+        .delete()
+        .eq('cmi_key',key)
+        .in('activity_id',stale);
+      if(deleteError)throw deleteError;
+    }
+    if(rows.length){
+      const {error:upsertError}=await supabaseClient
+        .from(DELIVERY_ACTIVITY_TABLE)
+        .upsert(rows,{onConflict:'cmi_key,activity_id'});
+      if(upsertError)throw upsertError;
+    }
+  }
+
+  async function saveCmiProgressToSupabase(pending) {
+    for(const x of pending){
+      const {r,a,start,finish,pct}=x;
+      const key=deliveryActivityKey(r);
+      const payload={
+        cmi_key:key,
+        cmi_no:r.cmiNo||('CMI '+key),
+        cmi_record_id:r.id||null,
+        activity_id:a.activityId,
+        activity_name:activityLabel(a),
+        actual_start:start||null,
+        actual_finish:finish||null,
+        progress_pct:pct
+      };
+      const {error}=await supabaseClient
+        .from(DELIVERY_ACTIVITY_TABLE)
+        .upsert(payload,{onConflict:'cmi_key,activity_id'});
+      if(error)throw error;
+    }
+  }
+
   async function testSupabaseConnection() {
     const { error } = await supabaseClient
       .from('cmis')
@@ -762,7 +904,7 @@ function autoSyncCmiActivityPlan(id){
  const r=state.records.find(x=>x.id===id);if(!r)return;
  readCmiActivityPanel(r);rollupCmiActivityPlan(r);persistStateOnly();refreshAllocationPlanState(r);renderGantt();
 }
-function saveCmiActivityPlan(id){
+async function saveCmiActivityPlan(id){
  const r=state.records.find(x=>x.id===id);if(!r)return;
  if(!(r.cmiActivities||[]).length){alert('Add at least one activity to this CMI before saving the plan.');return}
  readCmiActivityPanel(r);
@@ -777,7 +919,16 @@ function saveCmiActivityPlan(id){
   if(a.targetDate<a.startDate){invalid=`Target date cannot be before start date for ${activityLabel(a)}.`;break}
  }
  if(invalid){rollupCmiActivityPlan(r);persistStateOnly();refreshAllocationPlanState(r);alert(invalid);return}
- rollupCmiActivityPlan(r);saveState();alert(`${r.cmiNo} activity plan validated. Its activities, resources and dates are reflected automatically in the Delivery Plan.`);
+ rollupCmiActivityPlan(r);
+ try{
+  await saveCmiPlanToSupabase(r);
+  try{localStorage.setItem(STORAGE_KEY,JSON.stringify(state))}catch(e){}
+  renderAll();
+  alert(`${r.cmiNo} activity plan saved to Supabase. The shared Delivery Plan has been updated for everyone using this dashboard.`);
+ }catch(e){
+  console.error('Unable to save CMI Activity Plan to Supabase:',e);
+  alert('The activity plan could not be saved to Supabase. No shared Delivery Plan update was confirmed. '+(e.message||''));
+ }
 }
 function renderAllocation(){
  renderHighLevelAllocation();
@@ -1085,7 +1236,7 @@ function renderProgress(){
  body.innerHTML=rows.map(({r,a})=>`<tr data-progress-activity="${r.id}|${a.id}"><td><b>${esc(activityLabel(a))}</b></td><td><input class="inline-input" type="date" data-progress-field="actualStartDate" value="${a.actualStartDate||''}"></td><td><input class="inline-input" type="date" data-progress-field="actualFinishDate" value="${a.actualFinishDate||''}"></td><td><input class="inline-input" type="number" min="0" max="100" step="1" data-progress-field="progressPct" value="${Number(a.progressPct)||0}"></td></tr>`).join('');
  if(btn)btn.disabled=false;
 }
-function submitProgressUpdate(){
+async function submitProgressUpdate(){
  const body=document.getElementById('progressActivityBody'),status=document.getElementById('progressSubmitStatus');if(!body)return;
  const rows=[...body.querySelectorAll('[data-progress-activity]')];
  if(!rows.length){if(status)status.textContent='Enter a CMI No. with allocated activities first.';return}
@@ -1097,6 +1248,15 @@ function submitProgressUpdate(){
   pending.push({r,a,start,finish,pct});
  }
  if(!pending.length){if(status)status.textContent='No activity progress rows to submit.';return}
+ if(status)status.textContent='Saving progress to shared database…';
+ try{
+  await saveCmiProgressToSupabase(pending);
+ }catch(e){
+  console.error('Unable to save Progress Update to Supabase:',e);
+  if(status)status.textContent='Progress was not saved to the shared database.';
+  alert('The progress update could not be saved to Supabase. '+(e.message||''));
+  return;
+ }
  const touched=new Set();
  pending.forEach(x=>{
   const {r,a,start,finish,pct}=x;
@@ -1109,12 +1269,10 @@ function submitProgressUpdate(){
  });
  touched.forEach(id=>{const r=state.records.find(x=>x.id===id);if(r){r.inDeliveryPlan=true;rollupCmiActivityPlan(r);r.inDeliveryPlan=true;rollupCmiProgress(r);r.deliveryStatus=derivedDeliveryStatus(r)}});
  syncHighLevelProgressFromActivities();
- persistStateOnly();
- renderGantt();
- renderHighLevelGantt();
- renderProgress();
+ try{localStorage.setItem(STORAGE_KEY,JSON.stringify(state))}catch(e){}
+ renderAll();
  const key=progressSearchRecords()[0]?.cmiKey||normCmi(document.getElementById('progressCmiSearch')?.value||'');
- const msg='Progress update submitted for CMI '+key+'.';
+ const msg='Progress update saved to Supabase for CMI '+key+'. The shared Delivery Plan has been updated.';
  const st=document.getElementById('progressSubmitStatus');if(st)st.textContent=msg;
 }
 function goProgress(id){
@@ -1274,6 +1432,7 @@ document.getElementById('resetBtn').addEventListener('click',()=>{if(confirm('Re
 ['targetDateInput','capacityInput','preCompletedInput','fullTeamInput'].forEach(id=>document.getElementById(id).addEventListener('change',()=>{state.meta.defaultDeliveryTarget=document.getElementById('targetDateInput').value||state.meta.defaultDeliveryTarget;state.meta.weeklyCapacity=Number(document.getElementById('capacityInput').value)||12;state.meta.preTrackerCompleted=Number(document.getElementById('preCompletedInput').value)||0;state.meta.fullOffsiteTeamStart=document.getElementById('fullTeamInput').value||state.meta.fullOffsiteTeamStart;saveState()}));
 (async function bootstrapDashboard(){
  await loadSharedDashboardState();
+ await loadDeliveryActivitiesFromSupabase();
  renderAll();
  await loadResourcesFromSupabase();
 })();
