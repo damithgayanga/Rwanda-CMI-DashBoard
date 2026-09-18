@@ -108,6 +108,98 @@
     SUPABASE_PUBLISHABLE_KEY
   );
 
+  const SHARED_STATE_RESOURCE_NAME = '__CMI_DASHBOARD_SHARED_STATE__';
+  let sharedStateSyncTimer = null;
+  let sharedStateLoaded = false;
+
+  function compactSharedState() {
+    return {
+      version: 1,
+      savedAt: new Date().toISOString(),
+      meta: {
+        highLevelPlan: clone(state.meta.highLevelPlan||[]),
+        highLevelGroupProgress: clone(state.meta.highLevelGroupProgress||{}),
+        highLevelResourceProgress: clone(state.meta.highLevelResourceProgress||{}),
+        deliveryLevel1: clone(state.meta.deliveryLevel1||[]),
+        activityList: clone(state.meta.activityList||[])
+      },
+      records: state.records.filter(r=>{
+        const acts=r.cmiActivities||[];
+        return r.inDeliveryPlan||acts.length||hasActivityProgress(r);
+      }).map(r=>({
+        id:r.id,
+        cmiKey:r.cmiKey,
+        inDeliveryPlan:!!r.inDeliveryPlan,
+        siteResource:r.siteResource||'',
+        offsiteResource:r.offsiteResource||'',
+        startDate:r.startDate||'',
+        targetDate:r.targetDate||'',
+        finishDate:r.finishDate||'',
+        deliveryStatus:r.deliveryStatus||'To be Started',
+        progressPct:Number(r.progressPct)||0,
+        cmiActivities:clone(r.cmiActivities||[])
+      }))
+    };
+  }
+
+  function mergeSharedState(payload) {
+    if(!payload||!Array.isArray(payload.records))return false;
+    if(payload.meta){
+      ['highLevelPlan','deliveryLevel1','activityList'].forEach(k=>{if(Array.isArray(payload.meta[k]))state.meta[k]=clone(payload.meta[k])});
+      ['highLevelGroupProgress','highLevelResourceProgress'].forEach(k=>{if(payload.meta[k]&&typeof payload.meta[k]==='object')state.meta[k]=clone(payload.meta[k])});
+    }
+    payload.records.forEach(sr=>{
+      const r=state.records.find(x=>x.id===sr.id)||state.records.find(x=>String(x.cmiKey||'')===String(sr.cmiKey||''));
+      if(!r)return;
+      ['inDeliveryPlan','siteResource','offsiteResource','startDate','targetDate','finishDate','deliveryStatus','progressPct'].forEach(k=>{if(sr[k]!==undefined)r[k]=sr[k]});
+      if(Array.isArray(sr.cmiActivities))r.cmiActivities=clone(sr.cmiActivities);
+    });
+    state=ensureShape(state);
+    try{localStorage.setItem(STORAGE_KEY,JSON.stringify(state))}catch(e){}
+    return true;
+  }
+
+  async function loadSharedDashboardState() {
+    try{
+      const {data,error}=await supabaseClient.from('resources').select('id,resource_name,role,active,is_deleted,updated_at').eq('resource_name',SHARED_STATE_RESOURCE_NAME).limit(1);
+      if(error){console.error('Unable to load shared dashboard state:',error);return false}
+      const row=(data||[])[0];
+      if(row&&row.role){
+        try{
+          const payload=JSON.parse(row.role);
+          if(mergeSharedState(payload)){sharedStateLoaded=true;return true}
+        }catch(e){console.error('Invalid shared dashboard state:',e)}
+      }
+      const meaningful=state.records.some(r=>r.inDeliveryPlan||(r.cmiActivities||[]).length||hasActivityProgress(r));
+      if(meaningful){
+        await saveSharedDashboardState();
+        sharedStateLoaded=true;
+      }
+      return meaningful;
+    }catch(e){console.error('Shared dashboard state load failed:',e);return false}
+  }
+
+  async function saveSharedDashboardState() {
+    try{
+      const payload=JSON.stringify(compactSharedState());
+      const {data,error}=await supabaseClient.from('resources').select('id').eq('resource_name',SHARED_STATE_RESOURCE_NAME).limit(1);
+      if(error){console.error('Unable to check shared dashboard state:',error);return}
+      const row=(data||[])[0];
+      if(row){
+        const {error:updateError}=await supabaseClient.from('resources').update({role:payload,active:false,is_deleted:false}).eq('id',row.id);
+        if(updateError)console.error('Unable to update shared dashboard state:',updateError);
+      }else{
+        const {error:insertError}=await supabaseClient.from('resources').insert({resource_name:SHARED_STATE_RESOURCE_NAME,role:payload,active:false,is_deleted:false});
+        if(insertError)console.error('Unable to create shared dashboard state:',insertError);
+      }
+    }catch(e){console.error('Shared dashboard state save failed:',e)}
+  }
+
+  function queueSharedStateSync() {
+    if(sharedStateSyncTimer)clearTimeout(sharedStateSyncTimer);
+    sharedStateSyncTimer=setTimeout(()=>{saveSharedDashboardState()},250);
+  }
+
   async function testSupabaseConnection() {
     const { error } = await supabaseClient
       .from('cmis')
@@ -373,7 +465,7 @@ function ensureShape(s){
  return s;
 }
 function loadState(){try{const raw=localStorage.getItem(STORAGE_KEY);if(raw){const x=JSON.parse(raw);if(x&&Array.isArray(x.records))return ensureShape(x)}}catch(e){}return ensureShape({meta:clone(SOURCE.meta),records:clone(SOURCE.records)})}
-function saveState(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(state))}catch(e){}renderAll()}
+function saveState(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(state))}catch(e){}queueSharedStateSync();renderAll()}
 function money(v){if(v===null||v===undefined||v==='')return '<span class="empty">—</span>';const n=Number(v);if(!Number.isFinite(n))return '<span class="empty">—</span>';const a=Math.abs(n).toLocaleString('en-US',{maximumFractionDigits:0});return n<0?'($'+a+')':'$'+a}
 function moneyText(v){if(v===null||v===undefined||v==='')return '';const n=Number(v);return Number.isFinite(n)?n.toFixed(2):''}
 function fmtDate(s){if(!s)return '<span class="empty">—</span>';const d=new Date(s+'T00:00:00');return d.toLocaleDateString('en-NZ',{day:'2-digit',month:'short',year:'numeric'})}
@@ -411,7 +503,27 @@ function derivedDeliveryStatus(r){
 function planned(){return state.records.filter(isInDeliveryPlanRecord)}
 function performanceFor(name){const p=planned().filter(r=>resourceMatches(r,name));const completed=p.filter(r=>derivedDeliveryStatus(r)==='Completed'||derivedDeliveryStatus(r)==='Submitted to Client').length;return {allocated:p.length,completed,inprogress:p.filter(r=>derivedDeliveryStatus(r)==='In Progress').length,baseline:0}}
 
-function renderKpis(){const r=state.records,tbs=r.filter(x=>x.status==='To be Submitted - Initial Review compelted'),p=planned();const submittedPlan=p.filter(x=>derivedDeliveryStatus(x)==='Submitted to Client').length;const inprog=p.filter(x=>derivedDeliveryStatus(x)==='In Progress').length;const complete=p.filter(x=>derivedDeliveryStatus(x)==='Completed').length;const cards=[['Log work items',r.length,'Unique CMI refs: '+uniq(r.map(x=>x.cmiKey)).length,''],['To be Submitted - Initial Review compelted',tbs.length,uniq(tbs.map(x=>x.cmiKey)).length+' unique refs','warn'],['In Delivery Plan',p.length,'Scheduled activities / submitted progress',''],['In Progress',inprog,'Activity progress submitted',''],['Completed since 9 Sep',complete,'Completed from activity progress','good'],['Submitted to Client',submittedPlan,'Tracked plan submissions','good']];document.getElementById('kpiGrid').innerHTML=cards.map(c=>`<div class="card kpi ${c[3]}"><div class="label">${c[0]}</div><div class="value">${c[1]}</div><div class="hint">${c[2]}</div></div>`).join('')}
+function findActivityByIdOrName(r,id,namePart){
+ const part=String(namePart||'').toLowerCase();
+ return (r.cmiActivities||[]).find(a=>a.activityId===id||String(activityLabel(a)||'').toLowerCase().includes(part));
+}
+function activityComplete(a){return !!(a&&(Number(a.progressPct)||0)>=100&&a.actualFinishDate)}
+function afterTrackerStart(a){
+ const cutoff=state.meta.trackerStart||'2026-09-09';
+ const d=a&&(a.actualFinishDate||a.actualStartDate);
+ return !d||d>=cutoff;
+}
+function operationalStage(r){
+ if(!isInDeliveryPlanRecord(r))return '';
+ const submission=findActivityByIdOrName(r,'act-submit-dgj','submission to dgj');
+ if(activityComplete(submission)&&afterTrackerStart(submission))return 'Submitted to DGJ';
+ const measure=findActivityByIdOrName(r,'act-measure','measurement works');
+ if(!activityComplete(measure))return 'In Progress';
+ const clearance=findActivityByIdOrName(r,'act-clearance','technical and commercial clearance');
+ if(!activityComplete(submission)&&(clearance||measure))return 'Technical and Commercial Clearance';
+ return '';
+}
+function renderKpis(){const r=state.records,tbs=r.filter(x=>x.status==='To be Submitted - Initial Review compelted'),p=planned();const inprog=p.filter(x=>operationalStage(x)==='In Progress').length;const clearance=p.filter(x=>operationalStage(x)==='Technical and Commercial Clearance').length;const submittedDgj=p.filter(x=>operationalStage(x)==='Submitted to DGJ').length;const cards=[['Log work items',r.length,'Unique CMI refs: '+uniq(r.map(x=>x.cmiKey)).length,''],['To be Submitted - Initial Review compelted',tbs.length,uniq(tbs.map(x=>x.cmiKey)).length+' unique refs','warn'],['In Delivery Plan',p.length,'Shared scheduled activities / progress',''],['In Progress',inprog,'Measurement & Valuation not completed',''],['Technical & Commercial Clearance',clearance,'Post-measurement / pre-submission','warn'],['Submitted to DGJ',submittedDgj,'Submission activity completed since 9 Sep','good']];document.getElementById('kpiGrid').innerHTML=cards.map(c=>`<div class="card kpi ${c[3]}"><div class="label">${c[0]}</div><div class="value">${c[1]}</div><div class="hint">${c[2]}</div></div>`).join('')}
 function portfolioMoney(v){const n=Number(v)||0;const a=Math.abs(n);const txt=a>=1000000?'$'+(a/1000000).toLocaleString('en-US',{maximumFractionDigits:2})+'m':a>=1000?'$'+(a/1000).toLocaleString('en-US',{maximumFractionDigits:1})+'k':'$'+a.toLocaleString('en-US',{maximumFractionDigits:0});return n<0?'('+txt+')':txt}
 const PIE_COLORS=['#18835d','#2563a8','#bc7410','#6b4cb5','#b62d25','#23adc8','#75899b','#147e8b'];
 function renderDonut(id,slices,opt={}){
@@ -577,7 +689,7 @@ function renderCmiActivityPanel(r){
  const rows=acts.map(a=>`<tr data-cmia="${a.id}"><td><select class="activity-name-select" data-cmia-field="activityId">${activityOptions(a.activityId,a.activityName)}</select></td><td><select class="resource-select" data-cmia-field="siteResource">${resourceOptions(siteNames,a.siteResource,'No site resource')}</select></td><td><select class="resource-select" data-cmia-field="offsiteResource">${resourceOptions(offsiteNames,a.offsiteResource,'No off-site resource')}</select></td><td><input class="date-input" type="date" data-cmia-field="startDate" value="${a.startDate||''}"></td><td><input class="date-input" type="date" data-cmia-field="targetDate" value="${a.targetDate||''}"></td><td><button class="btn danger" type="button" onclick="removeCmiActivity('${r.id}','${a.id}')">Remove</button></td></tr>`).join('');
  return `<tr class="cmi-plan-row"><td colspan="8"><div class="activity-plan-panel" data-cmi-plan="${esc(r.id)}"><div class="activity-plan-head"><div><b>${esc(r.cmiNo)} — Activity Allocation</b><div class="activity-help">Each activity requires at least one resource (site or off-site) and planned dates. Complete activity rows are synchronised automatically to the Delivery Plan.</div></div><div class="activity-toolbar"><button class="btn good" type="button" onclick="saveCmiActivityPlan('${r.id}')">Save CMI Activity Plan</button>${r.inDeliveryPlan?`<button class="btn" type="button" onclick="removeFromPlan('${r.id}')">Remove from Delivery Plan</button>`:''}</div></div><div style="overflow:auto"><table class="activity-assignment-table"><thead><tr><th>Activity</th><th>Site Resource</th><th>Off-site Resource</th><th>Start Date</th><th>Target Date</th><th>Action</th></tr></thead><tbody>${rows||'<tr><td colspan="6" class="muted">No activities selected yet. Use the activity dropdown in the CMI row above.</td></tr>'}</tbody></table></div></div></td></tr>`;
 }
-function persistStateOnly(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(state))}catch(e){}}
+function persistStateOnly(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(state))}catch(e){}queueSharedStateSync()}
 function activityReadyForDelivery(a){return !!(a&&a.activityId&&(a.siteResource||a.offsiteResource)&&a.startDate&&a.targetDate&&a.targetDate>=a.startDate)}
 function readCmiActivityPanel(r){
  const panel=[...document.querySelectorAll('.activity-plan-panel')].find(x=>x.dataset.cmiPlan===String(r.id));
@@ -753,7 +865,7 @@ async function ensureDefaultResourcesInSupabase(){
 let supabaseResources=[];
 let editingResourceMasterId=null;
 function currentResourceRows(){
- const rows=(supabaseResources||[]).filter(r=>r&&r.active!==false&&!r.is_deleted&&(r.resource_name||'').trim());
+ const rows=(supabaseResources||[]).filter(r=>r&&r.active!==false&&!r.is_deleted&&(r.resource_name||'').trim()&&r.resource_name!==SHARED_STATE_RESOURCE_NAME);
  return rows;
 }
 function currentAllResources(){
@@ -783,7 +895,7 @@ async function loadResourcesFromSupabase(){
  const body=document.getElementById('resourceMasterBody');if(body)body.innerHTML='<tr><td colspan="5" class="muted">Loading shared resources…</td></tr>';
  const {data,error}=await supabaseClient.from('resources').select('id,resource_name,role,active,is_deleted,updated_at').eq('is_deleted',false).order('resource_name',{ascending:true});
  if(error){console.error('Unable to load resources:',error);setResourceDbStatus('Unable to load resources from Supabase. '+(error.message||''),'error');if(body)body.innerHTML='<tr><td colspan="5" class="muted">Unable to load shared resources.</td></tr>';return}
- supabaseResources=data||[];
+ supabaseResources=(data||[]).filter(r=>r.resource_name!==SHARED_STATE_RESOURCE_NAME);
  setResourceDbStatus(`${supabaseResources.length} shared resource${supabaseResources.length===1?'':'s'} loaded.`,'good');
  renderResourceMaster();
  populateFilters();
@@ -1119,7 +1231,10 @@ document.getElementById('addCmiBtn').addEventListener('click',openAdd);document.
 document.getElementById('exportCsvBtn').addEventListener('click',()=>exportCsv(filteredRegister,'CMI_Filtered_Register.csv'));document.getElementById('deliveryExportBtn').addEventListener('click',()=>exportCsv(planned(),'CMI_Delivery_Plan.csv'));document.getElementById('exportJsonBtn').addEventListener('click',()=>download('CMI_Dashboard_Backup.json',JSON.stringify(state,null,2),'application/json'));
 document.getElementById('resetBtn').addEventListener('click',()=>{if(confirm('Reset all local edits and restore the uploaded Excel data?')){try{localStorage.removeItem(STORAGE_KEY)}catch(e){}state=ensureShape({meta:clone(SOURCE.meta),records:clone(SOURCE.records)});selectedAllocation.clear();renderAll()}});
 ['targetDateInput','capacityInput','preCompletedInput','fullTeamInput'].forEach(id=>document.getElementById(id).addEventListener('change',()=>{state.meta.defaultDeliveryTarget=document.getElementById('targetDateInput').value||state.meta.defaultDeliveryTarget;state.meta.weeklyCapacity=Number(document.getElementById('capacityInput').value)||12;state.meta.preTrackerCompleted=Number(document.getElementById('preCompletedInput').value)||0;state.meta.fullOffsiteTeamStart=document.getElementById('fullTeamInput').value||state.meta.fullOffsiteTeamStart;saveState()}));
-renderAll();
-loadResourcesFromSupabase();
+(async function bootstrapDashboard(){
+ await loadSharedDashboardState();
+ renderAll();
+ await loadResourcesFromSupabase();
+})();
 </script>
 </body></html>
