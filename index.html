@@ -121,7 +121,8 @@
         highLevelGroupProgress: clone(state.meta.highLevelGroupProgress||{}),
         highLevelResourceProgress: clone(state.meta.highLevelResourceProgress||{}),
         deliveryLevel1: clone(state.meta.deliveryLevel1||[]),
-        activityList: clone(state.meta.activityList||[])
+        activityList: clone(state.meta.activityList||[]),
+        resourceAssignmentResetVersion: Math.max(1, Number(state.meta.resourceAssignmentResetVersion)||0)
       },
       records: state.records.filter(r=>{
         const acts=r.cmiActivities||[];
@@ -142,18 +143,54 @@
     };
   }
 
+  function sharedValue(localValue, remoteValue) {
+    if(remoteValue===undefined||remoteValue===null||remoteValue==='')return localValue;
+    return remoteValue;
+  }
+
+  function mergeActivityCollections(localActs, remoteActs) {
+    const out=clone(Array.isArray(localActs)?localActs:[]);
+    const keyOf=a=>String((a&&a.id)||(a&&a.activityId)||(a&&a.activityName)||'');
+    (Array.isArray(remoteActs)?remoteActs:[]).forEach(ra=>{
+      const key=keyOf(ra);
+      let la=out.find(a=>keyOf(a)===key);
+      if(!la){out.push(clone(ra));return}
+      ['activityId','activityName','siteResource','offsiteResource','startDate','targetDate','finishDate','actualStartDate','actualFinishDate','status','notes'].forEach(k=>{
+        la[k]=sharedValue(la[k],ra[k]);
+      });
+      la.progressPct=Math.max(Number(la.progressPct)||0,Number(ra.progressPct)||0);
+      la.resourceProgress={...(la.resourceProgress||{}),...(ra.resourceProgress||{})};
+    });
+    return out;
+  }
+
   function mergeSharedState(payload) {
     if(!payload||!Array.isArray(payload.records))return false;
     if(payload.meta){
-      ['highLevelPlan','deliveryLevel1','activityList'].forEach(k=>{if(Array.isArray(payload.meta[k]))state.meta[k]=clone(payload.meta[k])});
-      ['highLevelGroupProgress','highLevelResourceProgress'].forEach(k=>{if(payload.meta[k]&&typeof payload.meta[k]==='object')state.meta[k]=clone(payload.meta[k])});
+      ['highLevelPlan','deliveryLevel1','activityList'].forEach(k=>{
+        if(Array.isArray(payload.meta[k])&&payload.meta[k].length)state.meta[k]=clone(payload.meta[k]);
+      });
+      ['highLevelGroupProgress','highLevelResourceProgress'].forEach(k=>{
+        if(payload.meta[k]&&typeof payload.meta[k]==='object')state.meta[k]={...(state.meta[k]||{}),...clone(payload.meta[k])};
+      });
+      state.meta.resourceAssignmentResetVersion=Math.max(
+        1,
+        Number(state.meta.resourceAssignmentResetVersion)||0,
+        Number(payload.meta.resourceAssignmentResetVersion)||0
+      );
+    }else{
+      state.meta.resourceAssignmentResetVersion=Math.max(1,Number(state.meta.resourceAssignmentResetVersion)||0);
     }
     payload.records.forEach(sr=>{
       const r=state.records.find(x=>x.id===sr.id)||state.records.find(x=>String(x.cmiKey||'')===String(sr.cmiKey||''));
       if(!r)return;
-      ['inDeliveryPlan','siteResource','offsiteResource','startDate','targetDate','finishDate','deliveryStatus','progressPct'].forEach(k=>{if(sr[k]!==undefined)r[k]=sr[k]});
-      if(Array.isArray(sr.cmiActivities))r.cmiActivities=clone(sr.cmiActivities);
+      r.inDeliveryPlan=!!(r.inDeliveryPlan||sr.inDeliveryPlan);
+      ['siteResource','offsiteResource','startDate','targetDate','finishDate'].forEach(k=>{r[k]=sharedValue(r[k],sr[k])});
+      if(sr.deliveryStatus&&sr.deliveryStatus!=='To be Started')r.deliveryStatus=sr.deliveryStatus;
+      r.progressPct=Math.max(Number(r.progressPct)||0,Number(sr.progressPct)||0);
+      r.cmiActivities=mergeActivityCollections(r.cmiActivities,sr.cmiActivities);
     });
+    state.meta.resourceAssignmentResetVersion=Math.max(1,Number(state.meta.resourceAssignmentResetVersion)||0);
     state=ensureShape(state);
     try{localStorage.setItem(STORAGE_KEY,JSON.stringify(state))}catch(e){}
     return true;
@@ -164,27 +201,31 @@
       const {data,error}=await supabaseClient.from('resources').select('id,resource_name,role,active,is_deleted,updated_at').eq('resource_name',SHARED_STATE_RESOURCE_NAME).limit(1);
       if(error){console.error('Unable to load shared dashboard state:',error);return false}
       const row=(data||[])[0];
+      let loaded=false;
       if(row&&row.role){
         try{
           const payload=JSON.parse(row.role);
-          if(mergeSharedState(payload)){sharedStateLoaded=true;return true}
+          loaded=mergeSharedState(payload);
         }catch(e){console.error('Invalid shared dashboard state:',e)}
       }
       const meaningful=state.records.some(r=>r.inDeliveryPlan||(r.cmiActivities||[]).length||hasActivityProgress(r));
       if(meaningful){
-        await saveSharedDashboardState();
+        await saveSharedDashboardState(true);
         sharedStateLoaded=true;
       }
-      return meaningful;
+      return loaded||meaningful;
     }catch(e){console.error('Shared dashboard state load failed:',e);return false}
   }
 
-  async function saveSharedDashboardState() {
+  async function saveSharedDashboardState(skipRemoteMerge=false) {
     try{
-      const payload=JSON.stringify(compactSharedState());
-      const {data,error}=await supabaseClient.from('resources').select('id').eq('resource_name',SHARED_STATE_RESOURCE_NAME).limit(1);
+      const {data,error}=await supabaseClient.from('resources').select('id,role').eq('resource_name',SHARED_STATE_RESOURCE_NAME).limit(1);
       if(error){console.error('Unable to check shared dashboard state:',error);return}
       const row=(data||[])[0];
+      if(row&&row.role&&!skipRemoteMerge){
+        try{mergeSharedState(JSON.parse(row.role))}catch(e){console.error('Unable to merge existing shared dashboard state before save:',e)}
+      }
+      const payload=JSON.stringify(compactSharedState());
       if(row){
         const {error:updateError}=await supabaseClient.from('resources').update({role:payload,active:false,is_deleted:false}).eq('id',row.id);
         if(updateError)console.error('Unable to update shared dashboard state:',updateError);
