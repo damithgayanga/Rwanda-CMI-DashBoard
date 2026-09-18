@@ -239,6 +239,7 @@
  <div class="card">
   <div class="field" style="max-width:420px;margin-bottom:14px"><label>CMI No.</label><input id="progressCmiSearch" placeholder="Enter CMI No. e.g. 238"></div>
   <div class="table-wrap" style="max-height:70vh"><table class="data-table" style="min-width:760px"><thead><tr><th>Activity</th><th>Actual Start Date</th><th>Actual Finish Date</th><th>Progress %</th></tr></thead><tbody id="progressActivityBody"></tbody></table></div>
+  <div class="toolbar" style="justify-content:flex-end;margin-top:14px"><span class="small muted" id="progressSubmitStatus" style="margin-right:auto"></span><button class="btn good" id="submitProgressUpdateBtn" type="button">Submit Progress Update</button></div>
  </div>
 </section>
 <section class="tab" id="tab-organisation">
@@ -911,31 +912,46 @@ function syncHighLevelProgressFromActivities(){
 }
 function renderProgress(){
  const body=document.getElementById('progressActivityBody');if(!body)return;
- const input=document.getElementById('progressCmiSearch'),raw=(input?.value||'').trim();
- if(!raw){body.innerHTML='<tr><td colspan="4" class="muted">Enter a CMI No. above.</td></tr>';return}
+ const input=document.getElementById('progressCmiSearch'),raw=(input?.value||'').trim(),btn=document.getElementById('submitProgressUpdateBtn'),status=document.getElementById('progressSubmitStatus');
+ if(status)status.textContent='';
+ if(!raw){body.innerHTML='<tr><td colspan="4" class="muted">Enter a CMI No. above.</td></tr>';if(btn)btn.disabled=true;return}
  const records=progressSearchRecords(),rows=progressActivitiesForSearch();
- if(!records.length){body.innerHTML='<tr><td colspan="4" class="muted">No matching CMI found.</td></tr>';return}
- if(!rows.length){body.innerHTML='<tr><td colspan="4" class="muted">No activities are allocated to this CMI.</td></tr>';return}
+ if(!records.length){body.innerHTML='<tr><td colspan="4" class="muted">No matching CMI found.</td></tr>';if(btn)btn.disabled=true;return}
+ if(!rows.length){body.innerHTML='<tr><td colspan="4" class="muted">No activities are allocated to this CMI.</td></tr>';if(btn)btn.disabled=true;return}
  body.innerHTML=rows.map(({r,a})=>`<tr data-progress-activity="${r.id}|${a.id}"><td><b>${esc(activityLabel(a))}</b></td><td><input class="inline-input" type="date" data-progress-field="actualStartDate" value="${a.actualStartDate||''}"></td><td><input class="inline-input" type="date" data-progress-field="actualFinishDate" value="${a.actualFinishDate||''}"></td><td><input class="inline-input" type="number" min="0" max="100" step="1" data-progress-field="progressPct" value="${Number(a.progressPct)||0}"></td></tr>`).join('');
+ if(btn)btn.disabled=false;
 }
-function updateProgressActivityField(el){
- const tr=el.closest('[data-progress-activity]');if(!tr)return;
- const parts=String(tr.dataset.progressActivity||'').split('|'),r=state.records.find(x=>x.id===parts[0]),a=r&&(r.cmiActivities||[]).find(x=>x.id===parts[1]);if(!r||!a)return;
- const field=el.dataset.progressField;if(!field)return;
- if(field==='progressPct')a.progressPct=Math.max(0,Math.min(100,Number(el.value)||0));else a[field]=el.value;
- if(a.actualStartDate&&a.actualFinishDate&&a.actualFinishDate<a.actualStartDate){a.actualFinishDate=a.actualStartDate;const finishInput=tr.querySelector('[data-progress-field="actualFinishDate"]');if(finishInput)finishInput.value=a.actualFinishDate}
- a.finishDate=a.actualFinishDate||'';
- if(a.actualFinishDate||a.progressPct>=100)a.status='Completed';
- else if(a.actualStartDate||a.progressPct>0)a.status='In Progress';
- else a.status='To be Started';
- const resources=uniq([a.siteResource,a.offsiteResource]).filter(Boolean);
- if(!a.resourceProgress||typeof a.resourceProgress!=='object')a.resourceProgress={};
- resources.forEach(n=>a.resourceProgress[n]=a.progressPct);
- rollupCmiProgress(r);
+function submitProgressUpdate(){
+ const body=document.getElementById('progressActivityBody'),status=document.getElementById('progressSubmitStatus');if(!body)return;
+ const rows=[...body.querySelectorAll('[data-progress-activity]')];
+ if(!rows.length){if(status)status.textContent='Enter a CMI No. with allocated activities first.';return}
+ const pending=[];
+ for(const tr of rows){
+  const parts=String(tr.dataset.progressActivity||'').split('|'),r=state.records.find(x=>x.id===parts[0]),a=r&&(r.cmiActivities||[]).find(x=>x.id===parts[1]);if(!r||!a)continue;
+  const start=tr.querySelector('[data-progress-field="actualStartDate"]')?.value||'',finish=tr.querySelector('[data-progress-field="actualFinishDate"]')?.value||'',pct=Math.max(0,Math.min(100,Number(tr.querySelector('[data-progress-field="progressPct"]')?.value)||0));
+  if(start&&finish&&finish<start){alert('Actual Finish Date cannot be before Actual Start Date for '+activityLabel(a)+'.');return}
+  pending.push({r,a,start,finish,pct});
+ }
+ if(!pending.length){if(status)status.textContent='No activity progress rows to submit.';return}
+ const touched=new Set();
+ pending.forEach(x=>{
+  const {r,a,start,finish,pct}=x;
+  a.actualStartDate=start;a.actualFinishDate=finish;a.progressPct=pct;a.finishDate=finish||'';
+  if(finish||pct>=100)a.status='Completed';else if(start||pct>0)a.status='In Progress';else a.status='To be Started';
+  const resources=uniq([a.siteResource,a.offsiteResource]).filter(Boolean);
+  if(!a.resourceProgress||typeof a.resourceProgress!=='object')a.resourceProgress={};
+  resources.forEach(n=>a.resourceProgress[n]=pct);
+  touched.add(r.id);
+ });
+ touched.forEach(id=>{const r=state.records.find(x=>x.id===id);if(r)rollupCmiProgress(r)});
  syncHighLevelProgressFromActivities();
  persistStateOnly();
  renderGantt();
  renderHighLevelGantt();
+ renderProgress();
+ const key=progressSearchRecords()[0]?.cmiKey||normCmi(document.getElementById('progressCmiSearch')?.value||'');
+ const msg='Progress update submitted for CMI '+key+'.';
+ const st=document.getElementById('progressSubmitStatus');if(st)st.textContent=msg;
 }
 function goProgress(id){
  document.querySelectorAll('.tabbtn').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
@@ -1084,7 +1100,7 @@ document.querySelectorAll('.tabbtn').forEach(b=>b.addEventListener('click',()=>{
 const progressCmiSearchEl=document.getElementById('progressCmiSearch');if(progressCmiSearchEl)progressCmiSearchEl.addEventListener('input',renderProgress);
 document.getElementById('saveHighLevelPlanBtn').addEventListener('click',saveHighLevelAllocation);const savePortfolioAssumptionsBtn=document.getElementById('savePortfolioAssumptionsBtn');if(savePortfolioAssumptionsBtn)savePortfolioAssumptionsBtn.addEventListener('click',savePortfolioAssumptions);
 const highLevelAllocationBodyEl=document.getElementById('highLevelAllocationBody');if(highLevelAllocationBodyEl)highLevelAllocationBodyEl.addEventListener('change',e=>{if(e.target.matches('[data-hl-field],[data-hl-resource]'))autoSyncHighLevelAllocation()});
-const progressActivityBodyEl=document.getElementById('progressActivityBody');if(progressActivityBodyEl)progressActivityBodyEl.addEventListener('change',e=>{if(e.target.matches('[data-progress-field]'))updateProgressActivityField(e.target)});
+const submitProgressUpdateBtn=document.getElementById('submitProgressUpdateBtn');if(submitProgressUpdateBtn)submitProgressUpdateBtn.addEventListener('click',submitProgressUpdate);
 const allocationBodyEl=document.getElementById('allocationBody');if(allocationBodyEl)allocationBodyEl.addEventListener('change',e=>{if(!e.target.matches('[data-cmia-field]'))return;const panel=e.target.closest('.activity-plan-panel');if(panel)autoSyncCmiActivityPlan(panel.dataset.cmiPlan)});
 document.getElementById('addActivityMasterBtn').addEventListener('click',addActivityMaster);
 const addResourceMasterBtn=document.getElementById('addResourceMasterBtn');if(addResourceMasterBtn)addResourceMasterBtn.addEventListener('click',addResourceMaster);
