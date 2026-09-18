@@ -684,7 +684,50 @@ function derivedDeliveryStatus(r){
  return 'To be Started';
 }
 function planned(){return state.records.filter(isInDeliveryPlanRecord)}
-function performanceFor(name){const p=planned().filter(r=>resourceMatches(r,name));const completed=p.filter(r=>derivedDeliveryStatus(r)==='Completed'||derivedDeliveryStatus(r)==='Submitted to Client').length;return {allocated:p.length,completed,inprogress:p.filter(r=>derivedDeliveryStatus(r)==='In Progress').length,baseline:0}}
+function resourceLocation(name){
+ const row=(supabaseResources||[]).find(r=>(r.resource_name||'')===name&&!r.is_deleted);
+ if(row)return unpackResourceRole(row.role).location;
+ if(OFFSITE_RESOURCES.includes(name))return 'Off-Site';
+ if(SITE_RESOURCES.includes(name))return 'On-Site';
+ return '';
+}
+function activityStarted(a){return !!(a&&(a.actualStartDate||a.actualFinishDate||Number(a.progressPct)>0))}
+function resourcePerformanceStatus(r,name){
+ const location=resourceLocation(name);
+ const measure=findActivityByIdOrName(r,'act-measure','measurement works');
+ const submission=findActivityByIdOrName(r,'act-submit-dgj','submission to dgj');
+
+ // Off-site resource work is complete when Measurement Works & Valuation is complete.
+ if(location==='Off-Site'){
+  if(activityComplete(measure))return 'Completed';
+  if(activityStarted(measure))return 'In Progress';
+  return 'To be Started';
+ }
+
+ // On-site resource work remains open until the CMI has been submitted to DGJ.
+ if(location==='On-Site'){
+  if(activityComplete(submission))return 'Completed';
+  const acts=(r.cmiActivities||[]).filter(a=>a.siteResource===name||a.offsiteResource===name);
+  if(acts.some(activityStarted)||hasActivityProgress(r))return 'In Progress';
+  return 'To be Started';
+ }
+
+ // Fallback for any resource without a configured location.
+ const status=derivedDeliveryStatus(r);
+ if(status==='Completed'||status==='Submitted to Client')return 'Completed';
+ if(status==='In Progress')return 'In Progress';
+ return 'To be Started';
+}
+function performanceFor(name){
+ const p=planned().filter(r=>resourceMatches(r,name));
+ const statuses=p.map(r=>resourcePerformanceStatus(r,name));
+ return {
+  allocated:p.length,
+  completed:statuses.filter(x=>x==='Completed').length,
+  inprogress:statuses.filter(x=>x==='In Progress').length,
+  baseline:0
+ };
+}
 
 function findActivityByIdOrName(r,id,namePart){
  const part=String(namePart||'').toLowerCase();
