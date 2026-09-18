@@ -350,6 +350,8 @@ function deliveryPill(s){let c=String(s||'To be Started').toLowerCase().replace(
 function uniq(a){return [...new Set(a.filter(Boolean))].sort((x,y)=>String(x).localeCompare(String(y),undefined,{numeric:true}))}
 function sum(a){return a.reduce((x,y)=>x+(Number(y)||0),0)}
 function dateISO(d){const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0');return `${y}-${m}-${day}`}
+function calendarDayNumber(v){if(v instanceof Date)return Date.UTC(v.getFullYear(),v.getMonth(),v.getDate())/86400000;const p=String(v||'').slice(0,10).split('-').map(Number);return p.length===3&&p.every(Number.isFinite)?Date.UTC(p[0],p[1]-1,p[2])/86400000:NaN}
+function calendarDayDiff(a,b){return calendarDayNumber(a)-calendarDayNumber(b)}
 function businessDays(a,b){let x=new Date(a+'T00:00:00'),y=new Date(b+'T00:00:00');if(x>y)return 0;let n=0;while(x<=y){if(![0,6].includes(x.getDay()))n++;x.setDate(x.getDate()+1)}return n}
 function addBusinessOutputDate(start,items,weekly){let d=new Date(start+'T00:00:00'),rem=items,per=weekly/5;if(rem<=0)return start;while(rem>0){if(![0,6].includes(d.getDay()))rem-=per;if(rem>0)d.setDate(d.getDate()+1)}return dateISO(d)}
 function daysFromToday(s){if(!s)return null;const t=new Date();t.setHours(0,0,0,0);const d=new Date(s+'T00:00:00');return Math.round((d-t)/86400000)}
@@ -593,9 +595,9 @@ function renderGantt(){
  const datePoints=[];rows.forEach(r=>{const acts=(r.cmiActivities||[]).filter(activityReadyForDelivery);if(acts.length)acts.forEach(a=>{datePoints.push(a.startDate,a.targetDate);if(a.actualStartDate)datePoints.push(a.actualStartDate);if(a.actualFinishDate)datePoints.push(a.actualFinishDate)});else datePoints.push(r.startDate,r.targetDate,r.finishDate)});
  let start=new Date(Math.min(...datePoints.filter(Boolean).map(x=>new Date(x+'T00:00:00').getTime()))),latest=new Date(Math.max(...datePoints.filter(Boolean).map(x=>new Date(x+'T00:00:00').getTime())));
  const back=(start.getDay()+6)%7;start.setDate(start.getDate()-back);latest.setDate(latest.getDate()+6);
- const totalDays=Math.max(7,Math.ceil((latest-start)/86400000)+1),weeks=Math.ceil(totalDays/7),weekw=92,timelineW=weeks*weekw;
+ const totalDays=Math.max(7,calendarDayDiff(latest,start)+1),weeks=Math.ceil(totalDays/7),weekw=92,timelineW=weeks*weekw;
  let marks='';for(let i=0;i<weeks;i++){const d=new Date(start);d.setDate(d.getDate()+i*7);marks+=`<div class="hl-weekmark" style="left:${i*weekw}px">W/C ${d.toLocaleDateString('en-NZ',{day:'2-digit',month:'short'})}</div>`}
- const metrics=(s,e)=>{const st=new Date(s+'T00:00:00'),en=new Date(e+'T00:00:00');return{left:Math.max(0,((st-start)/86400000)/7*weekw),width:Math.max(10,(((en-st)/86400000+1)/7)*weekw)}};
+ const metrics=(s,e)=>{return{left:Math.max(0,calendarDayDiff(s,start)/7*weekw),width:Math.max(10,((calendarDayDiff(e,s)+1)/7)*weekw)}};
  const order={High:0,Medium:1,Low:2,Unvalued:3},startFor=r=>{const acts=(r.cmiActivities||[]).filter(activityReadyForDelivery).map(a=>a.startDate).sort();return acts[0]||r.startDate||'9999'};
  rows.sort((a,b)=>startFor(a).localeCompare(startFor(b))||(order[calcPriority(a)]-order[calcPriority(b)]));
  let html=`<div class="hl-gantt-head"><div>CMI / Activity / Resource</div><div>Start Date</div><div>Finish Date</div><div>Progress</div><div class="hl-scale" style="width:${timelineW}px">${marks}</div></div>`,activityCount=0;
@@ -841,7 +843,7 @@ function weeklyHighLevelCounts(a,dateField,timelineStart,weeks,groupMode=false){
   (r.cmiActivities||[]).forEach(ca=>{
    if(!highLevelActivityMatches(a,ca,groupMode))return;
    const d=ca[dateField];if(!d)return;
-   const dt=new Date(d+'T00:00:00'),idx=Math.floor((dt-timelineStart)/604800000);
+   const idx=Math.floor(calendarDayDiff(d,timelineStart)/7);
    if(idx<0||idx>=weeks)return;
    const key=normCmi(r.cmiNo)+'|'+idx;
    if(seen.has(key))return;
@@ -862,9 +864,9 @@ function renderHighLevelGantt(){
  let start,latest;
  if(allDates.length){start=new Date(Math.min(...allDates.map(x=>new Date(x+'T00:00:00').getTime())));latest=new Date(Math.max(...allDates.map(x=>new Date(x+'T00:00:00').getTime())))}else{start=new Date((state.meta.trackerStart||todayISO())+'T00:00:00');latest=new Date((state.meta.defaultDeliveryTarget||todayISO())+'T00:00:00')}
  const back=(start.getDay()+6)%7;start.setDate(start.getDate()-back);latest.setDate(latest.getDate()+6);
- const totalDays=Math.max(7,Math.ceil((latest-start)/86400000)+1),weeks=Math.ceil(totalDays/7),weekw=92,timelineW=weeks*weekw;
+ const totalDays=Math.max(7,calendarDayDiff(latest,start)+1),weeks=Math.ceil(totalDays/7),weekw=92,timelineW=weeks*weekw;
  let marks='';for(let i=0;i<weeks;i++){const d=new Date(start);d.setDate(d.getDate()+i*7);marks+=`<div class="hl-weekmark" style="left:${i*weekw}px">W/C ${d.toLocaleDateString('en-NZ',{day:'2-digit',month:'short'})}</div>`}
- const metrics=(s,e)=>{if(!s||!e)return null;const st=new Date(s+'T00:00:00'),en=new Date(e+'T00:00:00');return{left:Math.max(0,((st-start)/86400000)/7*weekw),width:Math.max(10,(((en-st)/86400000+1)/7)*weekw)}};
+ const metrics=(s,e)=>{if(!s||!e)return null;return{left:Math.max(0,calendarDayDiff(s,start)/7*weekw),width:Math.max(10,((calendarDayDiff(e,s)+1)/7)*weekw)}};
  const groups=new Map();rows.forEach(a=>{const key=highLevelGroupKey(a);if(!groups.has(key))groups.set(key,[]);groups.get(key).push(a)});
  let html=`<div class="hl-gantt-head"><div>WBS Activity / Resource</div><div>Start Date</div><div>Finish Date</div><div>Progress</div><div class="hl-scale" style="width:${timelineW}px">${marks}</div></div>`;
  groups.forEach((activities,key)=>{
