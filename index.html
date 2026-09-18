@@ -267,52 +267,64 @@ const DELIVERY_STATUSES=['To be Started','In Progress','Completed','Submitted to
 const ACTIVITY_STATUSES=['To be Started','In Progress','Completed'];
 const DEFAULT_ACTIVITY_LIST=[
  {id:'act-measure',name:'Measurement Works & Valuation',description:'Measurement, BOQ / marked-up drawings, QA/QC and valuation.',active:true,order:1},
- {id:'act-finalise',name:'Finalisation of the Submission',description:'Compile and finalise the CMI submission package.',active:true,order:2},
+ {id:'act-finalise',name:'Review of Valuation and Compilation of all Documents',description:'Review the valuation and compile all supporting documents for the CMI submission package.',active:true,order:2},
  {id:'act-final-review',name:'Final Review of the Submission',description:'Final internal review before submission to DGJ.',active:true,order:3},
  {id:'act-submit-dgj',name:'Submission to DGJ',description:'Issue the completed CMI submission to DG Jones.',active:true,order:4},
  {id:'act-priority',name:'Allocate Priority Levels / Initial Judgement',description:'Initial review, value judgement and priority allocation for UR / unvalued CMIs.',active:true,order:5},
  {id:'act-investigate',name:'Further Investigation',description:'Further investigate closed / uncertain CMIs and confirm the required commercial action.',active:true,order:6},
  {id:'act-clearance',name:'Technical and Commercial Clearance',description:'Technical and commercial review / clearance, including CMIs stated as covered elsewhere.',active:true,order:7}
 ];
-const HIGH_LEVEL_TEMPLATE=[
- {id:'high-measure',group:'High Priority CMIs',countSource:'High',activity:'Measurement Works & Valuation',startDate:'2026-09-09',targetDate:'2026-09-25',resources:['Kosala Gamage','Damith Samarasinghe','Devmini Amarasinghe']},
- {id:'high-finalise',group:'High Priority CMIs',countSource:'High',activity:'Finalisation of the Submission',startDate:'2026-09-21',targetDate:'2026-10-02',resources:['Dinuka Maduranga','Kosala Gamage']},
- {id:'high-review',group:'High Priority CMIs',countSource:'High',activity:'Final Review of the Submission',startDate:'2026-09-28',targetDate:'2026-10-07',resources:['Chamara Ranasinghe','Dinuka Maduranga']},
- {id:'high-dgj',group:'High Priority CMIs',countSource:'High',activity:'Submission to DGJ',startDate:'2026-10-05',targetDate:'2026-10-09',resources:['Chamara Ranasinghe']},
- {id:'medium-measure',group:'Medium Priority CMIs',countSource:'Medium',activity:'Measurement Works & Valuation',startDate:'2026-09-21',targetDate:'2026-10-30',resources:['Kosala Gamage','Damith Samarasinghe','Devmini Amarasinghe']},
- {id:'medium-finalise',group:'Medium Priority CMIs',countSource:'Medium',activity:'Finalisation of the Submission',startDate:'2026-10-19',targetDate:'2026-11-06',resources:['Dinuka Maduranga','Kosala Gamage']},
- {id:'medium-review',group:'Medium Priority CMIs',countSource:'Medium',activity:'Final Review of the Submission',startDate:'2026-11-02',targetDate:'2026-11-13',resources:['Chamara Ranasinghe','Dinuka Maduranga']},
- {id:'medium-dgj',group:'Medium Priority CMIs',countSource:'Medium',activity:'Submission to DGJ',startDate:'2026-11-09',targetDate:'2026-11-20',resources:['Chamara Ranasinghe']},
- {id:'low-measure',group:'Low Priority CMIs',countSource:'Low',activity:'Measurement Works & Valuation',startDate:'2026-10-26',targetDate:'2026-11-27',resources:['Kosala Gamage','Damith Samarasinghe','Devmini Amarasinghe']},
- {id:'low-finalise',group:'Low Priority CMIs',countSource:'Low',activity:'Finalisation of the Submission',startDate:'2026-11-16',targetDate:'2026-12-04',resources:['Dinuka Maduranga','Kosala Gamage']},
- {id:'low-review',group:'Low Priority CMIs',countSource:'Low',activity:'Final Review of the Submission',startDate:'2026-11-30',targetDate:'2026-12-09',resources:['Chamara Ranasinghe','Dinuka Maduranga']},
- {id:'low-dgj',group:'Low Priority CMIs',countSource:'Low',activity:'Submission to DGJ',startDate:'2026-12-07',targetDate:'2026-12-16',resources:['Chamara Ranasinghe']},
- {id:'ur-priority',group:'Other CMI Reviews',countSource:'UR',activity:'Allocate Priority Levels / Initial Judgement for To be Submitted & UR',startDate:'2026-09-01',targetDate:'2026-09-30',resources:['Orville Mathew Gayatin','Kosala Gamage']},
- {id:'investigate-closed',group:'Other CMI Reviews',countSource:'Investigated',activity:'Further Investigate Closed CMIs',startDate:'2026-09-01',targetDate:'2026-10-16',resources:['Orville Mathew Gayatin']},
- {id:'included-review',group:'Other CMI Reviews',countSource:'Included',activity:'Technical and Commercial Clearance',startDate:'2026-09-01',targetDate:'2026-10-30',resources:['Orville Mathew Gayatin','Chamara Ranasinghe']}
+const DEFAULT_DELIVERY_LEVEL1=[
+ {id:'wbs-high',name:'High Priority CMIs',countSource:'High',order:1},
+ {id:'wbs-medium',name:'Medium Priority CMIs',countSource:'Medium',order:2},
+ {id:'wbs-low',name:'Low Priority CMIs',countSource:'Low',order:3},
+ {id:'wbs-other',name:'Other CMI Reviews',countSource:'Other',order:4}
 ];
+const HIGH_LEVEL_TEMPLATE=[
+ {id:'high-measure',groupId:'wbs-high',group:'High Priority CMIs',countSource:'High',activityId:'act-measure',activity:'Measurement Works & Valuation',startDate:'2026-09-09',targetDate:'2026-09-25',resources:[]},
+ {id:'high-finalise',groupId:'wbs-high',group:'High Priority CMIs',countSource:'High',activityId:'act-finalise',activity:'Review of Valuation and Compilation of all Documents',startDate:'2026-09-21',targetDate:'2026-10-02',resources:[]},
+ {id:'high-clearance',groupId:'wbs-high',group:'High Priority CMIs',countSource:'High',activityId:'act-clearance',activity:'Technical and Commercial Clearance',startDate:'2026-09-28',targetDate:'2026-10-05',resources:[]},
+ {id:'high-review',groupId:'wbs-high',group:'High Priority CMIs',countSource:'High',activityId:'act-final-review',activity:'Final Review of the Submission',startDate:'2026-10-05',targetDate:'2026-10-07',resources:[]},
+ {id:'high-dgj',groupId:'wbs-high',group:'High Priority CMIs',countSource:'High',activityId:'act-submit-dgj',activity:'Submission to DGJ',startDate:'2026-10-08',targetDate:'2026-10-09',resources:[]},
+ {id:'medium-measure',groupId:'wbs-medium',group:'Medium Priority CMIs',countSource:'Medium',activityId:'act-measure',activity:'Measurement Works & Valuation',startDate:'2026-09-21',targetDate:'2026-10-30',resources:[]},
+ {id:'medium-finalise',groupId:'wbs-medium',group:'Medium Priority CMIs',countSource:'Medium',activityId:'act-finalise',activity:'Review of Valuation and Compilation of all Documents',startDate:'2026-10-19',targetDate:'2026-11-06',resources:[]},
+ {id:'medium-clearance',groupId:'wbs-medium',group:'Medium Priority CMIs',countSource:'Medium',activityId:'act-clearance',activity:'Technical and Commercial Clearance',startDate:'2026-11-02',targetDate:'2026-11-10',resources:[]},
+ {id:'medium-review',groupId:'wbs-medium',group:'Medium Priority CMIs',countSource:'Medium',activityId:'act-final-review',activity:'Final Review of the Submission',startDate:'2026-11-09',targetDate:'2026-11-13',resources:[]},
+ {id:'medium-dgj',groupId:'wbs-medium',group:'Medium Priority CMIs',countSource:'Medium',activityId:'act-submit-dgj',activity:'Submission to DGJ',startDate:'2026-11-16',targetDate:'2026-11-20',resources:[]},
+ {id:'low-measure',groupId:'wbs-low',group:'Low Priority CMIs',countSource:'Low',activityId:'act-measure',activity:'Measurement Works & Valuation',startDate:'2026-10-26',targetDate:'2026-11-27',resources:[]},
+ {id:'low-finalise',groupId:'wbs-low',group:'Low Priority CMIs',countSource:'Low',activityId:'act-finalise',activity:'Review of Valuation and Compilation of all Documents',startDate:'2026-11-16',targetDate:'2026-12-04',resources:[]},
+ {id:'low-clearance',groupId:'wbs-low',group:'Low Priority CMIs',countSource:'Low',activityId:'act-clearance',activity:'Technical and Commercial Clearance',startDate:'2026-11-30',targetDate:'2026-12-07',resources:[]},
+ {id:'low-review',groupId:'wbs-low',group:'Low Priority CMIs',countSource:'Low',activityId:'act-final-review',activity:'Final Review of the Submission',startDate:'2026-12-07',targetDate:'2026-12-09',resources:[]},
+ {id:'low-dgj',groupId:'wbs-low',group:'Low Priority CMIs',countSource:'Low',activityId:'act-submit-dgj',activity:'Submission to DGJ',startDate:'2026-12-10',targetDate:'2026-12-16',resources:[]},
+ {id:'ur-priority',groupId:'wbs-other',group:'Other CMI Reviews',countSource:'UR',activityId:'act-priority',activity:'Allocate Priority Levels / Initial Judgement',startDate:'2026-09-01',targetDate:'2026-09-30',resources:[]},
+ {id:'investigate-closed',groupId:'wbs-other',group:'Other CMI Reviews',countSource:'Investigated',activityId:'act-investigate',activity:'Further Investigation',startDate:'2026-09-01',targetDate:'2026-10-16',resources:[]},
+ {id:'included-review',groupId:'wbs-other',group:'Other CMI Reviews',countSource:'Included',activityId:'act-clearance',activity:'Technical and Commercial Clearance',startDate:'2026-09-01',targetDate:'2026-10-30',resources:[]}
+]
 let state=loadState();let filteredRegister=[];let selectedAllocation=new Set();let expandedHighLevelActivities=new Set();let collapsedHighLevelGroups=new Set();let expandedCmiActivities=new Set();let expandedDeliveryCmis=new Set();let expandedDeliveryActivities=new Set();
 
 function clone(x){return JSON.parse(JSON.stringify(x))}
 function ensureShape(s){
+ if(!s.meta)s.meta={};
  if(!s.meta.baselineCompletedByResource)s.meta.baselineCompletedByResource={'Kosala Gamage':4};
  if(!s.meta.highLevelGroupProgress||typeof s.meta.highLevelGroupProgress!=='object')s.meta.highLevelGroupProgress={};
  if(!s.meta.highLevelResourceProgress||typeof s.meta.highLevelResourceProgress!=='object')s.meta.highLevelResourceProgress={};
  if(!Array.isArray(s.meta.activityList))s.meta.activityList=clone(DEFAULT_ACTIVITY_LIST);
  else{s.meta.activityList.forEach((a,i)=>{if(!a.id)a.id='act-'+Date.now()+'-'+i;if(a.name===undefined)a.name='Activity '+(i+1);if(a.description===undefined)a.description='';if(a.active===undefined)a.active=true;if(a.order===undefined)a.order=i+1;});}
- if(!Array.isArray(s.meta.highLevelPlan))s.meta.highLevelPlan=HIGH_LEVEL_TEMPLATE.map(x=>({...clone(x),status:'To be Started',progressPct:0,finishDate:'',actualStartDate:'',actualFinishDate:'',notes:''}));
+ const valuationReview=s.meta.activityList.find(a=>a.id==='act-finalise');if(valuationReview){valuationReview.name='Review of Valuation and Compilation of all Documents';valuationReview.description='Review the valuation and compile all supporting documents for the CMI submission package.'}
+ if(!Array.isArray(s.meta.deliveryLevel1))s.meta.deliveryLevel1=clone(DEFAULT_DELIVERY_LEVEL1);
+ else{DEFAULT_DELIVERY_LEVEL1.forEach(d=>{if(!s.meta.deliveryLevel1.some(g=>g.id===d.id))s.meta.deliveryLevel1.push(clone(d))});s.meta.deliveryLevel1.forEach((g,i)=>{if(!g.id)g.id='wbs-custom-'+Date.now()+'-'+i;if(!g.name)g.name='Level 1 '+(i+1);if(!g.countSource)g.countSource='All';if(g.order===undefined)g.order=i+1;});}
+ if(!Array.isArray(s.meta.highLevelPlan)){s.meta.highLevelPlan=HIGH_LEVEL_TEMPLATE.map(x=>({...clone(x),status:'To be Started',progressPct:0,finishDate:'',actualStartDate:'',actualFinishDate:'',notes:''}));s.meta.deliveryWbsVersion=3}
  else{
-  const byId=Object.fromEntries(s.meta.highLevelPlan.map(x=>[x.id,x]));
-  HIGH_LEVEL_TEMPLATE.forEach(t=>{if(!byId[t.id])s.meta.highLevelPlan.push({...clone(t),status:'To be Started',progressPct:0,finishDate:'',actualStartDate:'',actualFinishDate:'',notes:''})});
-  s.meta.highLevelPlan.forEach(a=>{if(!Array.isArray(a.resources))a.resources=[];if(!a.status)a.status='To be Started';if(a.progressPct===undefined)a.progressPct=0;if(a.finishDate===undefined)a.finishDate='';if(a.actualStartDate===undefined)a.actualStartDate='';if(a.actualFinishDate===undefined)a.actualFinishDate=a.finishDate||'';if(a.notes===undefined)a.notes='';});
-  const clearance=s.meta.highLevelPlan.find(a=>a.id==='included-review');if(clearance)clearance.activity='Technical and Commercial Clearance';
+  if(Number(s.meta.deliveryWbsVersion||0)<3){
+   const old=s.meta.highLevelPlan.slice(),ids=new Set(HIGH_LEVEL_TEMPLATE.map(t=>t.id));
+   const migrated=HIGH_LEVEL_TEMPLATE.map(t=>{const o=old.find(x=>x.id===t.id)||{};return {...clone(t),...o,groupId:t.groupId,group:t.group,countSource:t.countSource,activityId:t.activityId,activity:t.activity,resources:[],status:o.status||'To be Started',progressPct:Number(o.progressPct)||0,finishDate:o.finishDate||'',actualStartDate:o.actualStartDate||'',actualFinishDate:o.actualFinishDate||o.finishDate||'',notes:o.notes||''}});
+   const custom=old.filter(x=>!ids.has(x.id)&&!['High','Medium','Low'].includes(x.countSource));
+   s.meta.highLevelPlan=migrated.concat(custom);s.meta.deliveryWbsVersion=3;
+  }
+  s.meta.highLevelPlan.forEach(a=>{if(!Array.isArray(a.resources))a.resources=[];if(!a.status)a.status='To be Started';if(a.progressPct===undefined)a.progressPct=0;if(a.finishDate===undefined)a.finishDate='';if(a.actualStartDate===undefined)a.actualStartDate='';if(a.actualFinishDate===undefined)a.actualFinishDate=a.finishDate||'';if(a.notes===undefined)a.notes='';if(!a.activityId){const d=s.meta.activityList.find(x=>String(x.name||'').trim().toLowerCase()===String(a.activity||'').trim().toLowerCase());if(d)a.activityId=d.id}if(a.activityId){const d=s.meta.activityList.find(x=>x.id===a.activityId);if(d)a.activity=d.name}if(!a.groupId){const g=s.meta.deliveryLevel1.find(x=>x.name===a.group)||s.meta.deliveryLevel1.find(x=>x.countSource===a.countSource);if(g)a.groupId=g.id}});
  }
- s.records.forEach(r=>{
-  if(r.status==='To be'+' Investigated')r.status='Provisional Sum CMI';
-  if(r.siteResource===undefined)r.siteResource='';if(r.offsiteResource===undefined)r.offsiteResource='';if(r.inDeliveryPlan===undefined)r.inDeliveryPlan=false;if(!r.deliveryStatus)r.deliveryStatus='To be Started';if(r.deliveryValue===undefined)r.deliveryValue=null;if(r.startDate===undefined)r.startDate='';if(r.targetDate===undefined)r.targetDate='';if(r.finishDate===undefined)r.finishDate='';if(r.progressPct===undefined)r.progressPct=0;if(r.progressNotes===undefined)r.progressNotes='';
-  if(!Array.isArray(r.cmiActivities))r.cmiActivities=[];
-  r.cmiActivities.forEach((a,i)=>{if(!a.id)a.id='cma-'+r.id+'-'+i;if(a.activityId===undefined)a.activityId='';if(a.activityName===undefined)a.activityName='';if(a.siteResource===undefined)a.siteResource='';if(a.offsiteResource===undefined)a.offsiteResource='';if(a.startDate===undefined)a.startDate='';if(a.targetDate===undefined)a.targetDate='';if(a.finishDate===undefined)a.finishDate='';if(a.actualStartDate===undefined)a.actualStartDate='';if(a.actualFinishDate===undefined)a.actualFinishDate=a.finishDate||'';if(!a.status)a.status='To be Started';if(a.progressPct===undefined)a.progressPct=0;if(!a.resourceProgress||typeof a.resourceProgress!=='object')a.resourceProgress={};if(a.notes===undefined)a.notes='';});
- });return s;
+ s.records.forEach(r=>{if(r.status==='To be'+' Investigated')r.status='Provisional Sum CMI';if(r.siteResource===undefined)r.siteResource='';if(r.offsiteResource===undefined)r.offsiteResource='';if(r.inDeliveryPlan===undefined)r.inDeliveryPlan=false;if(!r.deliveryStatus)r.deliveryStatus='To be Started';if(r.deliveryValue===undefined)r.deliveryValue=null;if(r.startDate===undefined)r.startDate='';if(r.targetDate===undefined)r.targetDate='';if(r.finishDate===undefined)r.finishDate='';if(r.progressPct===undefined)r.progressPct=0;if(r.progressNotes===undefined)r.progressNotes='';if(!Array.isArray(r.cmiActivities))r.cmiActivities=[];r.cmiActivities.forEach((a,i)=>{if(!a.id)a.id='cma-'+r.id+'-'+i;if(a.activityId===undefined)a.activityId='';if(a.activityName===undefined)a.activityName='';if(a.siteResource===undefined)a.siteResource='';if(a.offsiteResource===undefined)a.offsiteResource='';if(a.startDate===undefined)a.startDate='';if(a.targetDate===undefined)a.targetDate='';if(a.finishDate===undefined)a.finishDate='';if(a.actualStartDate===undefined)a.actualStartDate='';if(a.actualFinishDate===undefined)a.actualFinishDate=a.finishDate||'';if(!a.status)a.status='To be Started';if(a.progressPct===undefined)a.progressPct=0;if(!a.resourceProgress||typeof a.resourceProgress!=='object')a.resourceProgress={};if(a.notes===undefined)a.notes='';const d=s.meta.activityList.find(x=>x.id===a.activityId);if(d)a.activityName=d.name;});});
+ return s;
 }
 function loadState(){try{const raw=localStorage.getItem(STORAGE_KEY);if(raw){const x=JSON.parse(raw);if(x&&Array.isArray(x.records))return ensureShape(x)}}catch(e){}return ensureShape({meta:clone(SOURCE.meta),records:clone(SOURCE.records)})}
 function saveState(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(state))}catch(e){}renderAll()}
