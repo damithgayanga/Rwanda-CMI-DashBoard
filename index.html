@@ -70,6 +70,32 @@
 .hl-gantt-row.wbs-row{background:#edf4f8}.hl-gantt-label .wbs-activity-indent{width:14px;display:inline-block}.hl-gantt-label .wbs-resource-indent{width:40px;display:inline-block}
 
 .resource-master-grid{display:grid;grid-template-columns:minmax(220px,1.1fr) minmax(220px,1.2fr) minmax(150px,.7fr) auto;gap:10px;align-items:end}.resource-master-table{min-width:900px}.resource-master-table input[type="text"]{width:100%;border:1px solid #c8d4df;border-radius:7px;padding:8px 9px;font-size:11px}.resource-master-table input[type="checkbox"]{width:16px;height:16px}.resource-db-status{font-size:10px;color:var(--muted);margin-top:8px}.resource-db-status.error{color:var(--red);font-weight:700}.resource-db-status.good{color:var(--green);font-weight:700}
+
+.dashboard-pie-grid{grid-template-columns:repeat(2,minmax(0,1fr));align-items:stretch}
+.pie-card{min-height:330px}
+.pie-card h3{margin-bottom:5px}
+.pie-subtitle{font-size:9.5px;color:var(--muted);line-height:1.45;margin-bottom:12px}
+.pie-layout{display:grid;grid-template-columns:minmax(170px,.8fr) minmax(230px,1.2fr);gap:16px;align-items:center}
+.donut-wrap{display:flex;align-items:center;justify-content:center;min-height:205px}
+.donut{width:190px;height:190px;border-radius:50%;position:relative;box-shadow:inset 0 0 0 1px rgba(16,41,63,.06)}
+.donut:after{content:"";position:absolute;inset:24%;border-radius:50%;background:#fff;box-shadow:0 0 0 1px #e5ebf0}
+.donut-center{position:absolute;inset:27%;z-index:2;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:6px}
+.donut-center b{font-size:19px;line-height:1.05;color:var(--navy)}
+.donut-center span{font-size:8.5px;line-height:1.3;color:var(--muted);margin-top:5px}
+.pie-legend{display:flex;flex-direction:column;gap:7px}
+.pie-legend-row{display:grid;grid-template-columns:10px minmax(0,1fr) auto;gap:7px;align-items:start;font-size:10px}
+.pie-swatch{width:10px;height:10px;border-radius:3px;margin-top:2px}
+.pie-legend-label{line-height:1.3;color:#34495d}
+.pie-legend-value{text-align:right;font-weight:850;color:var(--navy);font-variant-numeric:tabular-nums;white-space:nowrap}
+.pie-legend-share{font-size:8px;color:var(--muted);font-weight:600}
+.pie-empty{display:flex;align-items:center;justify-content:center;min-height:200px;color:var(--muted);font-size:11px}
+.assumption-box{margin-top:14px;padding-top:12px;border-top:1px solid #e6edf3}
+.assumption-title{font-size:9px;font-weight:850;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:8px}
+.assumption-grid{display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:end}
+.assumption-grid .field input{padding:7px 8px}
+.assumption-note{font-size:8.5px;color:var(--muted);line-height:1.4;margin-top:7px}
+@media(max-width:1000px){.dashboard-pie-grid{grid-template-columns:1fr}.pie-layout{grid-template-columns:1fr}.assumption-grid{grid-template-columns:1fr}}
+
 </style>
 
 <!-- Supabase -->
@@ -125,8 +151,23 @@
 <main class="main">
 <section class="tab active" id="tab-dashboard">
  <div class="grid kpis" id="kpiGrid"></div>
- <div class="section-title"><h2>Current Portfolio</h2><span class="note">Excel status remains the commercial register status. Delivery status is managed separately for planned CMIs.</span></div>
- <div class="grid two"><div class="card chart-card"><h3>Status distribution</h3><div class="bars" id="statusBars"></div></div><div class="card chart-card"><h3>To be Submitted — priority distribution</h3><div class="bars" id="priorityBars"></div><div class="badge-note" id="priorityValueNote"></div></div></div>
+ <div class="section-title"><h2>Commercial Portfolio Overview</h2><span class="note">All charts are calculated from the current CMI Register and refresh automatically when register data changes.</span></div>
+ <div class="grid dashboard-pie-grid">
+  <div class="card pie-card"><h3>CMI Status Split</h3><div class="pie-subtitle">Distribution of all CMI register work items by current commercial status.</div><div id="statusPie"></div></div>
+  <div class="card pie-card"><h3>To be Submitted — Priority Split</h3><div class="pie-subtitle">High, Medium and Low priorities for To be Submitted CMIs. Unallocated is shown where an Initial Estimate is not yet available.</div><div id="priorityPie"></div></div>
+  <div class="card pie-card"><h3>Agreed CMIs — Submitted vs Agreed Value</h3><div class="pie-subtitle">Compares the total Submitted Value and Agreed Amount for CMIs whose register status is Agreed.</div><div id="agreedComparisonPie"></div></div>
+  <div class="card pie-card"><h3>Total Portfolio Value Split</h3><div class="pie-subtitle">Agreed CMIs use Agreed Amount; Submitted CMIs use Submitted Value; To be Submitted CMIs use Initial Estimate; UR and Provisional Sum values use the editable allowances below.</div><div id="portfolioValuePie"></div>
+   <div class="assumption-box">
+    <div class="assumption-title">Editable value assumptions</div>
+    <div class="assumption-grid">
+     <div class="field"><label>To be Submitted &amp; UR allowance ($)</label><input type="number" min="0" step="100000" id="urPortfolioAllowanceInput"></div>
+     <div class="field"><label>Provisional Sum CMI allowance ($)</label><input type="number" min="0" step="100000" id="provisionalPortfolioAllowanceInput"></div>
+     <button class="btn primary" id="savePortfolioAssumptionsBtn" type="button">Save</button>
+    </div>
+    <div class="assumption-note">These are total category allowances, not amounts per CMI. Default values are $2.0m and $3.0m respectively.</div>
+   </div>
+  </div>
+ </div>
  <div class="section-title"><h2>Delivery Tracking</h2><span class="note">Delivery-plan performance is driven by the saved allocation and progress data.</span></div>
  <div class="grid two"><div class="card" id="deliverySnapshot"></div><div class="card"><h3>Off-site resource delivery</h3><div id="offsiteBars" class="bars"></div></div></div>
  <div class="section-title"><h2>Resource Performance</h2><span class="note">Completed includes Completed and Submitted to Client. Kosala's reported 4 completions to 16 Sep are included as a baseline.</span></div>
@@ -317,7 +358,7 @@ function ensureShape(s){
  if(!s.meta)s.meta={};
  if(!s.meta.baselineCompletedByResource)s.meta.baselineCompletedByResource={'Kosala Gamage':4};
  if(!s.meta.highLevelGroupProgress||typeof s.meta.highLevelGroupProgress!=='object')s.meta.highLevelGroupProgress={};
- if(!s.meta.highLevelResourceProgress||typeof s.meta.highLevelResourceProgress!=='object')s.meta.highLevelResourceProgress={};
+ if(!s.meta.highLevelResourceProgress||typeof s.meta.highLevelResourceProgress!=='object')s.meta.highLevelResourceProgress={};if(!Number.isFinite(Number(s.meta.urPortfolioAllowance)))s.meta.urPortfolioAllowance=2000000;if(!Number.isFinite(Number(s.meta.provisionalPortfolioAllowance)))s.meta.provisionalPortfolioAllowance=3000000;
  if(Number(s.meta.resourceAssignmentResetVersion||0)<1){s.records.forEach(r=>{r.siteResource='';r.offsiteResource='';r.inDeliveryPlan=false;if(Array.isArray(r.cmiActivities))r.cmiActivities.forEach(a=>{a.siteResource='';a.offsiteResource='';a.resourceProgress={}})});s.meta.highLevelResourceProgress={};if(Array.isArray(s.meta.highLevelPlan))s.meta.highLevelPlan.forEach(a=>{a.resources=[]});s.meta.resourceAssignmentResetVersion=1;}
  if(!Array.isArray(s.meta.activityList))s.meta.activityList=clone(DEFAULT_ACTIVITY_LIST);
  else{s.meta.activityList.forEach((a,i)=>{if(!a.id)a.id='act-'+Date.now()+'-'+i;if(a.name===undefined)a.name='Activity '+(i+1);if(a.description===undefined)a.description='';if(a.active===undefined)a.active=true;if(a.order===undefined)a.order=i+1;});}
@@ -366,7 +407,62 @@ function planned(){return state.records.filter(r=>r.inDeliveryPlan)}
 function performanceFor(name){const p=planned().filter(r=>resourceMatches(r,name));const tracked=p.filter(completedDelivery).length;const baseline=Number((state.meta.baselineCompletedByResource||{})[name]||0);return {allocated:p.length,completed:tracked+baseline,inprogress:p.filter(r=>r.deliveryStatus==='In Progress').length,baseline}}
 
 function renderKpis(){const r=state.records,tbs=r.filter(x=>x.status==='To be Submitted'),p=planned();const submittedPlan=p.filter(x=>x.deliveryStatus==='Submitted to Client').length;const inprog=p.filter(x=>x.deliveryStatus==='In Progress').length;const complete=p.filter(completedDelivery).length+Number(state.meta.preTrackerCompleted||0);const cards=[['Log work items',r.length,'Unique CMI refs: '+uniq(r.map(x=>x.cmiKey)).length,''],['To be Submitted',tbs.length,uniq(tbs.map(x=>x.cmiKey)).length+' unique refs','warn'],['In Delivery Plan',p.length,'Saved allocations',''],['In Progress',inprog,'Delivery status',''],['Completed since 9 Sep',complete,'Includes '+state.meta.preTrackerCompleted+' reported baseline','good'],['Submitted to Client',submittedPlan,'Tracked plan submissions','good']];document.getElementById('kpiGrid').innerHTML=cards.map(c=>`<div class="card kpi ${c[3]}"><div class="label">${c[0]}</div><div class="value">${c[1]}</div><div class="hint">${c[2]}</div></div>`).join('')}
-function renderBars(){const counts={};state.records.forEach(r=>counts[r.status]=(counts[r.status]||0)+1);const max=Math.max(1,...Object.values(counts));const order=STATUS_ORDER.filter(s=>counts[s]).concat(Object.keys(counts).filter(s=>!STATUS_ORDER.includes(s)));document.getElementById('statusBars').innerHTML=order.map(s=>`<div class="bar-row"><div class="bar-label">${esc(s)}</div><div class="bar-track"><div class="bar-fill ${s==='Agreed'?'green':s==='To be Submitted'?'amber':s==='Provisional Sum CMI'?'red':''}" style="width:${counts[s]/max*100}%"></div></div><div class="bar-value">${counts[s]}</div></div>`).join('');const tbs=state.records.filter(r=>r.status==='To be Submitted'),pc={High:0,Medium:0,Low:0,Unvalued:0};tbs.forEach(r=>pc[calcPriority(r)]++);const pm=Math.max(1,...Object.values(pc)),cls={High:'red',Medium:'amber',Low:'green',Unvalued:'purple'};document.getElementById('priorityBars').innerHTML=['High','Medium','Low','Unvalued'].map(p=>`<div class="bar-row"><div class="bar-label">${p==='Unvalued'?'Unvalued / Priority Pending':p}</div><div class="bar-track"><div class="bar-fill ${cls[p]}" style="width:${pc[p]/pm*100}%"></div></div><div class="bar-value">${pc[p]}</div></div>`).join('');const valued=tbs.filter(r=>r.initialEstimate!==null);document.getElementById('priorityValueNote').innerHTML=`Known open initial estimate: <b>${money(sum(valued.map(r=>r.initialEstimate)))}</b>.`}
+function portfolioMoney(v){const n=Number(v)||0;const a=Math.abs(n);const txt=a>=1000000?'$'+(a/1000000).toLocaleString('en-US',{maximumFractionDigits:2})+'m':a>=1000?'$'+(a/1000).toLocaleString('en-US',{maximumFractionDigits:1})+'k':'$'+a.toLocaleString('en-US',{maximumFractionDigits:0});return n<0?'('+txt+')':txt}
+const PIE_COLORS=['#18835d','#2563a8','#bc7410','#6b4cb5','#b62d25','#23adc8','#75899b','#147e8b'];
+function renderDonut(id,slices,opt={}){
+ const el=document.getElementById(id);if(!el)return;
+ const clean=slices.map((x,i)=>({...x,value:Number(x.value)||0,color:x.color||PIE_COLORS[i%PIE_COLORS.length]}));
+ const weights=clean.map(x=>opt.useMagnitude?Math.abs(x.value):Math.max(0,x.value)),totalWeight=sum(weights);
+ if(totalWeight<=0){el.innerHTML='<div class="pie-empty">No value available for this chart.</div>';return}
+ let acc=0,parts=[];
+ clean.forEach((x,i)=>{const w=weights[i];if(w<=0)return;const a=acc/totalWeight*360;acc+=w;const z=acc/totalWeight*360;parts.push(`${x.color} ${a.toFixed(3)}deg ${z.toFixed(3)}deg`)});
+ const centerValue=opt.centerValue!==undefined?opt.centerValue:(opt.valueType==='money'?portfolioMoney(clean.reduce((a,x)=>a+x.value,0)):String(clean.reduce((a,x)=>a+x.value,0)));
+ const centerLabel=opt.centerLabel||'Total';
+ const legend=clean.map((x,i)=>{const share=totalWeight?weights[i]/totalWeight*100:0;const val=opt.valueType==='money'?portfolioMoney(x.value):Number(x.value).toLocaleString('en-US');return `<div class="pie-legend-row"><span class="pie-swatch" style="background:${x.color}"></span><div class="pie-legend-label">${esc(x.label)}<div class="pie-legend-share">${share.toFixed(1)}% of ${opt.useMagnitude?'chart magnitude':'total'}</div></div><div class="pie-legend-value">${val}</div></div>`}).join('');
+ el.innerHTML=`<div class="pie-layout"><div class="donut-wrap"><div class="donut" style="background:conic-gradient(${parts.join(',')})"><div class="donut-center"><b>${esc(centerValue)}</b><span>${esc(centerLabel)}</span></div></div></div><div class="pie-legend">${legend}</div></div>${opt.note?`<div class="badge-note" style="margin-top:10px">${opt.note}</div>`:''}`;
+}
+function renderBars(){
+ const counts={};state.records.forEach(r=>counts[r.status]=(counts[r.status]||0)+1);
+ const statusOrder=STATUS_ORDER.filter(x=>counts[x]).concat(Object.keys(counts).filter(x=>!STATUS_ORDER.includes(x)));
+ const statusColorMap={'Agreed':'#18835d','Submitted':'#2563a8','To be Submitted':'#bc7410','To be Submitted and UR':'#6b4cb5','Provisional Sum CMI':'#b62d25','Included in Other CMIs':'#75899b','Unspecified':'#23adc8'};
+ renderDonut('statusPie',statusOrder.map(x=>({label:x,value:counts[x],color:statusColorMap[x]})),{centerValue:String(state.records.length),centerLabel:'CMI work items'});
+
+ const tbs=state.records.filter(r=>r.status==='To be Submitted'),pc={High:0,Medium:0,Low:0,Unallocated:0};
+ tbs.forEach(r=>{const p=calcPriority(r);pc[p==='Unvalued'?'Unallocated':p]++});
+ renderDonut('priorityPie',[
+  {label:'High',value:pc.High,color:'#b62d25'},
+  {label:'Medium',value:pc.Medium,color:'#bc7410'},
+  {label:'Low',value:pc.Low,color:'#18835d'},
+  {label:'Unallocated',value:pc.Unallocated,color:'#75899b'}
+ ],{centerValue:String(tbs.length),centerLabel:'To be Submitted CMIs'});
+
+ const agreed=state.records.filter(r=>r.status==='Agreed'),agreedSubmitted=sum(agreed.map(r=>r.submittedValue)),agreedAmount=sum(agreed.map(r=>r.agreedAmount));
+ renderDonut('agreedComparisonPie',[
+  {label:'Submitted Value',value:agreedSubmitted,color:'#2563a8'},
+  {label:'Agreed Amount',value:agreedAmount,color:'#18835d'}
+ ],{valueType:'money',useMagnitude:true,centerValue:String(agreed.length),centerLabel:'Agreed CMIs',note:'Legend values are the true signed net totals. Slice sizes use absolute magnitude because omission / credit CMIs can create negative net values.'});
+
+ const agreedPortfolio=sum(state.records.filter(r=>r.status==='Agreed').map(r=>r.agreedAmount));
+ const submittedPortfolio=sum(state.records.filter(r=>r.status==='Submitted').map(r=>r.submittedValue));
+ const tbsPortfolio=sum(state.records.filter(r=>r.status==='To be Submitted').map(r=>r.initialEstimate));
+ const urAllowance=Number(state.meta.urPortfolioAllowance)||0,provisionalAllowance=Number(state.meta.provisionalPortfolioAllowance)||0;
+ const portfolioSlices=[
+  {label:'Agreed CMIs — Agreed Amount',value:agreedPortfolio,color:'#18835d'},
+  {label:'Submitted CMIs — Submitted Value',value:submittedPortfolio,color:'#2563a8'},
+  {label:'To be Submitted — Initial Estimate',value:tbsPortfolio,color:'#bc7410'},
+  {label:'To be Submitted & UR — Allowance',value:urAllowance,color:'#6b4cb5'},
+  {label:'Provisional Sum CMI — Allowance',value:provisionalAllowance,color:'#b62d25'}
+ ];
+ const netTotal=sum(portfolioSlices.map(x=>x.value));
+ renderDonut('portfolioValuePie',portfolioSlices,{valueType:'money',useMagnitude:true,centerValue:portfolioMoney(netTotal),centerLabel:'Net portfolio total',note:'The centre total is the signed net total using the stated valuation basis. Slice sizes use absolute magnitude where negative omission / credit values occur.'});
+ const ur=document.getElementById('urPortfolioAllowanceInput'),ps=document.getElementById('provisionalPortfolioAllowanceInput');if(ur)ur.value=urAllowance;if(ps)ps.value=provisionalAllowance;
+}
+function savePortfolioAssumptions(){
+ const ur=document.getElementById('urPortfolioAllowanceInput'),ps=document.getElementById('provisionalPortfolioAllowanceInput');if(!ur||!ps)return;
+ const u=Number(ur.value),p=Number(ps.value);
+ if(!Number.isFinite(u)||u<0||!Number.isFinite(p)||p<0){alert('Enter non-negative numeric values for both portfolio assumptions.');return}
+ state.meta.urPortfolioAllowance=u;state.meta.provisionalPortfolioAllowance=p;persistStateOnly();renderBars();
+}
 function renderDeliverySnapshot(){const p=planned(),notstarted=p.filter(r=>r.deliveryStatus==='To be Started').length,inprog=p.filter(r=>r.deliveryStatus==='In Progress').length,completed=p.filter(r=>r.deliveryStatus==='Completed').length,submitted=p.filter(r=>r.deliveryStatus==='Submitted to Client').length,overdue=p.filter(r=>r.targetDate&&!completedDelivery(r)&&daysFromToday(r.targetDate)<0).length;document.getElementById('deliverySnapshot').innerHTML=`<h3>Saved delivery plan</h3><div class="metric-line"><span>Total planned</span><b>${p.length}</b></div><div class="metric-line"><span>To be Started</span><b>${notstarted}</b></div><div class="metric-line"><span>In Progress</span><b>${inprog}</b></div><div class="metric-line"><span>Completed / Submitted</span><b>${completed+submitted}</b></div><div class="metric-line"><span>Overdue</span><b>${overdue}</b></div>`;const vals=OFFSITE_RESOURCES.map(n=>[n,performanceFor(n).completed]);const mx=Math.max(1,...vals.map(x=>x[1]));document.getElementById('offsiteBars').innerHTML=vals.map(([n,v])=>`<div class="bar-row"><div class="bar-label">${esc(n)}</div><div class="bar-track"><div class="bar-fill green" style="width:${v/mx*100}%"></div></div><div class="bar-value">${v}</div></div>`).join('')}
 function renderResourcePerformance(){document.getElementById('resourcePerformance').innerHTML=ALL_RESOURCES.map(n=>{const x=performanceFor(n);return `<div class="perf-card"><div class="name">${esc(n)}</div><div class="role">${esc(RESOURCE_ROLES[n])}</div><div class="perf-nums"><div class="perf-num"><b>${x.allocated}</b><span>Allocated</span></div><div class="perf-num"><b>${x.inprogress}</b><span>In Progress</span></div><div class="perf-num"><b>${x.completed}</b><span>Completed</span></div></div>${x.baseline?`<div class="badge-note">Includes ${x.baseline} reported completions before item-level tracking was backfilled.</div>`:''}</div>`}).join('')}
 function renderTop(){const top=state.records.filter(r=>r.status==='To be Submitted'&&r.initialEstimate!==null).sort((a,b)=>b.initialEstimate-a.initialEstimate).slice(0,15);document.getElementById('topValueBody').innerHTML=top.map(r=>`<tr><td><b>${esc(r.cmiNo)}</b></td><td>${esc(r.assetCode)}</td><td>${esc(r.location)}</td><td class="desc">${esc(r.description)}</td><td class="money"><b>${money(r.initialEstimate)}</b></td><td>${priorityPill(calcPriority(r))}</td></tr>`).join('')}
@@ -940,7 +1036,7 @@ document.querySelectorAll('.tabbtn').forEach(b=>b.addEventListener('click',()=>{
 ['fSearch','fStatus','fPriority','fAsset','fPlan','fResource'].forEach(id=>document.getElementById(id).addEventListener('input',renderRegister));
 ['aSearch','aStatus','aPriority','aPlan','aSite','aOffsite'].forEach(id=>document.getElementById(id).addEventListener('input',renderAllocation));
 ['pSearch','pDeliveryStatus','pPriority','pSite','pOffsite','pOverdue'].forEach(id=>document.getElementById(id).addEventListener('input',renderProgress));
-document.getElementById('saveHighLevelPlanBtn').addEventListener('click',saveHighLevelAllocation);document.getElementById('saveActivityProgressBtn').addEventListener('click',saveActivityProgress);
+document.getElementById('saveHighLevelPlanBtn').addEventListener('click',saveHighLevelAllocation);document.getElementById('saveActivityProgressBtn').addEventListener('click',saveActivityProgress);const savePortfolioAssumptionsBtn=document.getElementById('savePortfolioAssumptionsBtn');if(savePortfolioAssumptionsBtn)savePortfolioAssumptionsBtn.addEventListener('click',savePortfolioAssumptions);
 const highLevelAllocationBodyEl=document.getElementById('highLevelAllocationBody');if(highLevelAllocationBodyEl)highLevelAllocationBodyEl.addEventListener('change',e=>{if(e.target.matches('[data-hl-field],[data-hl-resource]'))autoSyncHighLevelAllocation()});
 const activityProgressBodyEl=document.getElementById('activityProgressBody');if(activityProgressBodyEl)activityProgressBodyEl.addEventListener('change',e=>{if(e.target.matches('[data-hlp-field]'))autoSyncHighLevelProgressField(e.target)});
 const cmiActivityProgressBodyEl=document.getElementById('cmiActivityProgressBody');if(cmiActivityProgressBodyEl)cmiActivityProgressBodyEl.addEventListener('change',e=>{if(e.target.matches('[data-cap-field]'))autoSyncDetailedProgressField(e.target)});
