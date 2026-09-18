@@ -235,19 +235,12 @@
 </section>
 
 <section class="tab" id="tab-progress">
- <div class="section-title"><h2>Progress Update</h2><span class="note">Update only CMIs already included in the Delivery Plan.</span></div>
- <div class="grid kpis" id="progressKpis"></div>
- <div class="callout" style="margin:14px 0"><b>Submission rule:</b> when Delivery Status is changed to <b>Submitted to Client</b>, the entered Delivery Value is automatically copied to <b>CMI Register → Submitted Value</b>, the register status changes to <b>Submitted</b>, and Submitted Date is populated if blank. <b>Reopening:</b> a CMI previously marked <b>Completed</b> can be reopened; it returns to <b>In Progress</b>, the Finish Date is cleared, and it is removed from completed counts until completed again.</div>
- <div class="section-title"><h2>High-Level Activity Progress</h2><span class="note">Update activity-level progress independently from the individual CMI progress below.</span></div>
- <div class="card"><div class="toolbar" style="justify-content:flex-end;margin-bottom:10px"><button class="btn good" id="saveActivityProgressBtn" type="button">Save Activity Progress</button></div><div class="table-wrap"><table class="data-table hl-progress-table"><thead><tr><th>Workstream</th><th>Activity</th><th>Resources</th><th>Planned Start</th><th>Planned Finish</th><th>Actual Start</th><th>Actual Finish</th><th>Status</th><th>Progress %</th><th>Notes</th></tr></thead><tbody id="activityProgressBody"></tbody></table></div></div>
- <div class="section-title"><h2>Detailed CMI Activity Progress</h2><span class="note">Enter actual start and finish dates for the activity rows shown in the Delivery Plan programme.</span></div>
- <div class="card"><div class="table-wrap"><table class="data-table" style="min-width:1500px"><thead><tr><th>CMI</th><th>Activity</th><th>Resources</th><th>Planned Start</th><th>Planned Finish</th><th>Actual Start</th><th>Actual Finish</th><th>Status</th><th>Progress %</th><th>Action</th></tr></thead><tbody id="cmiActivityProgressBody"></tbody></table></div></div>
- <div class="section-title"><h2>Detailed CMI Progress</h2><span class="note">Update CMIs already included in the detailed Delivery Plan.</span></div>
- <div class="card"><div class="filters"><input id="pSearch" placeholder="Search planned CMI / description"><select id="pDeliveryStatus"><option value="">All delivery statuses</option></select><select id="pPriority"><option value="">All priorities</option><option>High</option><option>Medium</option><option>Low</option><option>Unvalued</option></select><select id="pSite"><option value="">All site resources</option></select><select id="pOffsite"><option value="">All off-site resources</option></select><select id="pOverdue"><option value="">All target dates</option><option value="overdue">Overdue</option><option value="due7">Due in next 7 days</option></select></div>
- <div class="small muted" id="progressCount" style="margin-bottom:10px"></div>
- <div class="table-wrap"><table class="data-table" style="min-width:1750px"><thead><tr><th>CMI</th><th>Description</th><th>Priority</th><th>Initial Estimate</th><th>Site Resource</th><th>Off-site Resource</th><th>Start</th><th>Target</th><th>Finish</th><th>Delivery Status</th><th>Delivery Value</th><th>Progress %</th><th>Notes</th><th>Actions</th></tr></thead><tbody id="progressBody"></tbody></table></div></div>
+ <div class="section-title"><h2>Progress Update</h2></div>
+ <div class="card">
+  <div class="field" style="max-width:420px;margin-bottom:14px"><label>CMI No.</label><input id="progressCmiSearch" placeholder="Enter CMI No. e.g. 238"></div>
+  <div class="table-wrap" style="max-height:70vh"><table class="data-table" style="min-width:760px"><thead><tr><th>Activity</th><th>Actual Start Date</th><th>Actual Finish Date</th><th>Progress %</th></tr></thead><tbody id="progressActivityBody"></tbody></table></div>
+ </div>
 </section>
-
 <section class="tab" id="tab-organisation">
  <div class="org-heading-row">
   <div class="org-heading-cell"><h2>Change Management Organisation</h2></div>
@@ -700,8 +693,8 @@ function renderGantt(){
  let html=`<div class="hl-gantt-head"><div>CMI / Activity / Resource</div><div>Start Date</div><div>Finish Date</div><div>Progress</div><div class="hl-scale" style="width:${timelineW}px">${marks}</div></div>`,activityCount=0;
  rows.forEach(r=>{
   const acts=(r.cmiActivities||[]).filter(activityReadyForDelivery),open=expandedDeliveryCmis.has(r.id),starts=acts.length?acts.map(a=>a.startDate).filter(Boolean).sort():[r.startDate],ends=acts.length?acts.map(a=>a.targetDate).filter(Boolean).sort():[r.targetDate],parentStart=starts[0],parentEnd=ends[ends.length-1],pm=metrics(parentStart,parentEnd);
-  const actualStarts=acts.map(a=>a.actualStartDate).filter(Boolean).sort(),actualFinishes=acts.map(a=>a.actualFinishDate).filter(Boolean).sort(),parentActualStart=actualStarts[0]||'',parentActualFinish=actualFinishes.length?actualFinishes[actualFinishes.length-1]:(r.finishDate||''),parentActualBarStart=parentActualStart||parentStart,parentActualBarEnd=parentActualFinish||(parentActualStart?todayISO():parentEnd),parentActualState=parentActualStart&&parentActualFinish?'complete':(parentActualStart||parentActualFinish?'partial':'missing'),pam=metrics(parentActualBarStart,parentActualBarEnd);
-  html+=`<div class="hl-gantt-row wbs-row"><div class="hl-gantt-label"><button class="toggle" onclick="toggleDeliveryCmi('${r.id}')">${open?'−':'+'}</button><div><div class="hl-activity-name">${esc(normCmi(r.cmiNo))} — ${esc(r.description)}</div></div></div><div class="hl-datecell programme-date"><div class="date-line"><span class="date-prefix">P</span><span>${fmtDate(parentStart)}</span></div><div class="date-line"><span class="date-prefix">A</span><span>${fmtDate(parentActualStart)}</span></div></div><div class="hl-datecell programme-date"><div class="date-line"><span class="date-prefix">P</span><span>${fmtDate(parentEnd)}</span></div><div class="date-line"><span class="date-prefix">A</span><span>${fmtDate(parentActualFinish)}</span></div></div><div class="hl-progress-cell"><input class="gantt-progress-input" type="number" min="0" max="100" step="1" value="${Number(r.progressPct)||0}" onchange="updateDetailedCmiGanttProgress('${r.id}',this.value)"><span>%</span></div><div class="hl-timeline programme-timeline" style="--weekw:${weekw}px;width:${timelineW}px"><div class="hl-bar plan-bar" style="left:${pm.left}px;width:${pm.width}px" title="Planned: ${parentStart} to ${parentEnd}"></div><div class="hl-bar actual-bar ${parentActualState==='missing'?'no-actual':parentActualState==='partial'?'partial-actual':''}" style="left:${pam.left}px;width:${pam.width}px" title="${parentActualState==='missing'?'Actual dates not entered':`Actual: ${parentActualStart||'—'} to ${parentActualFinish||'In progress'}`}"></div></div></div>`;
+  const actualStarts=acts.map(a=>a.actualStartDate).filter(Boolean).sort(),actualFinishes=acts.map(a=>a.actualFinishDate).filter(Boolean).sort(),parentActualStart=actualStarts[0]||'',parentActualFinish=acts.length&&actualFinishes.length===acts.length?actualFinishes[actualFinishes.length-1]:'',parentActualBarStart=parentActualStart||parentStart,parentActualBarEnd=parentActualFinish||(parentActualStart?todayISO():parentEnd),parentActualState=parentActualStart&&parentActualFinish?'complete':(parentActualStart||parentActualFinish?'partial':'missing'),pam=metrics(parentActualBarStart,parentActualBarEnd);
+  html+=`<div class="hl-gantt-row wbs-row"><div class="hl-gantt-label"><button class="toggle" onclick="toggleDeliveryCmi('${r.id}')">${open?'−':'+'}</button><div><div class="hl-activity-name">${esc(normCmi(r.cmiNo))} — ${esc(r.description)}</div></div></div><div class="hl-datecell programme-date"><div class="date-line"><span class="date-prefix">P</span><span>${fmtDate(parentStart)}</span></div><div class="date-line"><span class="date-prefix">A</span><span>${fmtDate(parentActualStart)}</span></div></div><div class="hl-datecell programme-date"><div class="date-line"><span class="date-prefix">P</span><span>${fmtDate(parentEnd)}</span></div><div class="date-line"><span class="date-prefix">A</span><span>${fmtDate(parentActualFinish)}</span></div></div><div class="hl-progress-cell"><span><b>${Number(r.progressPct)||0}</b>%</span></div><div class="hl-timeline programme-timeline" style="--weekw:${weekw}px;width:${timelineW}px"><div class="hl-bar plan-bar" style="left:${pm.left}px;width:${pm.width}px" title="Planned: ${parentStart} to ${parentEnd}"></div><div class="hl-bar actual-bar ${parentActualState==='missing'?'no-actual':parentActualState==='partial'?'partial-actual':''}" style="left:${pam.left}px;width:${pam.width}px" title="${parentActualState==='missing'?'Actual dates not entered':`Actual: ${parentActualStart||'—'} to ${parentActualFinish||'In progress'}`}"></div></div></div>`;
   if(!open)return;
   acts.forEach(a=>{
    activityCount++;
@@ -876,27 +869,80 @@ function renderOrganisation(){renderResourceMaster()}
 
 function renderResources(){const cards=[['Chamara Ranasinghe','Site Resource 1','Client liaison and commercial closure of CMI impact.','Site-based · mobilised from beginning Sep 2026'],['Dinuka Maduranga','Site Resource 2','Liaise with measurement team and finalise CMI submission.','Site-based · mobilised from beginning Sep 2026'],['Orville Mathew Gayatin','Site Resource 3','Initial judgement/value for UR items; investigate Included in Other CMIs and Provisional Sum CMI.','Site-based · UMC JV'],['Kosala Gamage','Off-site Resource 1','Site liaison; deliver assessments; valuation after measurement; QA/QC and delivery quality.','Started 9 Sep 2026 · 4 completed by 16 Sep'],['Damith Samarasinghe','Off-site Resource 2','CMI measurement; prepare BOQ and markup drawings.','Starts 21 Sep 2026'],['Devmini Amarasinghe','Off-site Resource 3','CMI measurement; prepare BOQ and markup drawings.','Starts 21 Sep 2026']];document.getElementById('resourceCards').innerHTML=cards.map(c=>`<div class="resource"><div class="type">${c[1]}</div><b>${c[0]}</b><p>${c[2]}</p><div class="badge-note">${c[3]}</div></div>`).join('')}
 
-function progressFilters(){const q=document.getElementById('pSearch').value.trim().toLowerCase(),ds=document.getElementById('pDeliveryStatus').value,p=document.getElementById('pPriority').value,sr=document.getElementById('pSite').value,or=document.getElementById('pOffsite').value,due=document.getElementById('pOverdue').value;return planned().filter(r=>{const hay=[r.cmiNo,r.description,r.location].join(' ').toLowerCase(),dd=daysFromToday(r.targetDate),acts=r.cmiActivities||[],sm=!sr||acts.some(a=>a.siteResource===sr)||r.siteResource===sr,om=!or||acts.some(a=>a.offsiteResource===or)||r.offsiteResource===or;return(!q||hay.includes(q))&&(!ds||r.deliveryStatus===ds)&&(!p||calcPriority(r)===p)&&sm&&om&&(!due||(due==='overdue'&&r.targetDate&&!completedDelivery(r)&&dd<0)||(due==='due7'&&r.targetDate&&!completedDelivery(r)&&dd>=0&&dd<=7))})}
-
-function renderCmiActivityProgress(){
- const body=document.getElementById('cmiActivityProgressBody');if(!body)return;
- const rows=planned().flatMap(r=>(r.cmiActivities||[]).filter(activityReadyForDelivery).map(a=>({r,a})));
- body.innerHTML=rows.map(({r,a})=>`<tr data-cap="${r.id}|${a.id}"><td><b>${esc(normCmi(r.cmiNo))}</b></td><td>${esc(activityLabel(a))}</td><td>${esc(uniq([a.siteResource,a.offsiteResource]).join(' / '))}</td><td>${fmtDate(a.startDate)}</td><td>${fmtDate(a.targetDate)}</td><td><input class="inline-input" type="date" data-cap-field="actualStartDate" value="${a.actualStartDate||''}"></td><td><input class="inline-input" type="date" data-cap-field="actualFinishDate" value="${a.actualFinishDate||''}"></td><td><select class="inline-select" data-cap-field="status">${ACTIVITY_STATUSES.map(x=>`<option ${x===a.status?'selected':''}>${x}</option>`).join('')}</select></td><td><input class="inline-input" type="number" min="0" max="100" step="1" data-cap-field="progressPct" value="${Number(a.progressPct)||0}"></td><td><button class="btn primary" type="button" onclick="saveCmiActivityProgressRow('${r.id}','${a.id}')">Save</button></td></tr>`).join('')||'<tr><td colspan="10" class="muted">No scheduled CMI activities yet.</td></tr>';
+function progressSearchRecords(){
+ const el=document.getElementById('progressCmiSearch'),raw=(el?.value||'').trim();
+ if(!raw)return [];
+ const key=normCmi(raw),q=raw.toLowerCase();
+ return state.records.filter(r=>{
+  const rk=String(r.cmiKey||normCmi(r.cmiNo));
+  return rk===key||String(r.cmiNo||'').toLowerCase()===q||String(r.cmiNo||'').toLowerCase().includes(q);
+ });
 }
-function saveCmiActivityProgressRow(recordId,activityId){
- const r=state.records.find(x=>x.id===recordId),a=r&&(r.cmiActivities||[]).find(x=>x.id===activityId);if(!r||!a)return;
- const tr=document.querySelector(`[data-cap="${recordId}|${activityId}"]`);if(!tr)return;
- tr.querySelectorAll('[data-cap-field]').forEach(el=>{const f=el.dataset.capField;a[f]=f==='progressPct'?Math.max(0,Math.min(100,Number(el.value)||0)):el.value});
- if((a.status==='In Progress'||a.progressPct>0)&&!a.actualStartDate)a.actualStartDate=todayISO();
- if(a.status==='Completed'){a.progressPct=100;if(!a.actualStartDate)a.actualStartDate=todayISO();if(!a.actualFinishDate)a.actualFinishDate=todayISO()}else if(a.progressPct>=100)a.progressPct=99;
+function progressActivitiesForSearch(){
+ return progressSearchRecords().flatMap(r=>(r.cmiActivities||[]).map(a=>({r,a}))).sort((x,y)=>{
+  const dx=activityDef(x.a.activityId),dy=activityDef(y.a.activityId),ox=dx?Number(dx.order)||999:999,oy=dy?Number(dy.order)||999:999;
+  return ox-oy||activityLabel(x.a).localeCompare(activityLabel(y.a));
+ });
+}
+function rollupCmiProgress(r){
+ const acts=(r.cmiActivities||[]).filter(activityReadyForDelivery);
+ if(!acts.length)return;
+ const starts=acts.map(a=>a.actualStartDate).filter(Boolean).sort();
+ const finishes=acts.map(a=>a.actualFinishDate).filter(Boolean).sort();
+ r.progressPct=Math.round(acts.reduce((t,a)=>t+Math.max(0,Math.min(100,Number(a.progressPct)||0)),0)/acts.length);
+ r.finishDate=finishes.length===acts.length?finishes[finishes.length-1]:'';
+ if(acts.every(a=>(Number(a.progressPct)||0)>=100&&a.actualFinishDate))r.deliveryStatus='Completed';
+ else if(starts.length||acts.some(a=>(Number(a.progressPct)||0)>0))r.deliveryStatus='In Progress';
+ else r.deliveryStatus='To be Started';
+}
+function syncHighLevelProgressFromActivities(){
+ (state.meta.highLevelPlan||[]).forEach(h=>{
+  const rows=highLevelMatchingAssignments(h);
+  if(!rows.length)return;
+  const progresses=rows.map(x=>Math.max(0,Math.min(100,Number(x.ca.progressPct)||0)));
+  const starts=rows.map(x=>x.ca.actualStartDate).filter(Boolean).sort();
+  const finishes=rows.map(x=>x.ca.actualFinishDate).filter(Boolean).sort();
+  h.progressPct=Math.round(progresses.reduce((a,b)=>a+b,0)/progresses.length);
+  h.actualStartDate=starts[0]||'';
+  h.actualFinishDate=finishes.length===rows.length?finishes[finishes.length-1]:'';
+  h.finishDate=h.actualFinishDate||'';
+  h.status=h.progressPct>=100&&h.actualFinishDate?'Completed':(h.progressPct>0||h.actualStartDate?'In Progress':'To be Started');
+ });
+}
+function renderProgress(){
+ const body=document.getElementById('progressActivityBody');if(!body)return;
+ const input=document.getElementById('progressCmiSearch'),raw=(input?.value||'').trim();
+ if(!raw){body.innerHTML='<tr><td colspan="4" class="muted">Enter a CMI No. above.</td></tr>';return}
+ const records=progressSearchRecords(),rows=progressActivitiesForSearch();
+ if(!records.length){body.innerHTML='<tr><td colspan="4" class="muted">No matching CMI found.</td></tr>';return}
+ if(!rows.length){body.innerHTML='<tr><td colspan="4" class="muted">No activities are allocated to this CMI.</td></tr>';return}
+ body.innerHTML=rows.map(({r,a})=>`<tr data-progress-activity="${r.id}|${a.id}"><td><b>${esc(activityLabel(a))}</b></td><td><input class="inline-input" type="date" data-progress-field="actualStartDate" value="${a.actualStartDate||''}"></td><td><input class="inline-input" type="date" data-progress-field="actualFinishDate" value="${a.actualFinishDate||''}"></td><td><input class="inline-input" type="number" min="0" max="100" step="1" data-progress-field="progressPct" value="${Number(a.progressPct)||0}"></td></tr>`).join('');
+}
+function updateProgressActivityField(el){
+ const tr=el.closest('[data-progress-activity]');if(!tr)return;
+ const parts=String(tr.dataset.progressActivity||'').split('|'),r=state.records.find(x=>x.id===parts[0]),a=r&&(r.cmiActivities||[]).find(x=>x.id===parts[1]);if(!r||!a)return;
+ const field=el.dataset.progressField;if(!field)return;
+ if(field==='progressPct')a.progressPct=Math.max(0,Math.min(100,Number(el.value)||0));else a[field]=el.value;
+ if(a.actualStartDate&&a.actualFinishDate&&a.actualFinishDate<a.actualStartDate){a.actualFinishDate=a.actualStartDate;const finishInput=tr.querySelector('[data-progress-field="actualFinishDate"]');if(finishInput)finishInput.value=a.actualFinishDate}
  a.finishDate=a.actualFinishDate||'';
- saveState();
+ if(a.actualFinishDate||a.progressPct>=100)a.status='Completed';
+ else if(a.actualStartDate||a.progressPct>0)a.status='In Progress';
+ else a.status='To be Started';
+ const resources=uniq([a.siteResource,a.offsiteResource]).filter(Boolean);
+ if(!a.resourceProgress||typeof a.resourceProgress!=='object')a.resourceProgress={};
+ resources.forEach(n=>a.resourceProgress[n]=a.progressPct);
+ rollupCmiProgress(r);
+ syncHighLevelProgressFromActivities();
+ persistStateOnly();
+ renderGantt();
+ renderHighLevelGantt();
 }
-function renderProgress(){renderActivityProgress();renderCmiActivityProgress();const p=planned(),tracked=p.filter(completedDelivery).length,now=new Date(),seven=new Date(now);seven.setDate(now.getDate()-7);const s7=dateISO(seven),td=dateISO(now),past7=p.filter(r=>r.finishDate&&r.finishDate>=s7&&r.finishDate<=td&&completedDelivery(r)).length,inprog=p.filter(r=>r.deliveryStatus==='In Progress').length,pending=p.filter(r=>r.deliveryStatus==='To be Started').length,overdue=p.filter(r=>r.targetDate&&!completedDelivery(r)&&daysFromToday(r.targetDate)<0).length;const cards=[['Completed since 9 Sep',Number(state.meta.preTrackerCompleted||0)+tracked,'Includes baseline','good'],['Past 7 days',past7,'Dated tracked completions','good'],['In Progress',inprog,'Delivery status',''],['To be Started',pending,'Planned, not commenced','warn'],['Overdue',overdue,'Target passed, not complete','high'],['In Delivery Plan',p.length,'Saved allocations','']];document.getElementById('progressKpis').innerHTML=cards.map(c=>`<div class="card kpi ${c[3]}"><div class="label">${c[0]}</div><div class="value">${c[1]}</div><div class="hint">${c[2]}</div></div>`).join('');const rows=progressFilters();document.getElementById('progressCount').textContent=`Showing ${rows.length} of ${p.length} planned CMIs`;document.getElementById('progressBody').innerHTML=rows.map(r=>`<tr data-prow="${r.id}"><td><b>${esc(r.cmiNo)}</b></td><td class="desc">${esc(r.description)}</td><td>${priorityPill(calcPriority(r))}</td><td class="money">${money(r.initialEstimate)}</td><td>${esc(r.siteResource)}</td><td>${esc(r.offsiteResource)}</td><td><input class="inline-input" type="date" data-f="startDate" value="${r.startDate||''}"></td><td><input class="inline-input" type="date" data-f="targetDate" value="${r.targetDate||''}"></td><td><input class="inline-input" type="date" data-f="finishDate" value="${r.finishDate||''}"></td><td><select class="inline-select" data-f="deliveryStatus">${DELIVERY_STATUSES.map(x=>`<option ${x===r.deliveryStatus?'selected':''}>${x}</option>`).join('')}</select></td><td><input class="inline-input" type="number" step="0.01" data-f="deliveryValue" value="${r.deliveryValue??''}" placeholder="Final value"></td><td><input class="inline-input" type="number" min="0" max="100" step="1" data-f="progressPct" value="${Number(r.progressPct)||0}"></td><td><input class="inline-input" data-f="progressNotes" value="${esc(r.progressNotes||'')}" placeholder="Progress notes"></td><td><div class="row-actions"><button class="btn primary" onclick="saveProgressRow('${r.id}')">Save</button>${r.deliveryStatus==='Completed'?`<button class="btn" onclick="reopenProgressRow('${r.id}')">Reopen</button>`:''}</div></td></tr>`).join('')||'<tr><td colspan="14" class="muted">No CMIs in the Delivery Plan.</td></tr>'}
-function saveProgressRow(id){const tr=document.querySelector(`[data-prow="${id}"]`),r=state.records.find(x=>x.id===id);if(!tr||!r)return;const previousStatus=r.deliveryStatus;tr.querySelectorAll('[data-f]').forEach(el=>{const f=el.dataset.f;if(f==='deliveryValue')r[f]=el.value===''?null:Number(el.value);else if(f==='progressPct')r[f]=Math.max(0,Math.min(100,Number(el.value)||0));else r[f]=el.value});const reopening=previousStatus==='Completed'&&['In Progress','To be Started'].includes(r.deliveryStatus);if(reopening){r.finishDate='';r.progressPct=r.deliveryStatus==='To be Started'?0:Math.min(99,Math.max(1,Number(r.progressPct)||99));r.lastReopenedDate=todayISO();r.reopenedCount=Number(r.reopenedCount||0)+1}else if(r.finishDate&&r.deliveryStatus==='In Progress')r.deliveryStatus='Completed';if(completedDelivery(r)&&!r.finishDate)r.finishDate=todayISO();if(completedDelivery(r))r.progressPct=100;if(r.deliveryStatus==='Submitted to Client'){if(r.deliveryValue===null||!Number.isFinite(Number(r.deliveryValue))){alert('Enter the Delivery Value before changing status to Submitted to Client.');r.deliveryStatus='Completed';renderProgress();return}r.submittedValue=Number(r.deliveryValue);if(!r.submittedDate)r.submittedDate=todayISO();r.status='Submitted'}saveState()}
-function reopenProgressRow(id){const r=state.records.find(x=>x.id===id);if(!r||r.deliveryStatus!=='Completed')return;if(!confirm(`Reopen ${r.cmiNo}? It will return to In Progress and the Finish Date will be cleared.`))return;r.deliveryStatus='In Progress';r.finishDate='';r.progressPct=Math.min(99,Math.max(1,Number(r.progressPct)||99));r.lastReopenedDate=todayISO();r.reopenedCount=Number(r.reopenedCount||0)+1;saveState()}
-function goProgress(id){document.querySelectorAll('.tabbtn').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));document.querySelector('[data-tab="progress"]').classList.add('active');document.getElementById('tab-progress').classList.add('active');document.getElementById('pSearch').value=state.records.find(r=>r.id===id)?.cmiNo||'';renderProgress()}
-
+function goProgress(id){
+ document.querySelectorAll('.tabbtn').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+ document.querySelector('[data-tab="progress"]').classList.add('active');document.getElementById('tab-progress').classList.add('active');
+ const r=state.records.find(x=>x.id===id),input=document.getElementById('progressCmiSearch');if(input)input.value=r?(r.cmiKey||normCmi(r.cmiNo)):'';
+ renderProgress();
+}
 function renderQuality(){const recs=state.records,groups={};recs.forEach(r=>(groups[r.cmiKey]??=[]).push(r));const multi=Object.values(groups).filter(g=>g.length>1),tbs=recs.filter(r=>r.status==='To be Submitted - Initial Review compelted'),unv=tbs.filter(r=>calcPriority(r)==='Unvalued').length,unalloc=recs.filter(r=>ACTIONABLE.has(r.status)&&!r.inDeliveryPlan).length;document.getElementById('qualityMetrics').innerHTML=`<div class="metric-line"><span>Populated log rows</span><b>${recs.length}</b></div><div class="metric-line"><span>Unique CMI references</span><b>${Object.keys(groups).length}</b></div><div class="metric-line"><span>Multi-line CMI references</span><b>${multi.length}</b></div><div class="metric-line"><span>To be Submitted - Initial Review compelted — unvalued</span><b>${unv}</b></div><div class="metric-line"><span>Actionable items not yet planned</span><b>${unalloc}</b></div>`;document.getElementById('duplicateBody').innerHTML=multi.sort((a,b)=>b.length-a.length).map(g=>{const sts=uniq(g.map(x=>x.status)),known=sum(g.filter(x=>x.initialEstimate!==null).map(x=>x.initialEstimate));return `<tr><td><b>CMI ${esc(g[0].cmiKey)}</b></td><td>${g.length}</td><td>${sts.map(statusPill).join(' ')}</td><td class="money">${money(known)}</td><td>${sts.length>1?'<span class="pill investigate">Mixed statuses — track by work item</span>':'Multiple source rows'}</td></tr>`}).join('')}
 
 function renderDashboard(){renderKpis();renderBars();renderDeliverySnapshot();renderResourcePerformance();renderTop()}
@@ -1035,11 +1081,10 @@ document.querySelectorAll('.tabbtn').forEach(b=>b.addEventListener('click',()=>{
 }));
 ['fSearch','fStatus','fPriority','fAsset','fPlan','fResource'].forEach(id=>document.getElementById(id).addEventListener('input',renderRegister));
 ['aSearch','aStatus','aPriority','aPlan','aSite','aOffsite'].forEach(id=>document.getElementById(id).addEventListener('input',renderAllocation));
-['pSearch','pDeliveryStatus','pPriority','pSite','pOffsite','pOverdue'].forEach(id=>document.getElementById(id).addEventListener('input',renderProgress));
-document.getElementById('saveHighLevelPlanBtn').addEventListener('click',saveHighLevelAllocation);document.getElementById('saveActivityProgressBtn').addEventListener('click',saveActivityProgress);const savePortfolioAssumptionsBtn=document.getElementById('savePortfolioAssumptionsBtn');if(savePortfolioAssumptionsBtn)savePortfolioAssumptionsBtn.addEventListener('click',savePortfolioAssumptions);
+const progressCmiSearchEl=document.getElementById('progressCmiSearch');if(progressCmiSearchEl)progressCmiSearchEl.addEventListener('input',renderProgress);
+document.getElementById('saveHighLevelPlanBtn').addEventListener('click',saveHighLevelAllocation);const savePortfolioAssumptionsBtn=document.getElementById('savePortfolioAssumptionsBtn');if(savePortfolioAssumptionsBtn)savePortfolioAssumptionsBtn.addEventListener('click',savePortfolioAssumptions);
 const highLevelAllocationBodyEl=document.getElementById('highLevelAllocationBody');if(highLevelAllocationBodyEl)highLevelAllocationBodyEl.addEventListener('change',e=>{if(e.target.matches('[data-hl-field],[data-hl-resource]'))autoSyncHighLevelAllocation()});
-const activityProgressBodyEl=document.getElementById('activityProgressBody');if(activityProgressBodyEl)activityProgressBodyEl.addEventListener('change',e=>{if(e.target.matches('[data-hlp-field]'))autoSyncHighLevelProgressField(e.target)});
-const cmiActivityProgressBodyEl=document.getElementById('cmiActivityProgressBody');if(cmiActivityProgressBodyEl)cmiActivityProgressBodyEl.addEventListener('change',e=>{if(e.target.matches('[data-cap-field]'))autoSyncDetailedProgressField(e.target)});
+const progressActivityBodyEl=document.getElementById('progressActivityBody');if(progressActivityBodyEl)progressActivityBodyEl.addEventListener('change',e=>{if(e.target.matches('[data-progress-field]'))updateProgressActivityField(e.target)});
 const allocationBodyEl=document.getElementById('allocationBody');if(allocationBodyEl)allocationBodyEl.addEventListener('change',e=>{if(!e.target.matches('[data-cmia-field]'))return;const panel=e.target.closest('.activity-plan-panel');if(panel)autoSyncCmiActivityPlan(panel.dataset.cmiPlan)});
 document.getElementById('addActivityMasterBtn').addEventListener('click',addActivityMaster);
 const addResourceMasterBtn=document.getElementById('addResourceMasterBtn');if(addResourceMasterBtn)addResourceMasterBtn.addEventListener('click',addResourceMaster);
