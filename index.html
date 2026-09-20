@@ -48,7 +48,7 @@
 .org-left-pane .org-band{padding:6px 8px;font-size:8px;margin:8px 0 18px}
 .org-right-pane{display:flex;flex-direction:column}
 .org-resource-card{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;overflow:hidden;padding:10px}
-.org-resource-card .resource-master-grid{flex:0 0 auto;margin:0;grid-template-columns:minmax(120px,1fr) minmax(150px,1.2fr) 110px auto;gap:8px}
+.org-resource-card .resource-master-grid{flex:0 0 auto;margin:0;grid-template-columns:minmax(120px,1fr) minmax(150px,1.2fr) 100px 118px auto;gap:8px}
 .org-resource-card .field label{font-size:8px}
 .org-resource-card .field input,.org-resource-card .field select{padding:6px 7px;font-size:9px}
 .org-resource-card .btn{padding:6px 8px;font-size:9px}
@@ -749,10 +749,11 @@
      <div class="field"><label>Name</label><input id="newResourceName" placeholder="e.g. Jane Smith"></div>
      <div class="field"><label>Designation</label><input id="newResourceRole" placeholder="e.g. Senior Quantity Surveyor"></div>
      <div class="field"><label>Location</label><select id="newResourceLocation"><option value="On-Site">On-Site</option><option value="Off-Site">Off-Site</option></select></div>
+     <div class="field"><label>Start Date</label><input id="newResourceStartDate" type="date"></div>
      <button class="btn good" id="addResourceMasterBtn" type="button">+ Add Resource</button>
     </div>
     <div class="resource-db-status" id="resourceDbStatus">Loading shared resources…</div>
-    <div class="table-wrap org-resource-table-wrap"><table class="data-table resource-master-table"><thead><tr><th>Name</th><th>Designation</th><th>Location</th><th>Active</th><th>Actions</th></tr></thead><tbody id="resourceMasterBody"></tbody></table></div>
+    <div class="table-wrap org-resource-table-wrap"><table class="data-table resource-master-table"><thead><tr><th>Name</th><th>Designation</th><th>Location</th><th>Start Date</th><th>Active</th><th>Actions</th></tr></thead><tbody id="resourceMasterBody"></tbody></table></div>
    </div>
   </div>
  </div>
@@ -1098,11 +1099,6 @@ function renderDeliverySnapshot(){
 }
 const DASHBOARD_OFFSITE_ORDER=['Kosala Gamage','Damith Samarasinghe','Devmini Amarasinghe'];
 const DASHBOARD_ONSITE_ORDER=['Dinuka Maduranga','Orville Mathew Gayatin','Chamara Ranasinghe'];
-const DASHBOARD_OFFSITE_START_DATES={
- 'Kosala Gamage':'11-Sep-2026',
- 'Damith Samarasinghe':'21-Sep-2026',
- 'Devmini Amarasinghe':'21-Sep-2026'
-};
 function dashboardResourceOrder(names,preferred){
  const rank=new Map(preferred.map((n,i)=>[n,i]));
  return names.slice().sort((a,b)=>{
@@ -1110,17 +1106,17 @@ function dashboardResourceOrder(names,preferred){
   return ar-br||String(a).localeCompare(String(b));
  });
 }
-function resourcePerformanceGroupHtml(names,startDates={}){
+function resourcePerformanceGroupHtml(names,showStartDates=false){
  const header='<div class="resource-performance-head"><div>Resource</div><div>Allocated</div><div>In Progress</div><div>Completed</div></div>';
- const rows=names.map(n=>{const x=performanceFor(n),start=startDates[n]?'<span class="resource-start-date">Start Date - '+esc(startDates[n])+'</span>':'';return `<div class="resource-performance-row"><div class="resource-performance-name"><b>${esc(n)}</b>${start}</div><div class="resource-performance-metric"><b>${x.allocated}</b></div><div class="resource-performance-metric"><b>${x.inprogress}</b></div><div class="resource-performance-metric"><b>${x.completed}</b></div></div>`}).join('');
+ const rows=names.map(n=>{const x=performanceFor(n),rawStart=showStartDates?resourceStartDate(n):'',start=rawStart?'<span class="resource-start-date">Start Date - '+esc(resourceStartDateText(rawStart))+'</span>':'';return `<div class="resource-performance-row"><div class="resource-performance-name"><b>${esc(n)}</b>${start}</div><div class="resource-performance-metric"><b>${x.allocated}</b></div><div class="resource-performance-metric"><b>${x.inprogress}</b></div><div class="resource-performance-metric"><b>${x.completed}</b></div></div>`}).join('');
  return header+(rows||'<div class="muted small" style="padding:8px">No resources configured.</div>');
 }
 function renderResourcePerformance(){
  const offsite=document.getElementById('offsiteResourcePerformance'),onsite=document.getElementById('onsiteResourcePerformance');
  const offsiteDashboardResources=dashboardResourceOrder(currentOffsiteResources(),DASHBOARD_OFFSITE_ORDER);
- if(offsite)offsite.innerHTML=resourcePerformanceGroupHtml(offsiteDashboardResources,DASHBOARD_OFFSITE_START_DATES);
+ if(offsite)offsite.innerHTML=resourcePerformanceGroupHtml(offsiteDashboardResources,true);
  const onsiteDashboardResources=dashboardResourceOrder(currentSiteResources().filter(n=>n!=='Michael Dullaghan'),DASHBOARD_ONSITE_ORDER);
- if(onsite)onsite.innerHTML=resourcePerformanceGroupHtml(onsiteDashboardResources);
+ if(onsite)onsite.innerHTML=resourcePerformanceGroupHtml(onsiteDashboardResources,false);
 }
 function renderTop(){const top=state.records.filter(r=>r.status==='To be Submitted - Initial Review compelted'&&r.initialEstimate!==null).sort((a,b)=>b.initialEstimate-a.initialEstimate).slice(0,15);document.getElementById('topValueBody').innerHTML=top.map(r=>`<tr><td><b>${esc(r.cmiNo)}</b></td><td>${esc(r.assetCode)}</td><td>${esc(r.location)}</td><td class="desc">${esc(r.description)}</td><td class="money"><b>${money(r.initialEstimate)}</b></td><td>${priorityPill(calcPriority(r))}</td></tr>`).join('')}
 
@@ -1397,13 +1393,13 @@ function renderGantt(){
  box.innerHTML=html;if(summary)summary.textContent=`${rows.length} planned CMIs · ${activityCount} scheduled activities · Planned (P, blue) and Actual (A, green) dates and bars shown at every WBS level · timeline ${dateISO(start)} to ${dateISO(latest)}`;
 }
 const DEFAULT_SHARED_RESOURCES=[
- {resource_name:'Michael Dullaghan',designation:'Change Manager',location:'On-Site'},
- {resource_name:'Chamara Ranasinghe',designation:'Senior Consultant',location:'On-Site'},
- {resource_name:'Dinuka Maduranga',designation:'Senior Consultant',location:'On-Site'},
- {resource_name:'Orville Mathew Gayatin',designation:'Senior Quantity Surveyor',location:'On-Site'},
- {resource_name:'Kosala Gamage',designation:'Senior Quantity Surveyor',location:'Off-Site'},
- {resource_name:'Damith Samarasinghe',designation:'Quantity Surveyor',location:'Off-Site'},
- {resource_name:'Devmini Amarasinghe',designation:'Quantity Surveyor',location:'Off-Site'}
+ {resource_name:'Michael Dullaghan',designation:'Change Manager',location:'On-Site',startDate:''},
+ {resource_name:'Chamara Ranasinghe',designation:'Senior Consultant',location:'On-Site',startDate:''},
+ {resource_name:'Dinuka Maduranga',designation:'Senior Consultant',location:'On-Site',startDate:''},
+ {resource_name:'Orville Mathew Gayatin',designation:'Senior Quantity Surveyor',location:'On-Site',startDate:''},
+ {resource_name:'Kosala Gamage',designation:'Senior Quantity Surveyor',location:'Off-Site',startDate:'2026-09-11'},
+ {resource_name:'Damith Samarasinghe',designation:'Quantity Surveyor',location:'Off-Site',startDate:'2026-09-21'},
+ {resource_name:'Devmini Amarasinghe',designation:'Quantity Surveyor',location:'Off-Site',startDate:'2026-09-21'}
 ];
 async function ensureDefaultResourcesInSupabase(){
  const {data,error}=await supabaseClient.from('resources').select('id,resource_name,role,is_deleted');
@@ -1412,10 +1408,18 @@ async function ensureDefaultResourcesInSupabase(){
  const inserts=[];const updates=[];
  DEFAULT_SHARED_RESOURCES.forEach(d=>{
   const existing=byName.get(d.resource_name.toLowerCase());
-  const packedRole=`${d.designation}|||${d.location}`;
+  const packedRole=packResourceRole(d.designation,d.location,d.startDate||'');
   if(!existing)inserts.push({resource_name:d.resource_name,role:packedRole,active:true,is_deleted:false});
   else if(existing.is_deleted)updates.push({id:existing.id,role:packedRole,restore:true});
-  else if(existing.role!==packedRole)updates.push({id:existing.id,role:packedRole,restore:false});
+  else{
+   const raw=String(existing.role||'');
+   const parts=raw.includes('|||')?raw.split('|||'):[];
+   if(!raw.trim())updates.push({id:existing.id,role:packedRole,restore:false});
+   else if(parts.length<3&&d.startDate){
+    const current=unpackResourceRole(raw);
+    updates.push({id:existing.id,role:packResourceRole(current.designation||d.designation,current.location||d.location,d.startDate),restore:false});
+   }
+  }
  });
  if(inserts.length){
   const {error:insertError}=await supabaseClient.from('resources').insert(inserts);
@@ -1458,13 +1462,14 @@ function resourceOptions(names,selected='',blank='Select resource'){
 function setResourceDbStatus(message,type=''){const el=document.getElementById('resourceDbStatus');if(!el)return;el.textContent=message;el.className='resource-db-status'+(type?' '+type:'')}
 async function loadResourcesFromSupabase(){
  if(canManageDelivery())await ensureDefaultResourcesInSupabase();
- const body=document.getElementById('resourceMasterBody');if(body)body.innerHTML='<tr><td colspan="5" class="muted">Loading shared resources…</td></tr>';
+ const body=document.getElementById('resourceMasterBody');if(body)body.innerHTML='<tr><td colspan="6" class="muted">Loading shared resources…</td></tr>';
  const {data,error}=await supabaseClient.from('resources').select('id,resource_name,role,active,is_deleted,updated_at').eq('is_deleted',false).order('resource_name',{ascending:true});
- if(error){console.error('Unable to load resources:',error);setResourceDbStatus('Unable to load resources from Supabase. '+(error.message||''),'error');if(body)body.innerHTML='<tr><td colspan="5" class="muted">Unable to load shared resources.</td></tr>';return}
+ if(error){console.error('Unable to load resources:',error);setResourceDbStatus('Unable to load resources from Supabase. '+(error.message||''),'error');if(body)body.innerHTML='<tr><td colspan="6" class="muted">Unable to load shared resources.</td></tr>';return}
  supabaseResources=(data||[]).filter(r=>r.resource_name!==SHARED_STATE_RESOURCE_NAME);
  setResourceDbStatus(`${supabaseResources.length} shared resource${supabaseResources.length===1?'':'s'} loaded.`,'good');
  renderResourceMaster();
  populateFilters();
+ renderResourcePerformance();
  const allocationTab=document.getElementById('tab-allocation'),deliveryTab=document.getElementById('tab-delivery');
  if(allocationTab&&allocationTab.classList.contains('active'))renderAllocation();
  if(deliveryTab&&deliveryTab.classList.contains('active'))renderDelivery();
@@ -1473,14 +1478,29 @@ function unpackResourceRole(value){
  const raw=(value||'').trim();
  if(raw.includes('|||')){
   const parts=raw.split('|||');
-  return{designation:(parts.shift()||'').trim(),location:(parts.join('|||')||'').trim()||'On-Site'};
+  return{
+   designation:(parts[0]||'').trim(),
+   location:(parts[1]||'').trim()||'On-Site',
+   startDate:(parts[2]||'').trim()
+  };
  }
  const lower=raw.toLowerCase();
  const location=(lower.includes('off-site')||lower.includes('off site')||lower.includes('remote'))?'Off-Site':'On-Site';
  const designation=(raw.split(' · ')[0]||raw).trim();
- return{designation,location};
+ return{designation,location,startDate:''};
 }
-function packResourceRole(designation,location){return `${(designation||'').trim()}|||${location||'On-Site'}`}
+function packResourceRole(designation,location,startDate=''){return `${(designation||'').trim()}|||${location||'On-Site'}|||${startDate||''}`}
+function resourceStartDate(name){
+ const row=(supabaseResources||[]).find(r=>(r.resource_name||'')===name&&!r.is_deleted);
+ return row?unpackResourceRole(row.role).startDate||'':'';
+}
+function resourceStartDateText(value){
+ if(!value)return '';
+ const d=new Date(value+'T00:00:00');
+ if(Number.isNaN(d.getTime()))return value;
+ const mon=d.toLocaleDateString('en-NZ',{month:'short'});
+ return String(d.getDate()).padStart(2,'0')+'-'+mon+'-'+d.getFullYear();
+}
 const CHANGE_RESOURCE_ORDER=['Michael Dullaghan','Chamara Ranasinghe','Dinuka Maduranga','Orville Mathew Gayatin','Kosala Gamage','Damith Samarasinghe','Devmini Amarasinghe'];
 const CHANGE_RESOURCE_DISPLAY_NAMES={
  'Michael Dullaghan':'Michael',
@@ -1507,6 +1527,7 @@ function renderResourceMaster(){
     <td><input type="text" data-rm-field="resource_name" value="${esc(r.resource_name||'')}"></td>
     <td><input type="text" data-rm-field="designation" value="${esc(parsed.designation)}"></td>
     <td><select data-rm-field="location"><option value="On-Site" ${parsed.location==='On-Site'?'selected':''}>On-Site</option><option value="Off-Site" ${parsed.location==='Off-Site'?'selected':''}>Off-Site</option></select></td>
+    <td><input type="date" data-rm-field="startDate" value="${esc(parsed.startDate||'')}"></td>
     <td><select data-rm-field="active"><option value="true" ${r.active!==false?'selected':''}>Active</option><option value="false" ${r.active===false?'selected':''}>Inactive</option></select></td>
     <td><div class="row-actions"><button class="btn primary" type="button" onclick="saveResourceMaster(${Number(r.id)})">Save</button><button class="btn" type="button" onclick="cancelResourceMasterEdit()">Cancel</button></div></td>
    </tr>`;
@@ -1515,21 +1536,22 @@ function renderResourceMaster(){
    <td><b>${esc(r.resource_name||'')}</b></td>
    <td>${esc(parsed.designation||'')}</td>
    <td>${esc(parsed.location||'')}</td>
+   <td>${parsed.startDate?esc(resourceStartDateText(parsed.startDate)):'<span class="empty">—</span>'}</td>
    <td>${r.active!==false?'Active':'Inactive'}</td>
    <td><div class="row-actions"><button class="btn primary" type="button" onclick="editResourceMaster(${Number(r.id)})">Edit</button><button class="btn danger" type="button" onclick="deleteResourceMaster(${Number(r.id)})">Delete</button></div></td>
   </tr>`;
- }).join('')||'<tr><td colspan="5" class="muted">No shared resources yet. Add the first resource above.</td></tr>';
+ }).join('')||'<tr><td colspan="6" class="muted">No shared resources yet. Add the first resource above.</td></tr>';
 }
 function editResourceMaster(id){editingResourceMasterId=Number(id);renderResourceMaster()}
 function cancelResourceMasterEdit(){editingResourceMasterId=null;renderResourceMaster()}
 async function addResourceMaster(){
- const n=document.getElementById('newResourceName'),r=document.getElementById('newResourceRole'),l=document.getElementById('newResourceLocation');
- const name=(n?.value||'').trim(),designation=(r?.value||'').trim(),location=l?.value||'On-Site';
+ const n=document.getElementById('newResourceName'),r=document.getElementById('newResourceRole'),l=document.getElementById('newResourceLocation'),sd=document.getElementById('newResourceStartDate');
+ const name=(n?.value||'').trim(),designation=(r?.value||'').trim(),location=l?.value||'On-Site',startDate=sd?.value||'';
  if(!name){alert('Enter a resource name.');n?.focus();return}
  setResourceDbStatus('Saving resource…');
  const {data:existing,error:lookupError}=await supabaseClient.from('resources').select('id,resource_name,is_deleted').ilike('resource_name',name).limit(1);
  if(lookupError){setResourceDbStatus('Unable to check existing resources. '+lookupError.message,'error');return}
- const role=packResourceRole(designation,location);let error;
+ const role=packResourceRole(designation,location,startDate);let error;
  if(existing&&existing.length){
   if(existing[0].is_deleted){({error}=await supabaseClient.from('resources').update({resource_name:name,role,active:true,is_deleted:false}).eq('id',existing[0].id));}
   else{alert('That resource already exists.');setResourceDbStatus('Resource was not added.','');return}
@@ -1537,17 +1559,18 @@ async function addResourceMaster(){
   ({error}=await supabaseClient.from('resources').insert({resource_name:name,role,active:true,is_deleted:false}));
  }
  if(error){console.error('Unable to add resource:',error);setResourceDbStatus('Unable to add resource. '+error.message,'error');return}
- n.value='';if(r)r.value='';if(l)l.value='On-Site';await loadResourcesFromSupabase();
+ n.value='';if(r)r.value='';if(l)l.value='On-Site';if(sd)sd.value='';await loadResourcesFromSupabase();
 }
 async function saveResourceMaster(id){
  const tr=document.querySelector(`[data-resource-master="${id}"]`);if(!tr)return;
  const name=tr.querySelector('[data-rm-field="resource_name"]').value.trim();
  const designation=tr.querySelector('[data-rm-field="designation"]').value.trim();
  const location=tr.querySelector('[data-rm-field="location"]').value;
+ const startDate=tr.querySelector('[data-rm-field="startDate"]').value;
  const active=tr.querySelector('[data-rm-field="active"]').value==='true';
  if(!name){alert('Resource name cannot be blank.');return}
  setResourceDbStatus('Saving changes…');
- const {error}=await supabaseClient.from('resources').update({resource_name:name,role:packResourceRole(designation,location),active}).eq('id',id);
+ const {error}=await supabaseClient.from('resources').update({resource_name:name,role:packResourceRole(designation,location,startDate),active}).eq('id',id);
  if(error){console.error('Unable to update resource:',error);setResourceDbStatus('Unable to save resource. '+error.message,'error');return}
  editingResourceMasterId=null;
  await loadResourcesFromSupabase();
