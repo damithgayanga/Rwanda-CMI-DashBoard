@@ -1077,8 +1077,18 @@ function renderResourcePerformance(){
 function renderTop(){const top=state.records.filter(r=>r.status==='To be Submitted - Initial Review compelted'&&r.initialEstimate!==null).sort((a,b)=>b.initialEstimate-a.initialEstimate).slice(0,15);document.getElementById('topValueBody').innerHTML=top.map(r=>`<tr><td><b>${esc(r.cmiNo)}</b></td><td>${esc(r.assetCode)}</td><td>${esc(r.location)}</td><td class="desc">${esc(r.description)}</td><td class="money"><b>${money(r.initialEstimate)}</b></td><td>${priorityPill(calcPriority(r))}</td></tr>`).join('')}
 
 function populateFilters(){
- const statuses=uniq(state.records.map(r=>r.status)),assets=uniq(state.records.flatMap(r=>String(r.assetCode||'').split(/\n|,/).map(x=>x.trim()).filter(Boolean)));
- for(const id of ['fStatus','aStatus']){const el=document.getElementById(id);if(!el)continue;const v=el.value;el.innerHTML=(id==='aStatus'?'<option value="">All actionable statuses</option>':'<option value="">All statuses</option>')+statuses.filter(s=>id!=='aStatus'||ACTIONABLE.has(s)).map(s=>`<option>${esc(s)}</option>`).join('');el.value=v}
+ const standardStatuses=['Agreed','Submitted','To be Submitted - Initial Review compelted','To be Submitted and Unallocated','Included in Other CMIs','Provisional Sum CMI'];
+ const statuses=uniq(state.records.map(r=>String(r.status||'').trim()).filter(Boolean).concat(standardStatuses)),assets=uniq(state.records.flatMap(r=>String(r.assetCode||'').split(/\n|,/).map(x=>x.trim()).filter(Boolean)));
+ const populateStatusSelect=(id,label,filterFn=null)=>{
+  const el=document.getElementById(id);if(!el)return;
+  const previous=el.value;
+  const values=filterFn?statuses.filter(filterFn):statuses;
+  el.replaceChildren(new Option(label,''));
+  values.forEach(s=>el.add(new Option(s,s)));
+  el.value=values.includes(previous)?previous:'';
+ };
+ populateStatusSelect('fStatus','All statuses');
+ populateStatusSelect('aStatus','All actionable statuses',s=>ACTIONABLE.has(s));
  let el=document.getElementById('fAsset');if(el){let v=el.value;el.innerHTML='<option value="">All assets</option>'+assets.map(x=>`<option>${esc(x)}</option>`).join('');el.value=v}
  const historicalAll=state.records.flatMap(r=>[r.siteResource,r.offsiteResource,...(r.cmiActivities||[]).flatMap(a=>[a.siteResource,a.offsiteResource])]).flatMap(x=>String(x||'').split(' / ')).filter(Boolean);
  const allResources=uniq(currentAllResources().concat(historicalAll));
