@@ -927,7 +927,12 @@ function resourceMatches(r,name){return r.siteResource===name||r.offsiteResource
 function todayISO(){return dateISO(new Date())}
 function optionList(arr,blank='Select resource'){return `<option value="">${blank}</option>`+arr.map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join('')}
 
-function setHeader(){document.getElementById('projectLine').textContent=`${state.meta.projectTitle} · ${state.meta.contractNo} · Client: UMC JV · Consultant: DMD Consult`;document.getElementById('updatedLine').innerHTML=`Source updated: <b>${state.meta.sourceUpdated||'—'}</b><br>Tracker start: <b>${state.meta.trackerStart}</b>`;document.getElementById('sourceFileFoot').textContent=state.meta.sourceFile}
+function setHeader(){
+ const projectLine=document.getElementById('projectLine'),updatedLine=document.getElementById('updatedLine'),sourceFileFoot=document.getElementById('sourceFileFoot');
+ if(projectLine)projectLine.textContent=`${state.meta.projectTitle} · ${state.meta.contractNo} · Client: UMC JV · Consultant: DMD Consult`;
+ if(updatedLine)updatedLine.innerHTML=`Source updated: <b>${state.meta.sourceUpdated||'—'}</b><br>Tracker start: <b>${state.meta.trackerStart}</b>`;
+ if(sourceFileFoot)sourceFileFoot.textContent=state.meta.sourceFile||'';
+}
 function hasActivityProgress(r){return (r.cmiActivities||[]).some(a=>!!(a.actualStartDate||a.actualFinishDate||Number(a.progressPct)>0))}
 function isInDeliveryPlanRecord(r){return !!(r&&(r.inDeliveryPlan||(r.cmiActivities||[]).some(activityReadyForDelivery)||hasActivityProgress(r)))}
 function derivedDeliveryStatus(r){
