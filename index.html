@@ -1157,18 +1157,35 @@ function renderKpis(){
   provisional=r.filter(x=>x.status==='Provisional Sum CMI'),
   toSubmit=tbs.concat(unallocated,provisional),
   p=planned(),
-  measurementCompleted=p.filter(x=>activityComplete(findActivityByIdOrName(x,'act-measure','measurement works'))),
-  inprog=p.filter(x=>{const measure=findActivityByIdOrName(x,'act-measure','measurement works');return !!(measure&&measure.actualStartDate)}),
-  clearancePending=p.filter(x=>{const measure=findActivityByIdOrName(x,'act-measure','measurement works'),clearance=findActivityByIdOrName(x,'act-clearance','technical and commercial clearance');return activityComplete(measure)&&!activityComplete(clearance)}),
-  submittedDgj=p.filter(x=>operationalStage(x)==='Submitted to DGJ');
+  assessmentCommenced=p.filter(x=>{
+   const measure=findActivityByIdOrName(x,'act-measure','measurement works');
+   return activityStarted(measure);
+  }),
+  measurementCompleted=p.filter(x=>{
+   const measure=findActivityByIdOrName(x,'act-measure','measurement works');
+   return activityProgressAt100(measure);
+  }),
+  clearancePending=p.filter(x=>{
+   const measure=findActivityByIdOrName(x,'act-measure','measurement works');
+   const clearance=findActivityByIdOrName(x,'act-clearance','technical and commercial clearance');
+   return activityProgressAt100(measure)&&!activityProgressAt100(clearance);
+  }),
+  clearanceCompleted=p.filter(x=>{
+   const clearance=findActivityByIdOrName(x,'act-clearance','technical and commercial clearance');
+   return activityProgressAt100(clearance);
+  }),
+  submittedDgj=p.filter(x=>{
+   const submission=findActivityByIdOrName(x,'act-submit-dgj','submission to dgj');
+   return activityProgressAt100(submission);
+  });
  const cards=[
   `<div class="card kpi kpi-stage kpi-submit-card"><div class="label">To be Submitted</div><div class="value">${toSubmit.length}<span class="value-context">out of ${r.length}</span></div>${submissionBreakdownHtml(toSubmit)}</div>`,
   `<div class="kpi-delivery-plan">${stageKpiHtml('In Delivery Plan',p,'',toSubmit.length)}</div>`,
   weeklyActivityPlanHtml(),
-  `<div class="kpi-standard">${stageKpiHtml('Measurement Completed',measurementCompleted)}</div>`,
-  `<div class="kpi-standard">${stageKpiHtml('In Progress',inprog)}</div>`,
-  `<div class="kpi-standard">${stageKpiHtml('Tech & Com. Clearance Pending',clearancePending,'warn')}</div>`,
-  `<div class="kpi-standard">${stageKpiHtml('Submitted to DGJ',submittedDgj,'good')}</div>`
+  `<div class="kpi-standard">${stageKpiHtml('CMI Assessment Commenced',assessmentCommenced,'',p.length)}</div>`,
+  `<div class="kpi-standard">${stageKpiHtml('Measurement Completed',measurementCompleted,'',assessmentCommenced.length)}</div>`,
+  `<div class="kpi-standard">${stageKpiHtml('Tech & Com. Clearance Pending',clearancePending,'warn',measurementCompleted.length)}</div>`,
+  `<div class="kpi-standard">${stageKpiHtml('Submitted to DGJ',submittedDgj,'good',clearanceCompleted.length)}</div>`
  ];
  document.getElementById('kpiGrid').innerHTML=cards.join('');
 }
