@@ -1047,12 +1047,13 @@ function renderDeliverySnapshot(){
  const p=planned();
  const measurementComplete=r=>activityComplete(findActivityByIdOrName(r,'act-measure','measurement works'));
  const clearanceComplete=r=>activityComplete(findActivityByIdOrName(r,'act-clearance','technical and commercial clearance'));
- const started=p.filter(r=>derivedDeliveryStatus(r)!=='To be Started').length;
+ const startedItems=p.filter(r=>derivedDeliveryStatus(r)!=='To be Started');
+ const started=startedItems.length;
  const measurementCompleted=p.filter(measurementComplete).length;
  const clearanceCompleted=p.filter(clearanceComplete).length;
- const inprog=p.filter(r=>r.deliveryStatus==='In Progress'&&!measurementComplete(r)).length;
- const completed=p.filter(r=>r.deliveryStatus==='Completed').length;
- const submitted=p.filter(r=>r.deliveryStatus==='Submitted to Client').length;
+ const inprog=startedItems.filter(r=>!measurementComplete(r)).length;
+ const completed=p.filter(r=>derivedDeliveryStatus(r)==='Completed').length;
+ const submitted=p.filter(r=>derivedDeliveryStatus(r)==='Submitted to Client').length;
  document.getElementById('deliverySnapshot').innerHTML=`<div class="metric-line"><span>Total planned</span><b>${p.length}</b></div><div class="metric-line"><span>Started</span><b>${started}</b></div><div class="metric-line"><span>Measurement and Valuation Completed</span><b>${measurementCompleted}</b></div><div class="metric-line"><span>Technical and Commercial Clearance Obtained</span><b>${clearanceCompleted}</b></div><div class="metric-line"><span>Completed / Submitted</span><b>${completed+submitted}</b></div><div class="metric-line"><span>In Progress</span><b>${inprog}</b></div>`;
  const vals=OFFSITE_RESOURCES.map(n=>[n,performanceFor(n).completed]);
  const mx=Math.max(1,...vals.map(x=>x[1]));
