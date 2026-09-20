@@ -737,8 +737,7 @@ const DEFAULT_DELIVERY_LEVEL1=[
  {id:'wbs-high',name:'High Priority CMIs',countSource:'High',order:1},
  {id:'wbs-medium',name:'Medium Priority CMIs',countSource:'Medium',order:2},
  {id:'wbs-low',name:'Low Priority CMIs',countSource:'Low',order:3},
- {id:'wbs-unallocated',name:'Unallocated Priority CMIs',countSource:'Unvalued',order:4},
- {id:'wbs-other',name:'Other CMI Reviews',countSource:'Other',order:5}
+ {id:'wbs-unallocated',name:'Unallocated Priority CMIs',countSource:'Unvalued',order:4}
 ];
 const HIGH_LEVEL_TEMPLATE=[
  {id:'high-measure',groupId:'wbs-high',group:'High Priority CMIs',countSource:'High',activityId:'act-measure',activity:'Measurement Works & Valuation',startDate:'2026-09-09',targetDate:'2026-09-25',resources:[]},
@@ -760,10 +759,7 @@ const HIGH_LEVEL_TEMPLATE=[
  {id:'unallocated-finalise',groupId:'wbs-unallocated',group:'Unallocated Priority CMIs',countSource:'Unvalued',activityId:'act-finalise',activity:'Review of Valuation and Compilation of all Documents',startDate:'',targetDate:'',resources:[]},
  {id:'unallocated-clearance',groupId:'wbs-unallocated',group:'Unallocated Priority CMIs',countSource:'Unvalued',activityId:'act-clearance',activity:'Technical and Commercial Clearance',startDate:'',targetDate:'',resources:[]},
  {id:'unallocated-review',groupId:'wbs-unallocated',group:'Unallocated Priority CMIs',countSource:'Unvalued',activityId:'act-final-review',activity:'Final Review of the Submission',startDate:'',targetDate:'',resources:[]},
- {id:'unallocated-dgj',groupId:'wbs-unallocated',group:'Unallocated Priority CMIs',countSource:'Unvalued',activityId:'act-submit-dgj',activity:'Submission to DGJ',startDate:'',targetDate:'',resources:[]},
- {id:'ur-priority',groupId:'wbs-other',group:'Other CMI Reviews',countSource:'UR',activityId:'act-priority',activity:'Allocate Priority Levels / Initial Judgement',startDate:'2026-09-01',targetDate:'2026-09-30',resources:[]},
- {id:'investigate-closed',groupId:'wbs-other',group:'Other CMI Reviews',countSource:'Investigated',activityId:'act-investigate',activity:'Further Investigation',startDate:'2026-09-01',targetDate:'2026-10-16',resources:[]},
- {id:'included-review',groupId:'wbs-other',group:'Other CMI Reviews',countSource:'Included',activityId:'act-clearance',activity:'Technical and Commercial Clearance',startDate:'2026-09-01',targetDate:'2026-10-30',resources:[]}
+ {id:'unallocated-dgj',groupId:'wbs-unallocated',group:'Unallocated Priority CMIs',countSource:'Unvalued',activityId:'act-submit-dgj',activity:'Submission to DGJ',startDate:'',targetDate:'',resources:[]}
 ]
 let state=loadState();let filteredRegister=[];let selectedAllocation=new Set();let expandedHighLevelActivities=new Set();let collapsedHighLevelGroups=new Set();let expandedCmiActivities=new Set();let expandedDeliveryCmis=new Set();let expandedDeliveryActivities=new Set();
 
@@ -779,8 +775,10 @@ function ensureShape(s){
  const valuationReview=s.meta.activityList.find(a=>a.id==='act-finalise');if(valuationReview){valuationReview.name='Review of Valuation and Compilation of all Documents';valuationReview.description='Review the valuation and compile all supporting documents for the CMI submission package.'}
  if(!Array.isArray(s.meta.deliveryLevel1))s.meta.deliveryLevel1=clone(DEFAULT_DELIVERY_LEVEL1);
  else{DEFAULT_DELIVERY_LEVEL1.forEach(d=>{if(!s.meta.deliveryLevel1.some(g=>g.id===d.id))s.meta.deliveryLevel1.push(clone(d))});s.meta.deliveryLevel1.forEach((g,i)=>{if(!g.id)g.id='wbs-custom-'+Date.now()+'-'+i;if(!g.name)g.name='Level 1 '+(i+1);if(!g.countSource)g.countSource='All';if(g.order===undefined)g.order=i+1;});}
- if(!Array.isArray(s.meta.highLevelPlan)){s.meta.highLevelPlan=HIGH_LEVEL_TEMPLATE.map(x=>({...clone(x),status:'To be Started',progressPct:0,finishDate:'',actualStartDate:'',actualFinishDate:'',notes:''}));s.meta.deliveryWbsVersion=3}
+ s.meta.deliveryLevel1=s.meta.deliveryLevel1.filter(g=>g.id!=='wbs-other'&&g.name!=='Other CMI Reviews');
+ if(!Array.isArray(s.meta.highLevelPlan)){s.meta.highLevelPlan=HIGH_LEVEL_TEMPLATE.map(x=>({...clone(x),status:'To be Started',progressPct:0,finishDate:'',actualStartDate:'',actualFinishDate:'',notes:''}));s.meta.deliveryWbsVersion=4}
  else{
+  s.meta.highLevelPlan=s.meta.highLevelPlan.filter(a=>a.groupId!=='wbs-other'&&a.group!=='Other CMI Reviews'&&!['UR','Investigated','Included'].includes(a.countSource));
   if(Number(s.meta.deliveryWbsVersion||0)<3){
    const old=s.meta.highLevelPlan.slice(),ids=new Set(HIGH_LEVEL_TEMPLATE.map(t=>t.id));
    const migrated=HIGH_LEVEL_TEMPLATE.map(t=>{const o=old.find(x=>x.id===t.id)||{};return {...clone(t),...o,groupId:t.groupId,group:t.group,countSource:t.countSource,activityId:t.activityId,activity:t.activity,resources:[],status:o.status||'To be Started',progressPct:Number(o.progressPct)||0,finishDate:o.finishDate||'',actualStartDate:o.actualStartDate||'',actualFinishDate:o.actualFinishDate||o.finishDate||'',notes:o.notes||''}});
