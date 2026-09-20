@@ -163,6 +163,8 @@
     const name=currentDashboardUser?.display_name||currentDashboardUser?.username||'';
     const nameEl=document.getElementById('currentUserName'),roleEl=document.getElementById('currentUserRole');
     if(nameEl)nameEl.textContent=name;if(roleEl)roleEl.textContent=role;
+    const userManagementCard=document.getElementById('userManagementCard');
+    if(userManagementCard)userManagementCard.style.display=role==='admin'?'':'none';
     const active=document.querySelector('.tabbtn.active');
     if(!active||!allowed.has(active.dataset.tab)){
       const first=(ROLE_TABS[role]||[])[0];
