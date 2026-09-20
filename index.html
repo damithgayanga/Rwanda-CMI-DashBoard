@@ -999,7 +999,15 @@ function setHeader(){
 }
 function hasActivityProgress(r){return (r.cmiActivities||[]).some(a=>!!(a.actualStartDate||a.actualFinishDate||Number(a.progressPct)>0))}
 function deliveryPlanApplicable(r){return !!(r&&derivedDeliveryStatus(r)!=='Not Applicable')}
-function isInDeliveryPlanRecord(r){return !!(r&&deliveryPlanApplicable(r)&&((r.cmiActivities||[]).some(activityReadyForDelivery)||hasActivityProgress(r)))}
+function hasOffsiteDeliveryAllocation(r){
+ if(!r)return false;
+ const activeOffsite=new Set(currentOffsiteResources());
+ return (r.cmiActivities||[]).some(a=>{
+  if(!a||!a.offsiteResource||!activeOffsite.has(a.offsiteResource))return false;
+  return activityReadyForDelivery(a)||activityStarted(a);
+ });
+}
+function isInDeliveryPlanRecord(r){return !!(r&&deliveryPlanApplicable(r)&&hasOffsiteDeliveryAllocation(r))}
 function activityProgressAt100(a){return !!(a&&Number(a.progressPct)>=100)}
 function derivedDeliveryStatus(r){
  if(!r)return 'To be Started';
@@ -1432,7 +1440,7 @@ function rollupCmiActivityPlan(r){
  const sites=uniq(activities.map(a=>a.siteResource)),offs=uniq(activities.map(a=>a.offsiteResource));
  const starts=scheduled.map(a=>a.startDate).filter(Boolean).sort(),targets=scheduled.map(a=>a.targetDate).filter(Boolean).sort();
  r.siteResource=sites.join(' / ');r.offsiteResource=offs.join(' / ');r.startDate=starts[0]||'';r.targetDate=targets[targets.length-1]||'';
- r.inDeliveryPlan=scheduled.length>0||hasActivityProgress(r);if(!r.deliveryStatus)r.deliveryStatus='To be Started';
+ r.inDeliveryPlan=isInDeliveryPlanRecord(r);if(!r.deliveryStatus)r.deliveryStatus='To be Started';
  return scheduled;
 }
 function allocationPlanStateHtml(r){
