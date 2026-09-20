@@ -1073,8 +1073,12 @@ function readCmiActivityPanel(r){
  });
 }
 function rollupCmiActivityPlan(r){
- const scheduled=(r.cmiActivities||[]).filter(activityReadyForDelivery);
- const sites=uniq(scheduled.map(a=>a.siteResource)),offs=uniq(scheduled.map(a=>a.offsiteResource));
+ const activities=r.cmiActivities||[];
+ const scheduled=activities.filter(activityReadyForDelivery);
+ // Resource names should reflect the actual activity assignments even if a row
+ // temporarily has incomplete/invalid dates. Date rollups still use only valid
+ // scheduled activities so bad dates do not corrupt the Delivery Plan timeline.
+ const sites=uniq(activities.map(a=>a.siteResource)),offs=uniq(activities.map(a=>a.offsiteResource));
  const starts=scheduled.map(a=>a.startDate).filter(Boolean).sort(),targets=scheduled.map(a=>a.targetDate).filter(Boolean).sort();
  r.siteResource=sites.join(' / ');r.offsiteResource=offs.join(' / ');r.startDate=starts[0]||'';r.targetDate=targets[targets.length-1]||'';
  r.inDeliveryPlan=scheduled.length>0||hasActivityProgress(r);if(!r.deliveryStatus)r.deliveryStatus='To be Started';
