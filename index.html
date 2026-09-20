@@ -965,13 +965,14 @@ function savePortfolioAssumptions(){
 function renderDeliverySnapshot(){
  const p=planned();
  const measurementComplete=r=>activityComplete(findActivityByIdOrName(r,'act-measure','measurement works'));
- const notstarted=p.filter(r=>r.deliveryStatus==='To be Started').length;
+ const clearanceComplete=r=>activityComplete(findActivityByIdOrName(r,'act-clearance','technical and commercial clearance'));
+ const started=p.filter(r=>derivedDeliveryStatus(r)!=='To be Started').length;
  const measurementCompleted=p.filter(measurementComplete).length;
+ const clearanceCompleted=p.filter(clearanceComplete).length;
  const inprog=p.filter(r=>r.deliveryStatus==='In Progress'&&!measurementComplete(r)).length;
  const completed=p.filter(r=>r.deliveryStatus==='Completed').length;
  const submitted=p.filter(r=>r.deliveryStatus==='Submitted to Client').length;
- const overdue=p.filter(r=>r.targetDate&&!completedDelivery(r)&&daysFromToday(r.targetDate)<0).length;
- document.getElementById('deliverySnapshot').innerHTML=`<h3>Saved delivery plan</h3><div class="metric-line"><span>Total planned</span><b>${p.length}</b></div><div class="metric-line"><span>To be Started</span><b>${notstarted}</b></div><div class="metric-line"><span>In Progress</span><b>${inprog}</b></div><div class="metric-line"><span>Measurement and Valuation Completed</span><b>${measurementCompleted}</b></div><div class="metric-line"><span>Completed / Submitted</span><b>${completed+submitted}</b></div><div class="metric-line"><span>Overdue</span><b>${overdue}</b></div>`;
+ document.getElementById('deliverySnapshot').innerHTML=`<div class="metric-line"><span>Total planned</span><b>${p.length}</b></div><div class="metric-line"><span>Started</span><b>${started}</b></div><div class="metric-line"><span>Measurement and Valuation Completed</span><b>${measurementCompleted}</b></div><div class="metric-line"><span>Technical and Commercial Clearance Obtained</span><b>${clearanceCompleted}</b></div><div class="metric-line"><span>Completed / Submitted</span><b>${completed+submitted}</b></div><div class="metric-line"><span>In Progress</span><b>${inprog}</b></div>`;
  const vals=OFFSITE_RESOURCES.map(n=>[n,performanceFor(n).completed]);
  const mx=Math.max(1,...vals.map(x=>x[1]));
  document.getElementById('offsiteBars').innerHTML=vals.map(([n,v])=>`<div class="bar-row"><div class="bar-label">${esc(n)}</div><div class="bar-track"><div class="bar-fill green" style="width:${v/mx*100}%"></div></div><div class="bar-value">${v}</div></div>`).join('')
