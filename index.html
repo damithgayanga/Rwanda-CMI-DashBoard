@@ -1093,7 +1093,8 @@ function resourcePerformanceGroupHtml(names){
 function renderResourcePerformance(){
  const offsite=document.getElementById('offsiteResourcePerformance'),onsite=document.getElementById('onsiteResourcePerformance');
  if(offsite)offsite.innerHTML=resourcePerformanceGroupHtml(currentOffsiteResources());
- if(onsite)onsite.innerHTML=resourcePerformanceGroupHtml(currentSiteResources());
+ const onsiteDashboardResources=currentSiteResources().filter(n=>n!=='Michael Dullaghan');
+ if(onsite)onsite.innerHTML=resourcePerformanceGroupHtml(onsiteDashboardResources);
 }
 function renderTop(){const top=state.records.filter(r=>r.status==='To be Submitted - Initial Review compelted'&&r.initialEstimate!==null).sort((a,b)=>b.initialEstimate-a.initialEstimate).slice(0,15);document.getElementById('topValueBody').innerHTML=top.map(r=>`<tr><td><b>${esc(r.cmiNo)}</b></td><td>${esc(r.assetCode)}</td><td>${esc(r.location)}</td><td class="desc">${esc(r.description)}</td><td class="money"><b>${money(r.initialEstimate)}</b></td><td>${priorityPill(calcPriority(r))}</td></tr>`).join('')}
 
