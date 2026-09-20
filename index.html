@@ -273,6 +273,15 @@
     await loadDeliveryActivitiesFromSupabase();
     await loadResourcesFromSupabase();
 
+    // Every authenticated opening starts at today's Data Date and with the
+    // first two programme WBS levels visible. User changes remain session-only.
+    programmeDataDate=todayISO();
+    state.meta.dataDate=programmeDataDate;
+    expandedDeliverySummaryActivities.clear();
+    expandedHighLevelActivities.clear();
+    collapsedHighLevelGroups=new Set((state.meta.highLevelPlan||[]).map(a=>a.groupId||`${a.group}|${a.countSource}`));
+    deliveryRootCollapsed=false;
+
     // Populate all dashboard content before revealing the application.
     renderAll();
 
@@ -303,7 +312,6 @@
         highLevelResourceProgress: clone(state.meta.highLevelResourceProgress||{}),
         deliveryLevel1: clone(state.meta.deliveryLevel1||[]),
         activityList: clone(state.meta.activityList||[]),
-        dataDate: state.meta.dataDate||todayISO(),
         resourceAssignmentResetVersion: Math.max(1, Number(state.meta.resourceAssignmentResetVersion)||0)
       },
       records: state.records.filter(r=>{
@@ -355,7 +363,6 @@
       ['highLevelGroupProgress','highLevelResourceProgress'].forEach(k=>{
         if(payload.meta[k]&&typeof payload.meta[k]==='object')state.meta[k]={...(state.meta[k]||{}),...clone(payload.meta[k])};
       });
-      if(payload.meta.dataDate)state.meta.dataDate=payload.meta.dataDate;
       state.meta.resourceAssignmentResetVersion=Math.max(
         1,
         Number(state.meta.resourceAssignmentResetVersion)||0,
@@ -886,7 +893,7 @@ const HIGH_LEVEL_TEMPLATE=[
  {id:'provisional-review',groupId:'wbs-provisional',group:'Provisional Sum CMIs',countSource:'Investigated',activityId:'act-final-review',activity:'Final Review of the Submission',startDate:'',targetDate:'',resources:[]},
  {id:'provisional-dgj',groupId:'wbs-provisional',group:'Provisional Sum CMIs',countSource:'Investigated',activityId:'act-submit-dgj',activity:'Submission to DGJ',startDate:'',targetDate:'',resources:[]}
 ]
-let state=loadState();let filteredRegister=[];let selectedAllocation=new Set();let expandedHighLevelActivities=new Set();let collapsedHighLevelGroups=new Set();let deliveryRootCollapsed=false;let expandedDeliverySummaryActivities=new Set(['act-measure','act-finalise','act-clearance','act-final-review','act-submit-dgj']);let expandedCmiActivities=new Set();let expandedDeliveryCmis=new Set();let expandedDeliveryActivities=new Set();
+let state=loadState();let programmeDataDate=todayISO();state.meta.dataDate=programmeDataDate;let filteredRegister=[];let selectedAllocation=new Set();let expandedHighLevelActivities=new Set();let collapsedHighLevelGroups=new Set();let deliveryRootCollapsed=false;let expandedDeliverySummaryActivities=new Set();let expandedCmiActivities=new Set();let expandedDeliveryCmis=new Set();let expandedDeliveryActivities=new Set();
 
 function clone(x){return JSON.parse(JSON.stringify(x))}
 function ensureShape(s){
@@ -944,8 +951,23 @@ function timelineWeekMarks(start,weeks,weekw){
  let marks='';for(let i=0;i<weeks;i++){const d=new Date(start);d.setDate(d.getDate()+i*7);marks+=`<div class="hl-weekmark" style="left:${i*weekw}px"><span class="hl-weekmark-label">${formatDateText(d)}</span></div>`}return marks;
 }
 function dataDateX(start,weekw,timelineW){
- const dd=state&&state.meta&&state.meta.dataDate?state.meta.dataDate:'';if(!dd)return -9999;
+ const dd=programmeDataDate||todayISO();
  const x=calendarDayDiff(dd,start)/7*weekw;return x>=0&&x<=timelineW?x:-9999;
+}
+function programmeTimelineRange(){
+ const dates=[programmeDataDate||todayISO()];
+ (state.records||[]).forEach(r=>{
+  [r.startDate,r.targetDate,r.finishDate].filter(Boolean).forEach(d=>dates.push(d));
+  (r.cmiActivities||[]).forEach(a=>[a.startDate,a.targetDate,a.finishDate,a.actualStartDate,a.actualFinishDate].filter(Boolean).forEach(d=>dates.push(d)));
+ });
+ (state.meta.highLevelPlan||[]).forEach(a=>[a.startDate,a.targetDate,a.finishDate,a.actualStartDate,a.actualFinishDate].filter(Boolean).forEach(d=>dates.push(d)));
+ const times=dates.map(x=>new Date(x+'T00:00:00').getTime()).filter(Number.isFinite);
+ let start=times.length?new Date(Math.min(...times)):new Date(todayISO()+'T00:00:00');
+ let latest=times.length?new Date(Math.max(...times)):new Date(todayISO()+'T00:00:00');
+ const back=(start.getDay()+6)%7;start.setDate(start.getDate()-back);
+ latest.setDate(latest.getDate()+6);
+ const totalDays=Math.max(7,calendarDayDiff(latest,start)+1),weeks=Math.ceil(totalDays/7),weekw=92,timelineW=weeks*weekw;
+ return {start,latest,totalDays,weeks,weekw,timelineW};
 }
 function esc(s){return String(s??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
 function normCmi(s){const str=String(s||'').trim();const main=str.match(/CMI\s*(?:No\.?\s*)?0*(\d+)/i);if(main)return String(parseInt(main[1],10)).padStart(5,'0');const m=str.match(/(\d+)/g);return m?String(parseInt(m[0],10)).padStart(5,'0'):str}
@@ -1370,17 +1392,17 @@ function applyDataDate(){
  const input=document.getElementById('dataDateInput'),status=document.getElementById('dataDateStatus');if(!input)return;
  const iso=String(input.value||'').trim();
  if(!/^\d{4}-\d{2}-\d{2}$/.test(iso)){if(status){status.textContent='Select a valid Data Date from the calendar.';status.style.color='var(--red)'}input.focus();return}
- state.meta.dataDate=iso;persistStateOnly();
+ programmeDataDate=iso;state.meta.dataDate=iso;
  if(status){status.textContent='Data Date: '+formatDateText(iso);status.style.color='var(--muted)'}
  renderDeliveryHighLevelSummary();renderHighLevelGantt();renderGantt();
 }
 function resetDataDate(){
  const iso=todayISO(),input=document.getElementById('dataDateInput'),status=document.getElementById('dataDateStatus');
- state.meta.dataDate=iso;if(input)input.value=iso;persistStateOnly();
+ programmeDataDate=iso;state.meta.dataDate=iso;if(input)input.value=iso;
  if(status){status.textContent='Data Date: '+formatDateText(iso)+' (Today)';status.style.color='var(--muted)'}
  renderDeliveryHighLevelSummary();renderHighLevelGantt();renderGantt();
 }
-function renderDelivery(){const dataDateInput=document.getElementById('dataDateInput'),dataDateStatus=document.getElementById('dataDateStatus');if(dataDateInput)dataDateInput.value=state.meta.dataDate||todayISO();if(dataDateStatus){dataDateStatus.textContent='Data Date: '+formatDateText(state.meta.dataDate||todayISO());dataDateStatus.style.color='var(--muted)'}document.getElementById('targetDateInput').value=state.meta.defaultDeliveryTarget;document.getElementById('capacityInput').value=state.meta.weeklyCapacity;document.getElementById('preCompletedInput').value=state.meta.preTrackerCompleted;document.getElementById('fullTeamInput').value=state.meta.fullOffsiteTeamStart;const m=capacityMetrics(),p=planned();document.getElementById('deliveryCapacity').innerHTML=`<div class="capacity"><div><div class="capacity-big">${p.length} CMIs planned</div><div class="capacity-sub">${p.filter(completedDelivery).length} complete/submitted · ${p.filter(r=>['Measurement in Progress','Pending Technical and Commercial Clearance','Under Finalisation for DGJ Submission'].includes(derivedDeliveryStatus(r))).length} in progress · ${p.filter(r=>derivedDeliveryStatus(r)==='To be Started').length} to be started.</div><div class="gauge"><div style="width:${p.length?Math.min(100,p.filter(completedDelivery).length/p.length*100):0}%"></div></div><div class="small muted">Current production assumption: ${m.cap} CMIs/week · open To-be-Submitted demand ${m.backlog}</div></div><div><div class="metric-line"><span>Target date</span><b>${fmtDate(m.target)}</b></div><div class="metric-line"><span>Required average</span><b>${Number.isFinite(m.required)?m.required.toFixed(1):'—'}/week</b></div><div class="metric-line"><span>Capacity gap</span><b>${Number.isFinite(m.gap)?m.gap.toFixed(1):'—'}/week</b></div></div></div>`;renderDeliveryWbsManager();renderDeliveryHighLevelSummary();renderHighLevelGantt();renderGantt();renderDeliveryTable()}
+function renderDelivery(){const dataDateInput=document.getElementById('dataDateInput'),dataDateStatus=document.getElementById('dataDateStatus');if(dataDateInput)dataDateInput.value=programmeDataDate||todayISO();if(dataDateStatus){dataDateStatus.textContent='Data Date: '+formatDateText(programmeDataDate||todayISO())+((programmeDataDate||todayISO())===todayISO()?' (Today)':'');dataDateStatus.style.color='var(--muted)'}document.getElementById('targetDateInput').value=state.meta.defaultDeliveryTarget;document.getElementById('capacityInput').value=state.meta.weeklyCapacity;document.getElementById('preCompletedInput').value=state.meta.preTrackerCompleted;document.getElementById('fullTeamInput').value=state.meta.fullOffsiteTeamStart;const m=capacityMetrics(),p=planned();document.getElementById('deliveryCapacity').innerHTML=`<div class="capacity"><div><div class="capacity-big">${p.length} CMIs planned</div><div class="capacity-sub">${p.filter(completedDelivery).length} complete/submitted · ${p.filter(r=>['Measurement in Progress','Pending Technical and Commercial Clearance','Under Finalisation for DGJ Submission'].includes(derivedDeliveryStatus(r))).length} in progress · ${p.filter(r=>derivedDeliveryStatus(r)==='To be Started').length} to be started.</div><div class="gauge"><div style="width:${p.length?Math.min(100,p.filter(completedDelivery).length/p.length*100):0}%"></div></div><div class="small muted">Current production assumption: ${m.cap} CMIs/week · open To-be-Submitted demand ${m.backlog}</div></div><div><div class="metric-line"><span>Target date</span><b>${fmtDate(m.target)}</b></div><div class="metric-line"><span>Required average</span><b>${Number.isFinite(m.required)?m.required.toFixed(1):'—'}/week</b></div><div class="metric-line"><span>Capacity gap</span><b>${Number.isFinite(m.gap)?m.gap.toFixed(1):'—'}/week</b></div></div></div>`;renderDeliveryWbsManager();renderDeliveryHighLevelSummary();renderHighLevelGantt();renderGantt();renderDeliveryTable()}
 function renderDeliveryTable(){const rows=planned().sort((a,b)=>(a.startDate||'9999').localeCompare(b.startDate||'9999')||({High:0,Medium:1,Low:2,Unvalued:3}[calcPriority(a)]-({High:0,Medium:1,Low:2,Unvalued:3}[calcPriority(b)])));document.getElementById('deliveryBody').innerHTML=rows.map(r=>`<tr><td><b>${esc(r.cmiNo)}</b></td><td class="desc">${esc(r.description)}</td><td>${priorityPill(calcPriority(r))}</td><td class="money">${money(r.initialEstimate)}</td><td>${esc(r.siteResource)}</td><td>${esc(r.offsiteResource)}</td><td>${fmtDate(r.startDate)}</td><td>${fmtDate(r.targetDate)}</td><td>${fmtDate(r.finishDate)}</td><td>${deliveryPill(derivedDeliveryStatus(r))}</td><td class="money">${money(r.deliveryValue)}</td><td><div class="row-actions"><button class="iconbtn" onclick="goProgress('${r.id}')">Progress</button><button class="iconbtn" onclick="removeFromPlan('${r.id}')">Remove</button></div></td></tr>`).join('')||'<tr><td colspan="12" class="muted">No CMIs have been added to the Delivery Plan yet. Use Resource Allocation first.</td></tr>'}
 function removeFromPlan(id){const r=state.records.find(x=>x.id===id);if(!r)return;if(confirm('Remove this CMI from the Delivery Plan? Resource assignments will be retained.')){r.inDeliveryPlan=false;saveState()}}
 function toggleDeliveryCmi(id){expandedDeliveryCmis.has(id)?expandedDeliveryCmis.delete(id):expandedDeliveryCmis.add(id);renderGantt()}
@@ -1438,10 +1460,7 @@ function renderGantt(){
  const rows=planned().filter(r=>(r.cmiActivities||[]).some(activityReadyForDelivery)||(r.startDate&&r.targetDate));
  const box=document.getElementById('ganttChart'),summary=document.getElementById('ganttSummary');
  if(!rows.length){box.innerHTML='<div class="callout">No scheduled resource allocations yet. Add a resource and valid start/target dates in Resource Allocation.</div>';if(summary)summary.textContent='';return}
- const datePoints=[];rows.forEach(r=>{const acts=(r.cmiActivities||[]).filter(activityReadyForDelivery);if(acts.length)acts.forEach(a=>{datePoints.push(a.startDate,a.targetDate);if(a.actualStartDate)datePoints.push(a.actualStartDate);if(a.actualFinishDate)datePoints.push(a.actualFinishDate)});else datePoints.push(r.startDate,r.targetDate,r.finishDate)});if(state.meta.dataDate)datePoints.push(state.meta.dataDate);
- let start=new Date(Math.min(...datePoints.filter(Boolean).map(x=>new Date(x+'T00:00:00').getTime()))),latest=new Date(Math.max(...datePoints.filter(Boolean).map(x=>new Date(x+'T00:00:00').getTime())));
- const back=(start.getDay()+6)%7;start.setDate(start.getDate()-back);latest.setDate(latest.getDate()+6);
- const totalDays=Math.max(7,calendarDayDiff(latest,start)+1),weeks=Math.ceil(totalDays/7),weekw=92,timelineW=weeks*weekw;
+ const timeline=programmeTimelineRange(),start=timeline.start,latest=timeline.latest,weeks=timeline.weeks,weekw=timeline.weekw,timelineW=timeline.timelineW;
  let marks=timelineWeekMarks(start,weeks,weekw);
  const metrics=(s,e)=>{return{left:Math.max(0,calendarDayDiff(s,start)/7*weekw),width:Math.max(10,((calendarDayDiff(e,s)+1)/7)*weekw)}};
  const order={High:0,Medium:1,Low:2,Unvalued:3},startFor=r=>{const acts=(r.cmiActivities||[]).filter(activityReadyForDelivery).map(a=>a.startDate).sort();return acts[0]||r.startDate||'9999'};
@@ -1913,12 +1932,8 @@ function weeklyDeliverySummaryResourceCounts(activityId,resource,dateField,timel
 function renderDeliveryHighLevelSummary(){
  const box=document.getElementById('deliverySummaryGantt'),summary=document.getElementById('deliverySummaryGanttSummary');if(!box)return;
  const activityRows=DELIVERY_SUMMARY_ACTIVITY_IDS.map(id=>({id,rows:deliverySummaryActivityRows(id)}));
- const allRows=activityRows.flatMap(x=>x.rows),allDates=[];
- activityRows.forEach(x=>{const sc=deliverySummaryAggregateSchedule(x.rows);[sc.startDate,sc.targetDate,sc.actualStartDate,sc.actualLatest].filter(Boolean).forEach(d=>allDates.push(d))});if(state.meta.dataDate)allDates.push(state.meta.dataDate);
- if(!allDates.length){box.innerHTML='<div class="callout">No Delivery Plan activity dates are available yet.</div>';if(summary)summary.textContent='';return}
- let start=new Date(Math.min(...allDates.map(x=>new Date(x+'T00:00:00').getTime()))),latest=new Date(Math.max(...allDates.map(x=>new Date(x+'T00:00:00').getTime())));
- const back=(start.getDay()+6)%7;start.setDate(start.getDate()-back);latest.setDate(latest.getDate()+6);
- const totalDays=Math.max(7,calendarDayDiff(latest,start)+1),weeks=Math.ceil(totalDays/7),weekw=92,timelineW=weeks*weekw;
+ const allRows=activityRows.flatMap(x=>x.rows);
+ const timeline=programmeTimelineRange(),start=timeline.start,latest=timeline.latest,weeks=timeline.weeks,weekw=timeline.weekw,timelineW=timeline.timelineW;
  let marks=timelineWeekMarks(start,weeks,weekw);
  const metrics=(a,b)=>a&&b?{left:Math.max(0,calendarDayDiff(a,start)/7*weekw),width:Math.max(10,((calendarDayDiff(b,a)+1)/7)*weekw)}:null;
  const rowBars=(sc,plannedCounts,actualCounts)=>{
@@ -1955,12 +1970,8 @@ function renderHighLevelGantt(){
  const box=document.getElementById('highLevelGantt');if(!box)return;
  const rows=(state.meta.highLevelPlan||[]).slice();
  if(!rows.length){box.innerHTML='<div class="callout">No Level 3 activities are configured in the Delivery Plan WBS.</div>';return}
- const schedules=new Map(rows.map(a=>[a.id,highLevelActivitySchedule(a)])),allDates=[];
- rows.forEach(a=>{const s=schedules.get(a.id);[s.startDate,s.targetDate,s.actualStartDate,s.actualFinishDate].filter(Boolean).forEach(d=>allDates.push(d));highLevelResourcesForActivity(a).forEach(n=>{const rs=highLevelResourceSchedule(a,n);[rs.startDate,rs.targetDate,rs.actualStartDate,rs.actualFinishDate].filter(Boolean).forEach(d=>allDates.push(d))})});if(state.meta.dataDate)allDates.push(state.meta.dataDate);
- let start,latest;
- if(allDates.length){start=new Date(Math.min(...allDates.map(x=>new Date(x+'T00:00:00').getTime())));latest=new Date(Math.max(...allDates.map(x=>new Date(x+'T00:00:00').getTime())))}else{start=new Date((state.meta.trackerStart||todayISO())+'T00:00:00');latest=new Date((state.meta.defaultDeliveryTarget||todayISO())+'T00:00:00')}
- const back=(start.getDay()+6)%7;start.setDate(start.getDate()-back);latest.setDate(latest.getDate()+6);
- const totalDays=Math.max(7,calendarDayDiff(latest,start)+1),weeks=Math.ceil(totalDays/7),weekw=92,timelineW=weeks*weekw;
+ const schedules=new Map(rows.map(a=>[a.id,highLevelActivitySchedule(a)]));
+ const timeline=programmeTimelineRange(),start=timeline.start,latest=timeline.latest,weeks=timeline.weeks,weekw=timeline.weekw,timelineW=timeline.timelineW;
  let marks=timelineWeekMarks(start,weeks,weekw);
  const metrics=(s,e)=>{if(!s||!e)return null;return{left:Math.max(0,calendarDayDiff(s,start)/7*weekw),width:Math.max(10,((calendarDayDiff(e,s)+1)/7)*weekw)}};
  const groups=new Map();rows.forEach(a=>{const key=highLevelGroupKey(a);if(!groups.has(key))groups.set(key,[]);groups.get(key).push(a)});
