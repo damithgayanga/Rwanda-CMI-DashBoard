@@ -181,9 +181,7 @@
     if(!u||!p){if(err)err.textContent='Enter both username and password.';return}
     const btn=document.getElementById('loginBtn');if(btn)btn.disabled=true;
     try{
-      const {data:emailData,error:emailError}=await supabaseClient.rpc('dashboard_login_email',{p_username:u});
-      if(emailError||!emailData)throw new Error('Invalid username or password.');
-      const {error:loginError}=await supabaseClient.auth.signInWithPassword({email:emailData,password:p});
+      const {error:loginError}=await supabaseClient.auth.signInWithPassword({email:u,password:p});
       if(loginError)throw new Error('Invalid username or password.');
       currentDashboardUser=await fetchDashboardProfile();
       if(!currentDashboardUser)throw new Error('This dashboard account is inactive or not configured.');
