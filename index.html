@@ -1094,7 +1094,7 @@ function operationalStage(r){
 }
 function submissionBreakdown(items){return {initial:items.filter(x=>x.status==='To be Submitted - Initial Review compelted').length,unallocated:items.filter(x=>x.status==='To be Submitted and Unallocated').length,provisional:items.filter(x=>x.status==='Provisional Sum CMI').length}}
 function submissionBreakdownHtml(items){const c=submissionBreakdown(items);return `<div class="kpi-group"><div class="kpi-sub initial"><span class="kpi-sub-label">Initial Review Completed</span><span class="kpi-sub-value">${c.initial}</span></div><div class="kpi-sub unallocated"><span class="kpi-sub-label">Unallocated</span><span class="kpi-sub-value">${c.unallocated}</span></div><div class="kpi-sub provisional"><span class="kpi-sub-label">Provisional Sums</span><span class="kpi-sub-value">${c.provisional}</span></div></div>`}
-function stageKpiHtml(label,items,style=''){return `<div class="card kpi kpi-stage ${style}"><div class="label">${label}</div><div class="value">${items.length}</div>${submissionBreakdownHtml(items)}</div>`}
+function stageKpiHtml(label,items,style='',total=null){const context=total===null||total===undefined?'':`<span class="value-context">out of ${total}</span>`;return `<div class="card kpi kpi-stage ${style}"><div class="label">${label}</div><div class="value">${items.length}${context}</div>${submissionBreakdownHtml(items)}</div>`}
 function programmeWeekRanges(){
  const base=new Date((programmeDataDate||todayISO())+'T00:00:00');
  const day=(base.getDay()+6)%7;
@@ -1145,10 +1145,10 @@ function weeklyActivityPlanHtml(){
   const last=plannedActivityCountForRange(row.id,ranges.last.start,ranges.last.finish);
   const current=plannedActivityCountForRange(row.id,ranges.current.start,ranges.current.finish);
   const next=plannedActivityCountForRange(row.id,ranges.next.start,ranges.next.finish);
-  const cumulative=cumulativePlannedActivityCount(row.id,ranges.next.finish);
-  return `<div class="weekly-plan-row"><div class="weekly-plan-activity">${row.label}</div><div class="weekly-plan-value">${last}</div><div class="weekly-plan-value">${current}</div><div class="weekly-plan-value">${next}</div><div class="weekly-plan-value cumulative">${cumulative}</div></div>`;
+  const cumulative=cumulativePlannedActivityCount(row.id,ranges.current.finish);
+  return `<div class="weekly-plan-row"><div class="weekly-plan-activity">${row.label}</div><div class="weekly-plan-value">${last}</div><div class="weekly-plan-value">${current}</div><div class="weekly-plan-value cumulative">${cumulative}</div><div class="weekly-plan-value">${next}</div></div>`;
  }).join('');
- return `<div class="card kpi weekly-activity-plan"><div class="label">Weekly Activity Plan</div><div class="weekly-plan-head"><span>Activity</span><span>Last Week<br><span class="weekly-plan-dates">${dateLabel(ranges.last)}</span></span><span>This Week<br><span class="weekly-plan-dates">${dateLabel(ranges.current)}</span></span><span>Next Week<br><span class="weekly-plan-dates">${dateLabel(ranges.next)}</span></span><span>Cumulative<br><span class="weekly-plan-dates">to ${formatDateText(ranges.next.finish)}</span></span></div>${body}</div>`;
+ return `<div class="card kpi weekly-activity-plan"><div class="label">Weekly Activity Plan</div><div class="weekly-plan-head"><span>Activity</span><span>Last Week<br><span class="weekly-plan-dates">${dateLabel(ranges.last)}</span></span><span>This Week<br><span class="weekly-plan-dates">${dateLabel(ranges.current)}</span></span><span>Cumulative<br><span class="weekly-plan-dates">to ${formatDateText(ranges.current.finish)}</span></span><span>Next Week<br><span class="weekly-plan-dates">${dateLabel(ranges.next)}</span></span></div>${body}</div>`;
 }
 function renderKpis(){
  const r=state.records,
@@ -1163,8 +1163,8 @@ function renderKpis(){
   submittedDgj=p.filter(x=>operationalStage(x)==='Submitted to DGJ');
  const cards=[
   `<div class="card kpi kpi-stage kpi-submit-card"><div class="label">To be Submitted</div><div class="value">${toSubmit.length}<span class="value-context">out of ${r.length}</span></div>${submissionBreakdownHtml(toSubmit)}</div>`,
+  `<div class="kpi-delivery-plan">${stageKpiHtml('In Delivery Plan',p,'',toSubmit.length)}</div>`,
   weeklyActivityPlanHtml(),
-  `<div class="kpi-delivery-plan">${stageKpiHtml('In Delivery Plan',p)}</div>`,
   `<div class="kpi-standard">${stageKpiHtml('Measurement Completed',measurementCompleted)}</div>`,
   `<div class="kpi-standard">${stageKpiHtml('In Progress',inprog)}</div>`,
   `<div class="kpi-standard">${stageKpiHtml('Tech & Com. Clearance Pending',clearancePending,'warn')}</div>`,
