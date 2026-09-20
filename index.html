@@ -262,13 +262,29 @@
   }
 
   async function startAuthenticatedDashboard(){
-    document.getElementById('authScreen')?.classList.add('auth-hidden');
-    document.getElementById('dashboardApp')?.classList.remove('auth-hidden');
+    const authScreen=document.getElementById('authScreen');
+    const dashboardApp=document.getElementById('dashboardApp');
+
+    // Keep the application hidden until the authenticated shared state is ready.
+    // This prevents users landing on an empty Executive Dashboard while the
+    // Supabase-backed state, delivery activities and resources are still loading.
     applyRoleAccess();
     await loadSharedDashboardState();
     await loadDeliveryActivitiesFromSupabase();
-    renderAll();
     await loadResourcesFromSupabase();
+
+    // Populate all dashboard content before revealing the application.
+    renderAll();
+
+    authScreen?.classList.add('auth-hidden');
+    dashboardApp?.classList.remove('auth-hidden');
+
+    // Render again after the visible layout has been painted. This guarantees
+    // the Executive Dashboard is fully populated immediately on login and also
+    // covers any layout-sensitive content.
+    await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+    renderAll();
+
     if(canViewChanges())await loadChangesLog();
     if(canAdmin()){await loadAuditLog();await loadDashboardUsers();}
   }
