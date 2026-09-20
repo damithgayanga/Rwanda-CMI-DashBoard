@@ -609,7 +609,7 @@
 <main class="main">
 <section class="tab active" id="tab-dashboard">
  <div class="grid kpis" id="kpiGrid"></div>
- <div class="section-title"><h2>Commercial Portfolio Overview</h2><span class="note">All charts are calculated from the current CMI Register and refresh automatically when register data changes.</span></div>
+ <div class="section-title"><h2>Commercial Portfolio Overview</h2></div>
  <div class="grid dashboard-pie-grid">
   <div class="card pie-card"><h3>CMI Status Split</h3><div id="statusPie"></div></div>
   <div class="card pie-card"><h3>To be Submitted — Category and Priority Split</h3><div id="priorityPie"></div></div>
@@ -626,9 +626,9 @@
    </div>
   </div>
  </div>
- <div class="section-title"><h2>Delivery Tracking</h2><span class="note">Delivery-plan performance is driven by the saved allocation and progress data.</span></div>
+ <div class="section-title"><h2>Delivery Tracking</h2></div>
  <div class="grid two"><div class="card" id="deliverySnapshot"></div><div class="card"><h3>Off-site resource delivery</h3><div id="offsiteBars" class="bars"></div></div></div>
- <div class="section-title"><h2>Resource Performance</h2><span class="note">Performance is calculated from the current Delivery Plan and submitted activity progress.</span></div>
+ <div class="section-title"><h2>Resource Performance</h2></div>
  <div class="resource-performance" id="resourcePerformance"></div>
  <div class="section-title"><h2>Highest-value open items</h2><span class="note">Known initial estimate; current register status = To be Submitted - Initial Review compelted.</span></div>
  <div class="card"><div class="table-wrap" style="max-height:420px"><table class="data-table" style="min-width:950px"><thead><tr><th>CMI</th><th>Asset</th><th>Location</th><th>Description</th><th>Initial Estimate</th><th>Priority</th></tr></thead><tbody id="topValueBody"></tbody></table></div></div>
@@ -784,7 +784,7 @@
  <div class="grid two"><div class="card"><h3>Data quality observations</h3><div id="qualityMetrics"></div></div><div class="card"><h3>Control rules</h3><div class="callout good"><b>Zero-value treatment:</b> $0.00 in Initial Estimate or Submitted Value is treated as blank for statuses other than Agreed and Submitted.</div><div class="callout" style="margin-top:10px"><b>Priority:</b> High ≥ $30,000; Medium ≥ $5,000 and &lt; $30,000; Low &lt; $5,000; blank = Unvalued.</div><div class="callout warn" style="margin-top:10px"><b>Multi-line CMIs:</b> repeated CMI references remain separate work items because scope lines can have different statuses and values.</div><div class="callout" style="margin-top:10px"><b>Persistence:</b> standalone edits are stored in this browser. Export Backup JSON before moving devices/browsers.</div></div></div>
  <div class="section-title"><h2>Multi-line CMI references</h2></div><div class="card"><div class="table-wrap" style="max-height:480px"><table class="data-table" style="min-width:900px"><thead><tr><th>CMI Key</th><th>Rows / Work Items</th><th>Statuses</th><th>Known Initial Estimate</th><th>Comment</th></tr></thead><tbody id="duplicateBody"></tbody></table></div></div>
 </section>
-<div class="footer">Standalone CMI management prototype · Source: <span id="sourceFileFoot"></span> · UMC JV / DMD Consult · Browser-local editing enabled.</div>
+
 </main></div>
 
 <div class="modal-backdrop" id="editModal"><div class="modal"><div class="modal-head"><h3 id="modalTitle">Edit CMI</h3><button class="btn" id="modalClose">Close</button></div><div class="modal-body"><form id="editForm" class="form-grid"><input type="hidden" id="eId"><div class="field"><label>CMI No.</label><input id="eCmiNo" required></div><div class="field"><label>Reference</label><input id="eReference"></div><div class="field full"><label>Description</label><textarea id="eDescription" required></textarea></div><div class="field"><label>CMI Date</label><input type="date" id="eCmiDate"></div><div class="field"><label>Register Status</label><select id="eStatus"></select></div><div class="field"><label>Asset Code</label><input id="eAsset"></div><div class="field"><label>Location</label><input id="eLocation"></div><div class="field"><label>Initial Estimate ($)</label><input type="number" step="0.01" id="eInitial"></div><div class="field"><label>Submitted Value ($)</label><input type="number" step="0.01" id="eSubmittedValue"></div><div class="field"><label>Agreed Amount ($)</label><input type="number" step="0.01" id="eAgreedAmount"></div><div class="field"><label>Submitted Date</label><input type="date" id="eSubmittedDate"></div><div class="field"><label>Agreed Date</label><input type="date" id="eAgreedDate"></div><div class="field full"><label>Remarks</label><textarea id="eRemarks"></textarea></div><div class="field full"><label>Notes</label><textarea id="eNotes"></textarea></div></form></div><div class="modal-foot"><button class="btn" id="modalCancel">Cancel</button><button class="btn primary" id="modalSave">Save changes</button></div></div></div>
@@ -1020,7 +1020,7 @@ function renderBars(){
  renderDonut('agreedComparisonPie',[
   {label:'Submitted Value',value:agreedSubmitted,color:'#2563a8'},
   {label:'Agreed Amount',value:agreedAmount,color:'#18835d'}
- ],{valueType:'money',useMagnitude:true,centerValue:String(agreed.length),centerLabel:'Agreed CMIs',note:'Legend values are the true signed net totals. Slice sizes use absolute magnitude because omission / credit CMIs can create negative net values.'});
+ ],{valueType:'money',useMagnitude:true,centerValue:String(agreed.length),centerLabel:'Agreed CMIs'});
 
  const agreedPortfolio=sum(state.records.filter(r=>r.status==='Agreed').map(r=>r.agreedAmount));
  const submittedPortfolio=sum(state.records.filter(r=>r.status==='Submitted').map(r=>r.submittedValue));
