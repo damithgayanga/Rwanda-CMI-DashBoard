@@ -128,14 +128,15 @@
   let currentDashboardUser=null;
 
   const ROLE_TABS={
-    admin:['dashboard','register','process','organisation','delivery','progress','activities','allocation','quality','audit'],
-    management:['dashboard','register','process','organisation','delivery','progress'],
-    progress:['delivery','progress']
+    admin:['dashboard','register','process','organisation','delivery','progress','activities','allocation','quality','changes','audit'],
+    management:['dashboard','register','process','organisation','delivery','progress','allocation','changes'],
+    progress:['dashboard','register','progress']
   };
 
   function currentRole(){return currentDashboardUser?.access_role||''}
   function canManageDelivery(){return currentRole()==='admin'||currentRole()==='management'}
   function canAdmin(){return currentRole()==='admin'}
+  function canViewChanges(){return currentRole()==='admin'||currentRole()==='management'}
 
   async function fetchDashboardProfile(){
     const {data:{user}}=await supabaseClient.auth.getUser();
@@ -162,7 +163,7 @@
     if(nameEl)nameEl.textContent=name;if(roleEl)roleEl.textContent=role;
     const active=document.querySelector('.tabbtn.active');
     if(!active||!allowed.has(active.dataset.tab)){
-      const first=role==='progress'?'delivery':(ROLE_TABS[role]||[])[0];
+      const first=(ROLE_TABS[role]||[])[0];
       const btn=document.querySelector(`.tabbtn[data-tab="${first}"]`);
       const tab=document.getElementById('tab-'+first);
       if(btn)btn.classList.add('active');if(tab)tab.classList.add('active');
@@ -492,9 +493,16 @@
         actual_finish:finish||null,
         progress_pct:pct
       };
-      const {error}=await supabaseClient
-        .from(DELIVERY_ACTIVITY_TABLE)
-        .upsert(payload,{onConflict:'cmi_key,activity_id'});
+      const {error}=await supabaseClient.rpc('dashboard_save_progress',{
+        p_cmi_key:payload.cmi_key,
+        p_cmi_no:payload.cmi_no,
+        p_cmi_record_id:payload.cmi_record_id,
+        p_activity_id:payload.activity_id,
+        p_activity_name:payload.activity_name,
+        p_actual_start:payload.actual_start,
+        p_actual_finish:payload.actual_finish,
+        p_progress_pct:payload.progress_pct
+      });
       if(error)throw error;
     }
   }
@@ -512,12 +520,11 @@
     }
   }
 
-  testSupabaseConnection();
 </script>
 
 </head>
 <body>
-<div class="auth-screen auth-hidden" id="authScreen">
+<div class="auth-screen" id="authScreen">
  <div class="auth-card">
   <h2>CMI Dashboard Login</h2>
   <p>Enter your assigned username and password to access the Rwanda CMI Assessment & Delivery Control Dashboard.</p>
@@ -527,7 +534,7 @@
   <div class="auth-error" id="loginError"></div>
  </div>
 </div>
-<div class="app" id="dashboardApp">
+<div class="app auth-hidden" id="dashboardApp">
 <header class="topbar">
  <div class="header-main">
   <div class="brand-left">
@@ -547,6 +554,7 @@
   <button class="tabbtn" data-tab="activities">Activity List</button>
   <button class="tabbtn" data-tab="allocation">Resource Allocation</button>
   <button class="tabbtn" data-tab="quality">Data Review</button>
+  <button class="tabbtn" data-tab="changes" id="changesTabBtn">Changes</button>
   <button class="tabbtn" data-tab="audit" id="auditTabBtn">Admin Audit</button>
  </nav>
 </header>
@@ -1660,19 +1668,14 @@ const logoutBtn=document.getElementById('logoutBtn');if(logoutBtn)logoutBtn.addE
 
 (async function bootstrapDashboard(){
  const {data:{session}}=await supabaseClient.auth.getSession();
- if(session){
-   currentDashboardUser=await fetchDashboardProfile();
+ if(session)currentDashboardUser=await fetchDashboardProfile();
+ if(currentDashboardUser){
+   await startAuthenticatedDashboard();
+   return;
  }
- if(!currentDashboardUser){
-   currentDashboardUser={username:'admin',display_name:'Admin',access_role:'admin',active:true,temporary:true};
- }
- document.getElementById('authScreen')?.classList.add('auth-hidden');
- document.getElementById('dashboardApp')?.classList.remove('auth-hidden');
- applyRoleAccess();
- await loadSharedDashboardState();
- await loadDeliveryActivitiesFromSupabase();
- renderAll();
- await loadResourcesFromSupabase();
+ await supabaseClient.auth.signOut();
+ document.getElementById('authScreen')?.classList.remove('auth-hidden');
+ document.getElementById('dashboardApp')?.classList.add('auth-hidden');
 })();
 </script>
 </body></html>
