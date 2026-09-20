@@ -830,7 +830,7 @@ const DEFAULT_DELIVERY_LEVEL1=[
  {id:'wbs-high',name:'High Priority CMIs',countSource:'High',order:1},
  {id:'wbs-medium',name:'Medium Priority CMIs',countSource:'Medium',order:2},
  {id:'wbs-low',name:'Low Priority CMIs',countSource:'Low',order:3},
- {id:'wbs-unallocated',name:'Unallocated Priority CMIs',countSource:'Unvalued',order:4}
+ {id:'wbs-unallocated',name:'Other CMIs (No Initial Estimate and Unallocated)',countSource:'Unvalued',order:4}
 ];
 const HIGH_LEVEL_TEMPLATE=[
  {id:'high-measure',groupId:'wbs-high',group:'High Priority CMIs',countSource:'High',activityId:'act-measure',activity:'Measurement Works & Valuation',startDate:'2026-09-09',targetDate:'2026-09-25',resources:[]},
@@ -848,11 +848,11 @@ const HIGH_LEVEL_TEMPLATE=[
  {id:'low-clearance',groupId:'wbs-low',group:'Low Priority CMIs',countSource:'Low',activityId:'act-clearance',activity:'Technical and Commercial Clearance',startDate:'2026-11-30',targetDate:'2026-12-07',resources:[]},
  {id:'low-review',groupId:'wbs-low',group:'Low Priority CMIs',countSource:'Low',activityId:'act-final-review',activity:'Final Review of the Submission',startDate:'2026-12-07',targetDate:'2026-12-09',resources:[]},
  {id:'low-dgj',groupId:'wbs-low',group:'Low Priority CMIs',countSource:'Low',activityId:'act-submit-dgj',activity:'Submission to DGJ',startDate:'2026-12-10',targetDate:'2026-12-16',resources:[]},
- {id:'unallocated-measure',groupId:'wbs-unallocated',group:'Unallocated Priority CMIs',countSource:'Unvalued',activityId:'act-measure',activity:'Measurement Works & Valuation',startDate:'',targetDate:'',resources:[]},
- {id:'unallocated-finalise',groupId:'wbs-unallocated',group:'Unallocated Priority CMIs',countSource:'Unvalued',activityId:'act-finalise',activity:'Review of Valuation and Compilation of all Documents',startDate:'',targetDate:'',resources:[]},
- {id:'unallocated-clearance',groupId:'wbs-unallocated',group:'Unallocated Priority CMIs',countSource:'Unvalued',activityId:'act-clearance',activity:'Technical and Commercial Clearance',startDate:'',targetDate:'',resources:[]},
- {id:'unallocated-review',groupId:'wbs-unallocated',group:'Unallocated Priority CMIs',countSource:'Unvalued',activityId:'act-final-review',activity:'Final Review of the Submission',startDate:'',targetDate:'',resources:[]},
- {id:'unallocated-dgj',groupId:'wbs-unallocated',group:'Unallocated Priority CMIs',countSource:'Unvalued',activityId:'act-submit-dgj',activity:'Submission to DGJ',startDate:'',targetDate:'',resources:[]}
+ {id:'unallocated-measure',groupId:'wbs-unallocated',group:'Other CMIs (No Initial Estimate and Unallocated)',countSource:'Unvalued',activityId:'act-measure',activity:'Measurement Works & Valuation',startDate:'',targetDate:'',resources:[]},
+ {id:'unallocated-finalise',groupId:'wbs-unallocated',group:'Other CMIs (No Initial Estimate and Unallocated)',countSource:'Unvalued',activityId:'act-finalise',activity:'Review of Valuation and Compilation of all Documents',startDate:'',targetDate:'',resources:[]},
+ {id:'unallocated-clearance',groupId:'wbs-unallocated',group:'Other CMIs (No Initial Estimate and Unallocated)',countSource:'Unvalued',activityId:'act-clearance',activity:'Technical and Commercial Clearance',startDate:'',targetDate:'',resources:[]},
+ {id:'unallocated-review',groupId:'wbs-unallocated',group:'Other CMIs (No Initial Estimate and Unallocated)',countSource:'Unvalued',activityId:'act-final-review',activity:'Final Review of the Submission',startDate:'',targetDate:'',resources:[]},
+ {id:'unallocated-dgj',groupId:'wbs-unallocated',group:'Other CMIs (No Initial Estimate and Unallocated)',countSource:'Unvalued',activityId:'act-submit-dgj',activity:'Submission to DGJ',startDate:'',targetDate:'',resources:[]}
 ]
 let state=loadState();let filteredRegister=[];let selectedAllocation=new Set();let expandedHighLevelActivities=new Set();let collapsedHighLevelGroups=new Set();let expandedCmiActivities=new Set();let expandedDeliveryCmis=new Set();let expandedDeliveryActivities=new Set();
 
@@ -869,6 +869,7 @@ function ensureShape(s){
  if(!Array.isArray(s.meta.deliveryLevel1))s.meta.deliveryLevel1=clone(DEFAULT_DELIVERY_LEVEL1);
  else{DEFAULT_DELIVERY_LEVEL1.forEach(d=>{if(!s.meta.deliveryLevel1.some(g=>g.id===d.id))s.meta.deliveryLevel1.push(clone(d))});s.meta.deliveryLevel1.forEach((g,i)=>{if(!g.id)g.id='wbs-custom-'+Date.now()+'-'+i;if(!g.name)g.name='Level 1 '+(i+1);if(!g.countSource)g.countSource='All';if(g.countSource===LEGACY_UNALLOCATED_CODE)g.countSource='Unallocated';if(g.order===undefined)g.order=i+1;});}
  s.meta.deliveryLevel1=s.meta.deliveryLevel1.filter(g=>g.id!=='wbs-other'&&g.name!=='Other CMI Reviews');
+ const otherDeliveryGroup=s.meta.deliveryLevel1.find(g=>g.id==='wbs-unallocated');if(otherDeliveryGroup){otherDeliveryGroup.name='Other CMIs (No Initial Estimate and Unallocated)';otherDeliveryGroup.countSource='Unvalued';}
  if(!Array.isArray(s.meta.highLevelPlan)){s.meta.highLevelPlan=HIGH_LEVEL_TEMPLATE.map(x=>({...clone(x),status:'To be Started',progressPct:0,finishDate:'',actualStartDate:'',actualFinishDate:'',notes:''}));s.meta.deliveryWbsVersion=4}
  else{
   s.meta.highLevelPlan.forEach(a=>{if(a.countSource===LEGACY_UNALLOCATED_CODE)a.countSource='Unallocated'});
@@ -882,6 +883,7 @@ function ensureShape(s){
   HIGH_LEVEL_TEMPLATE.forEach(t=>{if(!s.meta.highLevelPlan.some(x=>x.id===t.id))s.meta.highLevelPlan.push({...clone(t),status:'To be Started',progressPct:0,finishDate:'',actualStartDate:'',actualFinishDate:'',notes:''})});
   s.meta.highLevelPlan.forEach(a=>{if(!Array.isArray(a.resources))a.resources=[];if(!a.status)a.status='To be Started';if(a.progressPct===undefined)a.progressPct=0;if(a.finishDate===undefined)a.finishDate='';if(a.actualStartDate===undefined)a.actualStartDate='';if(a.actualFinishDate===undefined)a.actualFinishDate=a.finishDate||'';if(a.notes===undefined)a.notes='';if(!a.activityId){const d=s.meta.activityList.find(x=>String(x.name||'').trim().toLowerCase()===String(a.activity||'').trim().toLowerCase());if(d)a.activityId=d.id}if(a.activityId){const d=s.meta.activityList.find(x=>x.id===a.activityId);if(d)a.activity=d.name}if(!a.groupId){const g=s.meta.deliveryLevel1.find(x=>x.name===a.group)||s.meta.deliveryLevel1.find(x=>x.countSource===a.countSource);if(g)a.groupId=g.id}});
  }
+ s.meta.highLevelPlan.forEach(a=>{if(a.groupId==='wbs-unallocated'||String(a.id||'').startsWith('unallocated-')){a.groupId='wbs-unallocated';a.group='Other CMIs (No Initial Estimate and Unallocated)';a.countSource='Unvalued';}});
  s.records.forEach(r=>{if(r.status===LEGACY_UNALLOCATED_STATUS)r.status='To be Submitted and Unallocated';if(r.status==='To be'+' Submitted')r.status='To be Submitted - Initial Review compelted';if(r.agreedAmount===undefined){const src=SOURCE.records.find(x=>x.id===r.id);r.agreedAmount=src&&src.agreedAmount!==undefined?src.agreedAmount:null;}if(r.status==='To be'+' Investigated')r.status='Provisional Sum CMI';if(r.siteResource===undefined)r.siteResource='';if(r.offsiteResource===undefined)r.offsiteResource='';if(r.inDeliveryPlan===undefined)r.inDeliveryPlan=false;if(!r.deliveryStatus)r.deliveryStatus='To be Started';if(r.deliveryValue===undefined)r.deliveryValue=null;if(r.startDate===undefined)r.startDate='';if(r.targetDate===undefined)r.targetDate='';if(r.finishDate===undefined)r.finishDate='';if(r.progressPct===undefined)r.progressPct=0;if(r.progressNotes===undefined)r.progressNotes='';if(!Array.isArray(r.cmiActivities))r.cmiActivities=[];r.cmiActivities.forEach((a,i)=>{if(!a.id)a.id='cma-'+r.id+'-'+i;if(a.activityId===undefined)a.activityId='';if(a.activityName===undefined)a.activityName='';if(a.siteResource===undefined)a.siteResource='';if(a.offsiteResource===undefined)a.offsiteResource='';if(a.startDate===undefined)a.startDate='';if(a.targetDate===undefined)a.targetDate='';if(a.finishDate===undefined)a.finishDate='';if(a.actualStartDate===undefined)a.actualStartDate='';if(a.actualFinishDate===undefined)a.actualFinishDate=a.finishDate||'';if(!a.status)a.status='To be Started';if(a.progressPct===undefined)a.progressPct=0;if(!a.resourceProgress||typeof a.resourceProgress!=='object')a.resourceProgress={};if(a.notes===undefined)a.notes='';const d=s.meta.activityList.find(x=>x.id===a.activityId);if(d)a.activityName=d.name;});});
  return s;
 }
@@ -1095,7 +1097,9 @@ function allocationFilters(){const q=document.getElementById('aSearch').value.tr
 
 function highLevelCounts(){
  const tbs=state.records.filter(r=>r.status==='To be Submitted - Initial Review compelted');
- return {High:tbs.filter(r=>calcPriority(r)==='High').length,Medium:tbs.filter(r=>calcPriority(r)==='Medium').length,Low:tbs.filter(r=>calcPriority(r)==='Low').length,Unvalued:tbs.filter(r=>calcPriority(r)==='Unvalued').length,Unallocated:state.records.filter(r=>r.status==='To be Submitted and Unallocated').length,Investigated:state.records.filter(r=>r.status==='Provisional Sum CMI').length,Included:state.records.filter(r=>r.status==='Included in Other CMIs').length};
+ const unallocated=state.records.filter(r=>r.status==='To be Submitted and Unallocated');
+ const otherCount=tbs.filter(r=>calcPriority(r)==='Unvalued').length+unallocated.length;
+ return {High:tbs.filter(r=>calcPriority(r)==='High').length,Medium:tbs.filter(r=>calcPriority(r)==='Medium').length,Low:tbs.filter(r=>calcPriority(r)==='Low').length,Unvalued:otherCount,Unallocated:unallocated.length,Investigated:state.records.filter(r=>r.status==='Provisional Sum CMI').length,Included:state.records.filter(r=>r.status==='Included in Other CMIs').length};
 }
 function highLevelLabel(a){const c=highLevelCounts();let suffix='';if(['High','Medium','Low','Unvalued'].includes(a.countSource))suffix=` (${c[a.countSource]} CMIs)`;else if(a.countSource==='Unallocated')suffix=` (${c.Unallocated} CMIs)`;else if(a.countSource==='Investigated')suffix=` (${c.Investigated} CMIs)`;else if(a.countSource==='Included')suffix=` (${c.Included} CMIs)`;return `${a.group}${suffix}`}
 function toggleDeliverySection(id,btn){const panel=document.getElementById(id);if(!panel)return;const collapsed=panel.style.display!=='none';panel.style.display=collapsed?'none':'';panel.classList.toggle('hidden',collapsed);if(btn){btn.innerHTML=collapsed?'&#9662;':'&#9652;';btn.setAttribute('aria-expanded',collapsed?'false':'true');btn.title=collapsed?'Expand section':'Minimise section'}}
@@ -1612,6 +1616,11 @@ function highLevelGroupKey(a){return a.groupId||`${a.group}|${a.countSource}`}
 function toggleHighLevelGroup(key){collapsedHighLevelGroups.has(key)?collapsedHighLevelGroups.delete(key):collapsedHighLevelGroups.add(key);renderHighLevelGantt()}
 function highLevelRecordMatches(a,r){
  if(!r)return false;
+ const isOtherGroup=a.groupId==='wbs-unallocated'||String(a.id||'').startsWith('unallocated-');
+ if(isOtherGroup){
+  return r.status==='To be Submitted and Unallocated'
+   ||(r.status==='To be Submitted - Initial Review compelted'&&calcPriority(r)==='Unvalued');
+ }
  if(['High','Medium','Low','Unvalued'].includes(a.countSource)){
   if(['To be Submitted and Unallocated','Provisional Sum CMI','Included in Other CMIs'].includes(r.status))return false;
   return calcPriority(r)===a.countSource;
