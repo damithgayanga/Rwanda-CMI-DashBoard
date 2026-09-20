@@ -952,7 +952,20 @@ function savePortfolioAssumptions(){
  if(!Number.isFinite(u)||u<0||!Number.isFinite(p)||p<0){alert('Enter non-negative numeric values for both portfolio assumptions.');return}
  state.meta.urPortfolioAllowance=u;state.meta.provisionalPortfolioAllowance=p;persistStateOnly();renderBars();
 }
-function renderDeliverySnapshot(){const p=planned(),notstarted=p.filter(r=>r.deliveryStatus==='To be Started').length,inprog=p.filter(r=>r.deliveryStatus==='In Progress').length,completed=p.filter(r=>r.deliveryStatus==='Completed').length,submitted=p.filter(r=>r.deliveryStatus==='Submitted to Client').length,overdue=p.filter(r=>r.targetDate&&!completedDelivery(r)&&daysFromToday(r.targetDate)<0).length;document.getElementById('deliverySnapshot').innerHTML=`<h3>Saved delivery plan</h3><div class="metric-line"><span>Total planned</span><b>${p.length}</b></div><div class="metric-line"><span>To be Started</span><b>${notstarted}</b></div><div class="metric-line"><span>In Progress</span><b>${inprog}</b></div><div class="metric-line"><span>Completed / Submitted</span><b>${completed+submitted}</b></div><div class="metric-line"><span>Overdue</span><b>${overdue}</b></div>`;const vals=OFFSITE_RESOURCES.map(n=>[n,performanceFor(n).completed]);const mx=Math.max(1,...vals.map(x=>x[1]));document.getElementById('offsiteBars').innerHTML=vals.map(([n,v])=>`<div class="bar-row"><div class="bar-label">${esc(n)}</div><div class="bar-track"><div class="bar-fill green" style="width:${v/mx*100}%"></div></div><div class="bar-value">${v}</div></div>`).join('')}
+function renderDeliverySnapshot(){
+ const p=planned();
+ const measurementComplete=r=>activityComplete(findActivityByIdOrName(r,'act-measure','measurement works'));
+ const notstarted=p.filter(r=>r.deliveryStatus==='To be Started').length;
+ const measurementCompleted=p.filter(measurementComplete).length;
+ const inprog=p.filter(r=>r.deliveryStatus==='In Progress'&&!measurementComplete(r)).length;
+ const completed=p.filter(r=>r.deliveryStatus==='Completed').length;
+ const submitted=p.filter(r=>r.deliveryStatus==='Submitted to Client').length;
+ const overdue=p.filter(r=>r.targetDate&&!completedDelivery(r)&&daysFromToday(r.targetDate)<0).length;
+ document.getElementById('deliverySnapshot').innerHTML=`<h3>Saved delivery plan</h3><div class="metric-line"><span>Total planned</span><b>${p.length}</b></div><div class="metric-line"><span>To be Started</span><b>${notstarted}</b></div><div class="metric-line"><span>In Progress</span><b>${inprog}</b></div><div class="metric-line"><span>Measurement and Valuation Completed</span><b>${measurementCompleted}</b></div><div class="metric-line"><span>Completed / Submitted</span><b>${completed+submitted}</b></div><div class="metric-line"><span>Overdue</span><b>${overdue}</b></div>`;
+ const vals=OFFSITE_RESOURCES.map(n=>[n,performanceFor(n).completed]);
+ const mx=Math.max(1,...vals.map(x=>x[1]));
+ document.getElementById('offsiteBars').innerHTML=vals.map(([n,v])=>`<div class="bar-row"><div class="bar-label">${esc(n)}</div><div class="bar-track"><div class="bar-fill green" style="width:${v/mx*100}%"></div></div><div class="bar-value">${v}</div></div>`).join('')
+}
 function renderResourcePerformance(){document.getElementById('resourcePerformance').innerHTML=ALL_RESOURCES.map(n=>{const x=performanceFor(n);return `<div class="perf-card"><div class="name">${esc(n)}</div><div class="role">${esc(RESOURCE_ROLES[n])}</div><div class="perf-nums"><div class="perf-num"><b>${x.allocated}</b><span>Allocated</span></div><div class="perf-num"><b>${x.inprogress}</b><span>In Progress</span></div><div class="perf-num"><b>${x.completed}</b><span>Completed</span></div></div>${x.baseline?`<div class="badge-note">Includes ${x.baseline} reported completions before item-level tracking was backfilled.</div>`:''}</div>`}).join('')}
 function renderTop(){const top=state.records.filter(r=>r.status==='To be Submitted - Initial Review compelted'&&r.initialEstimate!==null).sort((a,b)=>b.initialEstimate-a.initialEstimate).slice(0,15);document.getElementById('topValueBody').innerHTML=top.map(r=>`<tr><td><b>${esc(r.cmiNo)}</b></td><td>${esc(r.assetCode)}</td><td>${esc(r.location)}</td><td class="desc">${esc(r.description)}</td><td class="money"><b>${money(r.initialEstimate)}</b></td><td>${priorityPill(calcPriority(r))}</td></tr>`).join('')}
 
