@@ -26,7 +26,7 @@ values
 ('act-finalise','Review of Valuation and Compilation of all Documents','Review the valuation and compile all supporting documents for the CMI submission package.',true,2),
 ('act-final-review','Final Review of the Submission','Final internal review before submission to DGJ.',true,3),
 ('act-submit-dgj','Submission to DGJ','Issue the completed CMI submission to DG Jones.',true,4),
-('act-priority','Allocate Priority Levels / Initial Judgement','Initial review, value judgement and priority allocation for UR / unvalued CMIs.',true,5),
+('act-priority','Allocate Priority Levels / Initial Judgement','Initial review, value judgement and priority allocation for Unallocated / unvalued CMIs.',true,5),
 ('act-investigate','Further Investigation','Further investigate closed / uncertain CMIs and confirm the required commercial action.',true,6),
 ('act-clearance','Technical and Commercial Clearance','Technical and commercial review / clearance, including CMIs stated as covered elsewhere.',true,7)
 on conflict (activity_id) do update
@@ -101,7 +101,7 @@ values
 ('low-review','wbs-low',2,'Final Review of the Submission','Low','act-final-review','2026-12-07','2026-12-09',true,4),
 ('low-dgj','wbs-low',2,'Submission to DGJ','Low','act-submit-dgj','2026-12-10','2026-12-16',true,5),
 
-('ur-priority','wbs-other',2,'Allocate Priority Levels / Initial Judgement','UR','act-priority','2026-09-01','2026-09-30',true,1),
+('unallocated-priority','wbs-other',2,'Allocate Priority Levels / Initial Judgement','Unallocated','act-priority','2026-09-01','2026-09-30',true,1),
 ('investigate-closed','wbs-other',2,'Further Investigation','Investigated','act-investigate','2026-09-01','2026-10-16',true,2),
 ('included-review','wbs-other',2,'Technical and Commercial Clearance','Included','act-clearance','2026-09-01','2026-10-30',true,3)
 on conflict (wbs_id) do update
@@ -140,7 +140,7 @@ values
 ('default_delivery_target','"2026-12-16"'::jsonb,'Current target date for the CMI delivery programme.'),
 ('weekly_capacity','12'::jsonb,'Current assumed CMI production capacity per week.'),
 ('full_offsite_team_start','"2026-09-21"'::jsonb,'Date from which the full off-site team is assumed available.'),
-('ur_portfolio_allowance','2000000'::jsonb,'Portfolio allowance used for UR / unvalued CMI dashboard analysis.'),
+('unallocated_portfolio_allowance','2000000'::jsonb,'Portfolio allowance used for Unallocated / unvalued CMI dashboard analysis.'),
 ('provisional_portfolio_allowance','3000000'::jsonb,'Portfolio allowance used for provisional-sum / investigation dashboard analysis.')
 on conflict (setting_key) do update
 set setting_value=excluded.setting_value,
