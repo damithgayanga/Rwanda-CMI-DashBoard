@@ -316,11 +316,11 @@
       },
       records: state.records.filter(r=>{
         const acts=r.cmiActivities||[];
-        return r.inDeliveryPlan||acts.length||hasActivityProgress(r);
+        return acts.length||hasActivityProgress(r);
       }).map(r=>({
         id:r.id,
         cmiKey:r.cmiKey,
-        inDeliveryPlan:!!r.inDeliveryPlan,
+        inDeliveryPlan:isInDeliveryPlanRecord(r),
         siteResource:r.siteResource||'',
         offsiteResource:r.offsiteResource||'',
         startDate:r.startDate||'',
@@ -374,11 +374,11 @@
     payload.records.forEach(sr=>{
       const r=state.records.find(x=>x.id===sr.id)||state.records.find(x=>String(x.cmiKey||'')===String(sr.cmiKey||''));
       if(!r)return;
-      r.inDeliveryPlan=!!(r.inDeliveryPlan||sr.inDeliveryPlan);
       ['siteResource','offsiteResource','startDate','targetDate','finishDate'].forEach(k=>{r[k]=sharedValue(r[k],sr[k])});
       if(sr.deliveryStatus&&sr.deliveryStatus!=='To be Started')r.deliveryStatus=sr.deliveryStatus;
       r.progressPct=Math.max(Number(r.progressPct)||0,Number(sr.progressPct)||0);
       r.cmiActivities=mergeActivityCollections(r.cmiActivities,sr.cmiActivities);
+      r.inDeliveryPlan=isInDeliveryPlanRecord(r);
     });
     state.meta.resourceAssignmentResetVersion=Math.max(1,Number(state.meta.resourceAssignmentResetVersion)||0);
     state=ensureShape(state);
@@ -427,9 +427,9 @@
   }
 
   function applyDeliveryActivityRow(row) {
-    const key=String(row.cmi_key||'').trim();
-    const r=state.records.find(x=>String(x.cmiKey||normCmi(x.cmiNo||''))===key)
-      || state.records.find(x=>String(x.id||'')===String(row.cmi_record_id||''));
+    const key=String(row.cmi_key||'').trim(),recordId=String(row.cmi_record_id||'').trim();
+    const r=(recordId?state.records.find(x=>String(x.id||'')===recordId):null)
+      || state.records.find(x=>String(x.cmiKey||normCmi(x.cmiNo||''))===key);
     if(!r)return false;
     if(!Array.isArray(r.cmiActivities))r.cmiActivities=[];
     let a=r.cmiActivities.find(x=>String(x.activityId||'')===String(row.activity_id||''));
@@ -467,8 +467,8 @@
     else a.status='To be Started';
     if(!a.resourceProgress||typeof a.resourceProgress!=='object')a.resourceProgress={};
     uniq([a.siteResource,a.offsiteResource]).filter(Boolean).forEach(n=>a.resourceProgress[n]=a.progressPct);
-    r.inDeliveryPlan=true;
-    return true;
+    r.inDeliveryPlan=isInDeliveryPlanRecord(r);
+    return String(r.id||'');
   }
 
   async function loadDeliveryActivitiesFromSupabase() {
@@ -484,13 +484,14 @@
       }
       const touched=new Set();
       (data||[]).forEach(row=>{
-        if(applyDeliveryActivityRow(row))touched.add(String(row.cmi_key||''));
+        const recordId=applyDeliveryActivityRow(row);
+        if(recordId)touched.add(recordId);
       });
       state.records.forEach(r=>{
-        if(touched.has(deliveryActivityKey(r))){
+        if(touched.has(String(r.id||''))){
           rollupCmiActivityPlan(r);
           rollupCmiProgress(r);
-          r.inDeliveryPlan=true;
+          r.inDeliveryPlan=isInDeliveryPlanRecord(r);
           r.deliveryStatus=derivedDeliveryStatus(r);
         }
       });
@@ -997,7 +998,7 @@ function setHeader(){
 }
 function hasActivityProgress(r){return (r.cmiActivities||[]).some(a=>!!(a.actualStartDate||a.actualFinishDate||Number(a.progressPct)>0))}
 function deliveryPlanApplicable(r){return !!(r&&derivedDeliveryStatus(r)!=='Not Applicable')}
-function isInDeliveryPlanRecord(r){return !!(r&&deliveryPlanApplicable(r)&&(r.inDeliveryPlan||(r.cmiActivities||[]).some(activityReadyForDelivery)||hasActivityProgress(r)))}
+function isInDeliveryPlanRecord(r){return !!(r&&deliveryPlanApplicable(r)&&((r.cmiActivities||[]).some(activityReadyForDelivery)||hasActivityProgress(r)))}
 function activityProgressAt100(a){return !!(a&&Number(a.progressPct)>=100)}
 function derivedDeliveryStatus(r){
  if(!r)return 'To be Started';
