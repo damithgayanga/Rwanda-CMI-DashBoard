@@ -363,41 +363,30 @@
 
   async function loadSharedDashboardState() {
     try{
-      const {data,error}=await supabaseClient.from('resources').select('id,resource_name,role,active,is_deleted,updated_at').eq('resource_name',SHARED_STATE_RESOURCE_NAME).limit(1);
+      const {data,error}=await supabaseClient.rpc('dashboard_get_shared_state');
       if(error){console.error('Unable to load shared dashboard state:',error);return false}
-      const row=(data||[])[0];
-      let loaded=false;
-      if(row&&row.role){
-        try{
-          const payload=JSON.parse(row.role);
-          loaded=mergeSharedState(payload);
-        }catch(e){console.error('Invalid shared dashboard state:',e)}
-      }
-      const meaningful=state.records.some(r=>r.inDeliveryPlan||(r.cmiActivities||[]).length||hasActivityProgress(r));
-      if(meaningful){
-        await saveSharedDashboardState(true);
-        sharedStateLoaded=true;
-      }
-      return loaded||meaningful;
+      if(!data){console.warn('No shared dashboard state was returned.');return false}
+      const payload=typeof data==='string'?JSON.parse(data):data;
+      const loaded=mergeSharedState(payload);
+      sharedStateLoaded=!!loaded;
+      return !!loaded;
     }catch(e){console.error('Shared dashboard state load failed:',e);return false}
   }
 
   async function saveSharedDashboardState(skipRemoteMerge=false) {
     try{
-      const {data,error}=await supabaseClient.from('resources').select('id,role').eq('resource_name',SHARED_STATE_RESOURCE_NAME).limit(1);
-      if(error){console.error('Unable to check shared dashboard state:',error);return}
-      const row=(data||[])[0];
-      if(row&&row.role&&!skipRemoteMerge){
-        try{mergeSharedState(JSON.parse(row.role))}catch(e){console.error('Unable to merge existing shared dashboard state before save:',e)}
+      if(!canManageDelivery())return;
+      if(!skipRemoteMerge){
+        const {data:remote,error:readError}=await supabaseClient.rpc('dashboard_get_shared_state');
+        if(readError){console.error('Unable to check shared dashboard state:',readError);return}
+        if(remote){
+          try{mergeSharedState(typeof remote==='string'?JSON.parse(remote):remote)}
+          catch(e){console.error('Unable to merge existing shared dashboard state before save:',e)}
+        }
       }
-      const payload=JSON.stringify(compactSharedState());
-      if(row){
-        const {error:updateError}=await supabaseClient.from('resources').update({role:payload,active:false,is_deleted:false}).eq('id',row.id);
-        if(updateError)console.error('Unable to update shared dashboard state:',updateError);
-      }else{
-        const {error:insertError}=await supabaseClient.from('resources').insert({resource_name:SHARED_STATE_RESOURCE_NAME,role:payload,active:false,is_deleted:false});
-        if(insertError)console.error('Unable to create shared dashboard state:',insertError);
-      }
+      const payload=compactSharedState();
+      const {error}=await supabaseClient.rpc('dashboard_save_shared_state',{p_payload:payload});
+      if(error)console.error('Unable to update shared dashboard state:',error);
     }catch(e){console.error('Shared dashboard state save failed:',e)}
   }
 
