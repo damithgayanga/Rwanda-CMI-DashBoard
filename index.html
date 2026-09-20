@@ -69,7 +69,7 @@
 @media print{.topbar{position:static}.tabs,.toolbar,.filters,.btn,.row-actions,.footer,.bulkbar{display:none!important}.main{max-width:none;padding:10px}.tab{display:block!important;page-break-after:always}.card{box-shadow:none}.table-wrap{max-height:none;overflow:visible}.data-table{min-width:0;font-size:8px}}
 
 .activity-master-grid{display:grid;grid-template-columns:1.2fr 2fr auto;gap:10px;align-items:end}.activity-master-table{min-width:1050px}.activity-master-table input[type="text"]{width:100%;border:1px solid #c8d4df;border-radius:7px;padding:8px 9px;font-size:11px}.activity-master-table input[type="checkbox"]{width:16px;height:16px}.activity-add-box{display:grid;grid-template-columns:minmax(220px,1fr) auto;gap:6px;align-items:center;min-width:330px}.activity-add-box select{width:100%;border:1px solid #c8d4df;border-radius:7px;background:#fff;padding:8px 9px;font-size:10px}.activity-plan-summary{display:flex;flex-wrap:wrap;gap:4px;max-width:380px}.activity-plan-panel{background:#f7fafc;border:1px solid #d9e3eb;border-radius:10px;padding:12px;margin:2px 0 8px}.activity-plan-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:9px}.activity-plan-head b{color:var(--navy);font-size:11px}.activity-assignment-table{width:100%;border-collapse:separate;border-spacing:0;font-size:9px;min-width:1050px}.activity-assignment-table th{background:#eaf1f6;color:#405568;text-align:left;padding:7px;border-bottom:1px solid #d5e0e8;white-space:nowrap}.activity-assignment-table td{padding:7px;border-bottom:1px solid #e8eef3;vertical-align:middle}.activity-assignment-table select,.activity-assignment-table input{width:100%;border:1px solid #c8d4df;border-radius:6px;background:#fff;padding:7px 8px;font-size:10px}.activity-assignment-table .activity-name-select{min-width:220px}.activity-assignment-table .resource-select{min-width:170px}.activity-assignment-table .date-input{min-width:130px}.cmi-plan-row td{background:#f8fbfd;padding:0 8px 8px}.activity-count{font-size:9px;color:var(--muted);margin-top:4px}.draft-pill{background:#fff1cf;color:#8b5a00}.activity-help{font-size:10px;color:var(--muted);line-height:1.5;margin-top:8px}.activity-toolbar{display:flex;gap:6px;align-items:center;flex-wrap:wrap}.activity-master-note{max-width:850px}.allocation-table-v2{min-width:1450px}.allocation-table-v2 td{vertical-align:middle}.allocation-table-v2 .desc{max-width:430px}.used-count{font-variant-numeric:tabular-nums;font-weight:850;color:var(--navy)}
-.hl-gantt-row.root-row{background:#dce9f2;font-weight:850}.hl-gantt-row.root-row .hl-activity-name{font-size:11px}.hl-gantt-row.wbs-row{background:#edf4f8}.hl-gantt-label .wbs-group-indent{width:14px;display:inline-block}.hl-gantt-label .wbs-activity-indent{width:38px;display:inline-block}.hl-gantt-label .wbs-resource-indent{width:66px;display:inline-block}
+.hl-gantt-row.root-row{background:#dce9f2;font-weight:850}.hl-gantt-row.root-row .hl-activity-name{font-size:11px}.hl-gantt-row.wbs-row{background:#edf4f8}.hl-gantt-row.cmi-row{background:#fbfcfe}.hl-gantt-row.cmi-row .hl-activity-name{font-size:9px;font-weight:800}.hl-gantt-row.cmi-row .resource-role{font-size:7.5px}.hl-gantt-label .wbs-group-indent{width:14px;display:inline-block}.hl-gantt-label .wbs-activity-indent{width:38px;display:inline-block}.hl-gantt-label .wbs-resource-indent{width:66px;display:inline-block}.hl-gantt-label .wbs-cmi-indent{width:94px;display:inline-block}
 
 .resource-master-grid{display:grid;grid-template-columns:minmax(220px,1.1fr) minmax(220px,1.2fr) minmax(150px,.7fr) auto;gap:10px;align-items:end}.resource-master-table{min-width:900px}.resource-master-table input[type="text"]{width:100%;border:1px solid #c8d4df;border-radius:7px;padding:8px 9px;font-size:11px}.resource-master-table input[type="checkbox"]{width:16px;height:16px}.resource-db-status{font-size:10px;color:var(--muted);margin-top:8px}.resource-db-status.error{color:var(--red);font-weight:700}.resource-db-status.good{color:var(--green);font-weight:700}
 
@@ -278,6 +278,7 @@
     programmeDataDate=todayISO();
     state.meta.dataDate=programmeDataDate;
     expandedDeliverySummaryActivities.clear();
+    expandedDeliverySummaryResources.clear();
     expandedHighLevelActivities.clear();
     collapsedHighLevelGroups=new Set((state.meta.highLevelPlan||[]).map(a=>a.groupId||`${a.group}|${a.countSource}`));
     deliveryRootCollapsed=false;
@@ -894,7 +895,7 @@ const HIGH_LEVEL_TEMPLATE=[
  {id:'provisional-review',groupId:'wbs-provisional',group:'Provisional Sum CMIs',countSource:'Investigated',activityId:'act-final-review',activity:'Final Review of the Submission',startDate:'',targetDate:'',resources:[]},
  {id:'provisional-dgj',groupId:'wbs-provisional',group:'Provisional Sum CMIs',countSource:'Investigated',activityId:'act-submit-dgj',activity:'Submission to DGJ',startDate:'',targetDate:'',resources:[]}
 ]
-let state=loadState();let programmeDataDate=todayISO();state.meta.dataDate=programmeDataDate;let filteredRegister=[];let selectedAllocation=new Set();let expandedHighLevelActivities=new Set();let collapsedHighLevelGroups=new Set();let deliveryRootCollapsed=false;let expandedDeliverySummaryActivities=new Set();let expandedCmiActivities=new Set();let expandedDeliveryCmis=new Set();let expandedDeliveryActivities=new Set();
+let state=loadState();let programmeDataDate=todayISO();state.meta.dataDate=programmeDataDate;let filteredRegister=[];let selectedAllocation=new Set();let expandedHighLevelActivities=new Set();let collapsedHighLevelGroups=new Set();let deliveryRootCollapsed=false;let expandedDeliverySummaryActivities=new Set();let expandedDeliverySummaryResources=new Set();let expandedCmiActivities=new Set();let expandedDeliveryCmis=new Set();let expandedDeliveryActivities=new Set();
 
 function clone(x){return JSON.parse(JSON.stringify(x))}
 function ensureShape(s){
@@ -1968,6 +1969,39 @@ function toggleDeliverySummaryActivity(activityId){
  expandedDeliverySummaryActivities.has(activityId)?expandedDeliverySummaryActivities.delete(activityId):expandedDeliverySummaryActivities.add(activityId);
  renderDeliveryHighLevelSummary();
 }
+function deliverySummaryResourceKey(activityId,resource){return activityId+'|'+resource}
+function toggleDeliverySummaryResource(activityId,resource){
+ const key=deliverySummaryResourceKey(activityId,resource);
+ expandedDeliverySummaryResources.has(key)?expandedDeliverySummaryResources.delete(key):expandedDeliverySummaryResources.add(key);
+ renderDeliveryHighLevelSummary();
+}
+function deliverySummaryResourceCmis(activityId,resource){
+ const grouped=new Map();
+ deliverySummaryResourceAssignments(activityId,resource).forEach(({r,ca})=>{
+  const key=normCmi(r.cmiNo);if(!key)return;
+  if(!grouped.has(key))grouped.set(key,{key,cmiNo:r.cmiNo||key,description:r.description||'',rows:[]});
+  grouped.get(key).rows.push({r,ca});
+ });
+ return Array.from(grouped.values()).map(g=>{
+  const starts=g.rows.map(x=>x.ca.startDate).filter(Boolean).sort();
+  const finishes=g.rows.map(x=>x.ca.targetDate).filter(Boolean).sort();
+  const actualStarts=g.rows.map(x=>x.ca.actualStartDate).filter(Boolean).sort();
+  const actualFinishes=g.rows.map(x=>x.ca.actualFinishDate).filter(Boolean).sort();
+  const vals=g.rows.map(x=>Math.max(0,Math.min(100,Number(x.ca.progressPct)||0)));
+  const startedRows=g.rows.filter(x=>x.ca.actualStartDate||x.ca.actualFinishDate||Number(x.ca.progressPct)>0);
+  const completedRows=g.rows.filter(x=>x.ca.actualFinishDate&&Number(x.ca.progressPct)>=100);
+  return {
+   key:g.key,cmiNo:g.cmiNo,description:g.description,
+   startDate:starts[0]||'',targetDate:finishes[finishes.length-1]||'',
+   actualStartDate:actualStarts[0]||'',
+   actualFinishDate:startedRows.length&&completedRows.length===startedRows.length?actualFinishes[actualFinishes.length-1]||'':'',
+   progress:vals.length?Math.round(vals.reduce((x,y)=>x+y,0)/vals.length):0
+  };
+ }).sort((a,b)=>{
+  const an=Number(String(a.key).replace(/\D/g,'')),bn=Number(String(b.key).replace(/\D/g,''));
+  return Number.isFinite(an)&&Number.isFinite(bn)&&an!==bn?an-bn:String(a.key).localeCompare(String(b.key));
+ });
+}
 function deliverySummaryCategoryDefs(){
  const c=highLevelCounts();
  return [
@@ -2056,13 +2090,19 @@ function renderDeliveryHighLevelSummary(){
   if(id==='act-measure'){
    const offsite=deliveryResourceOrder(currentOffsiteResources());
    offsite.forEach(resource=>{
-    const rs=deliverySummaryResourceSchedule(id,resource),rp=weeklyDeliverySummaryResourceCounts(id,resource,'targetDate',start,weeks),ra=weeklyDeliverySummaryResourceCounts(id,resource,'actualFinishDate',start,weeks);
-    html+=`<div class="hl-gantt-row resource-row"><div class="hl-gantt-label"><span class="wbs-activity-indent"></span><div><b>${esc(resource)} (${rs.count} CMIs)</b><div class="resource-role">Off-Site resource breakdown</div></div></div><div class="hl-datecell programme-date"><div class="date-line"><span class="date-prefix">P</span><span>${fmtDate(rs.startDate)}</span></div><div class="date-line"><span class="date-prefix">A</span><span>${fmtDate(rs.actualStartDate)}</span></div></div><div class="hl-datecell programme-date"><div class="date-line"><span class="date-prefix">P</span><span>${fmtDate(rs.targetDate)}</span></div><div class="date-line"><span class="date-prefix">A</span><span>${fmtDate(rs.actualFinishDate)}</span></div></div><div class="hl-progress-cell"><b>${rs.progress}%</b></div>${rowBars(rs,rp,ra)}</div>`;
+    const rs=deliverySummaryResourceSchedule(id,resource),rp=weeklyDeliverySummaryResourceCounts(id,resource,'targetDate',start,weeks),ra=weeklyDeliverySummaryResourceCounts(id,resource,'actualFinishDate',start,weeks),cmis=deliverySummaryResourceCmis(id,resource),resourceOpen=expandedDeliverySummaryResources.has(deliverySummaryResourceKey(id,resource)),resourceArg=JSON.stringify(resource).replace(/"/g,'&quot;');
+    html+=`<div class="hl-gantt-row resource-row"><div class="hl-gantt-label"><span class="wbs-activity-indent"></span>${cmis.length?`<button class="toggle" onclick="toggleDeliverySummaryResource('${id}',${resourceArg})">${resourceOpen?'−':'+'}</button>`:'<span class="child-indent"></span>'}<div><b>${esc(resource)} (${rs.count} CMIs)</b><div class="resource-role">Off-Site resource breakdown</div></div></div><div class="hl-datecell programme-date"><div class="date-line"><span class="date-prefix">P</span><span>${fmtDate(rs.startDate)}</span></div><div class="date-line"><span class="date-prefix">A</span><span>${fmtDate(rs.actualStartDate)}</span></div></div><div class="hl-datecell programme-date"><div class="date-line"><span class="date-prefix">P</span><span>${fmtDate(rs.targetDate)}</span></div><div class="date-line"><span class="date-prefix">A</span><span>${fmtDate(rs.actualFinishDate)}</span></div></div><div class="hl-progress-cell"><b>${rs.progress}%</b></div>${rowBars(rs,rp,ra)}</div>`;
+    if(resourceOpen){
+     cmis.forEach(cmi=>{
+      const emptyCounts=Array(weeks).fill(0),cmiLabel='CMI '+String(cmi.cmiNo||cmi.key).replace(/^CMI\s*/i,'');
+      html+=`<div class="hl-gantt-row cmi-row"><div class="hl-gantt-label"><span class="wbs-cmi-indent"></span><div><div class="hl-activity-name">${esc(cmiLabel)}</div>${cmi.description?`<div class="resource-role" title="${esc(cmi.description)}">${esc(cmi.description.length>70?cmi.description.slice(0,67)+'...':cmi.description)}</div>`:''}</div></div><div class="hl-datecell programme-date"><div class="date-line"><span class="date-prefix">P</span><span>${fmtDate(cmi.startDate)}</span></div><div class="date-line"><span class="date-prefix">A</span><span>${fmtDate(cmi.actualStartDate)}</span></div></div><div class="hl-datecell programme-date"><div class="date-line"><span class="date-prefix">P</span><span>${fmtDate(cmi.targetDate)}</span></div><div class="date-line"><span class="date-prefix">A</span><span>${fmtDate(cmi.actualFinishDate)}</span></div></div><div class="hl-progress-cell"><b>${cmi.progress}%</b></div>${rowBars(cmi,emptyCounts,emptyCounts)}</div>`;
+     });
+    }
    });
   }
  });
  box.innerHTML=html;
- if(summary)summary.textContent='WBS 1: overall CMI assessment and delivery · WBS 2: five core delivery activities · WBS 3: CMI category breakdowns, with an additional Off-Site resource breakdown under Measurement Works & Valuation. Planned counts are based on planned finish week; Actual counts require 100% progress and an Actual Finish Date.';
+ if(summary)summary.textContent='WBS 1: overall CMI assessment and delivery · WBS 2: five core delivery activities · WBS 3: CMI category breakdowns, with an additional Off-Site resource breakdown under Measurement Works & Valuation · Expand a resource to view each assigned CMI with its Planned and Actual dates, progress and programme bars. Planned counts are based on planned finish week; Actual counts require 100% progress and an Actual Finish Date.';
 }
 
 function renderHighLevelGantt(){
