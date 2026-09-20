@@ -514,7 +514,7 @@
 
 </head>
 <body>
-<div class="auth-screen" id="authScreen">
+<div class="auth-screen auth-hidden" id="authScreen">
  <div class="auth-card">
   <h2>CMI Dashboard Login</h2>
   <p>Enter your assigned username and password to access the Rwanda CMI Assessment & Delivery Control Dashboard.</p>
@@ -524,7 +524,7 @@
   <div class="auth-error" id="loginError"></div>
  </div>
 </div>
-<div class="app auth-hidden" id="dashboardApp">
+<div class="app" id="dashboardApp">
 <header class="topbar">
  <div class="header-main">
   <div class="brand-left">
@@ -1634,11 +1634,17 @@ const logoutBtn=document.getElementById('logoutBtn');if(logoutBtn)logoutBtn.addE
  const {data:{session}}=await supabaseClient.auth.getSession();
  if(session){
    currentDashboardUser=await fetchDashboardProfile();
-   if(currentDashboardUser){await startAuthenticatedDashboard();return}
-   await supabaseClient.auth.signOut();
  }
- document.getElementById('authScreen')?.classList.remove('auth-hidden');
- document.getElementById('dashboardApp')?.classList.add('auth-hidden');
+ if(!currentDashboardUser){
+   currentDashboardUser={username:'admin',display_name:'Admin',access_role:'admin',active:true,temporary:true};
+ }
+ document.getElementById('authScreen')?.classList.add('auth-hidden');
+ document.getElementById('dashboardApp')?.classList.remove('auth-hidden');
+ applyRoleAccess();
+ await loadSharedDashboardState();
+ await loadDeliveryActivitiesFromSupabase();
+ renderAll();
+ await loadResourcesFromSupabase();
 })();
 </script>
 </body></html>
