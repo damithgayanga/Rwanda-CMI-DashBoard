@@ -12,7 +12,7 @@
 .eyebrow{font-size:10px;letter-spacing:.13em;text-transform:uppercase;opacity:.72;font-weight:800}.topbar h1{font-size:22px;margin:3px 0 3px;line-height:1.16}.subline{font-size:11px;opacity:.82;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:820px}.updated{font-size:11px;text-align:right;opacity:.83;white-space:nowrap}.tabs{display:flex;gap:7px;flex-wrap:wrap;margin-top:13px}.tabbtn{border:1px solid rgba(255,255,255,.22);background:rgba(255,255,255,.06);color:white;border-radius:8px;padding:8px 11px;font-size:11px;font-weight:800}.tabbtn.active{background:#fff;color:var(--navy);border-color:#fff}
 .main{padding:22px 28px 42px;max-width:1900px;margin:auto}.tab{display:none}.tab.active{display:block}.grid{display:grid;gap:16px}.kpis{grid-template-columns:repeat(7,minmax(135px,1fr))}.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);padding:16px}.kpi .label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;font-weight:850}.kpi .value{font-size:28px;font-weight:850;margin-top:6px;color:var(--navy)}.kpi .hint{font-size:10px;color:var(--muted);margin-top:4px;line-height:1.4}.kpi.high .value{color:var(--red)}.kpi.good .value{color:var(--green)}.kpi.warn .value{color:var(--amber)}
 .kpi-group{display:grid;gap:2px;margin-top:7px}.kpi-sub{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:8px;padding:5px 0;border-top:1px solid #e6edf3}.kpi-sub-label{font-size:9px;line-height:1.25;color:var(--muted);font-weight:800}.kpi-sub-value{font-size:19px;line-height:1;font-weight:850;color:var(--navy);font-variant-numeric:tabular-nums}.kpi-sub.initial .kpi-sub-value{color:var(--amber)}.kpi-sub.unallocated .kpi-sub-value{color:var(--purple)}.kpi-sub.provisional .kpi-sub-value{color:var(--red)}
-.kpi-stage .value{font-size:24px;margin-top:4px}.kpi-stage .kpi-group{margin-top:4px}.kpi-stage .kpi-sub{padding:3px 0}.kpi-stage .kpi-sub-value{font-size:15px}
+.kpi-stage .value{font-size:24px;margin-top:4px}.kpi-stage .kpi-group{margin-top:4px}.kpi-stage .kpi-sub{padding:3px 0}.kpi-stage .kpi-sub-value{font-size:15px}.kpi .value .value-context{font-size:13px;font-weight:800;color:var(--muted);margin-left:5px}.next-week-plan .hint{margin-top:5px}.next-week-plan .kpi-sub-value{color:var(--navy)}
 .section-title{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:24px 0 10px}.section-title h2{font-size:17px;margin:0;color:var(--navy)}.section-title .note{font-size:10px;color:var(--muted);text-align:right}.two{grid-template-columns:1.05fr .95fr}.three{grid-template-columns:repeat(3,1fr)}.chart-card h3,.card h3{font-size:13px;margin:0 0 14px;color:var(--navy)}
 .bars{display:flex;flex-direction:column;gap:10px}.bar-row{display:grid;grid-template-columns:190px 1fr 60px;gap:10px;align-items:center;font-size:11px}.bar-label{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.bar-track{height:10px;background:#e7edf3;border-radius:999px;overflow:hidden}.bar-fill{height:100%;background:var(--blue);border-radius:999px}.bar-fill.green{background:var(--green)}.bar-fill.amber{background:#d18b24}.bar-fill.red{background:#c84b41}.bar-fill.purple{background:var(--purple)}.bar-value{text-align:right;font-weight:850;color:var(--navy)}
 .pill{display:inline-flex;align-items:center;border-radius:999px;padding:4px 8px;font-size:9px;font-weight:850;white-space:nowrap;margin:1px}.pill.high{background:#fee4e2;color:#912018}.pill.medium{background:#fff1cf;color:#8b5a00}.pill.low{background:#e7f6ef;color:#176b4d}.pill.unvalued{background:#ede9fe;color:#5b36a5}.pill.agreed,.pill.completed{background:#dcfae6;color:#176b4d}.pill.submitted,.pill.inprogress,.pill.measurementinprogress{background:#e0efff;color:#1859a9}.pill.pendingtechnicalandcommercialclearance{background:#fff1cf;color:#8b5a00}.pill.underfinalisationfordgjsubmission{background:#ede9fe;color:#5b36a5}.pill.notapplicable{background:#edf2f7;color:#4a5568}.pill.other,.pill.tobestarted{background:#edf2f7;color:#4a5568}.pill.investigate{background:#fff0e6;color:#9a4b00}.pill.unallocated{background:#f4e8ff;color:#7234a5}.pill.submittedtoclient{background:#dff6f4;color:#0f6f72}
@@ -1092,7 +1092,52 @@ function operationalStage(r){
 function submissionBreakdown(items){return {initial:items.filter(x=>x.status==='To be Submitted - Initial Review compelted').length,unallocated:items.filter(x=>x.status==='To be Submitted and Unallocated').length,provisional:items.filter(x=>x.status==='Provisional Sum CMI').length}}
 function submissionBreakdownHtml(items){const c=submissionBreakdown(items);return `<div class="kpi-group"><div class="kpi-sub initial"><span class="kpi-sub-label">Initial Review Completed</span><span class="kpi-sub-value">${c.initial}</span></div><div class="kpi-sub unallocated"><span class="kpi-sub-label">Unallocated</span><span class="kpi-sub-value">${c.unallocated}</span></div><div class="kpi-sub provisional"><span class="kpi-sub-label">Provisional Sums</span><span class="kpi-sub-value">${c.provisional}</span></div></div>`}
 function stageKpiHtml(label,items,style=''){return `<div class="card kpi kpi-stage ${style}"><div class="label">${label}</div><div class="value">${items.length}</div>${submissionBreakdownHtml(items)}</div>`}
-function renderKpis(){const r=state.records,tbs=r.filter(x=>x.status==='To be Submitted - Initial Review compelted'),unallocated=r.filter(x=>x.status==='To be Submitted and Unallocated'),provisional=r.filter(x=>x.status==='Provisional Sum CMI'),toSubmit=tbs.concat(unallocated,provisional),p=planned(),measurementCompleted=p.filter(x=>activityComplete(findActivityByIdOrName(x,'act-measure','measurement works'))),inprog=p.filter(x=>operationalStage(x)==='In Progress'),clearancePending=p.filter(x=>{const measure=findActivityByIdOrName(x,'act-measure','measurement works'),clearance=findActivityByIdOrName(x,'act-clearance','technical and commercial clearance');return activityComplete(measure)&&!activityComplete(clearance)}),submittedDgj=p.filter(x=>operationalStage(x)==='Submitted to DGJ');const cards=[`<div class="card kpi"><div class="label">Total CMIs</div><div class="value">${r.length}</div></div>`,`<div class="card kpi kpi-stage"><div class="label">To be Submitted</div><div class="value">${toSubmit.length}</div>${submissionBreakdownHtml(toSubmit)}</div>`,stageKpiHtml('In Delivery Plan',p),stageKpiHtml('Measurement Completed',measurementCompleted),stageKpiHtml('In Progress',inprog),stageKpiHtml('Tech & Com. Clearance Pending',clearancePending,'warn'),stageKpiHtml('Submitted to DGJ',submittedDgj,'good')];document.getElementById('kpiGrid').innerHTML=cards.join('')}
+function nextProgrammeWeekRange(){
+ const base=new Date((programmeDataDate||todayISO())+'T00:00:00');
+ const day=(base.getDay()+6)%7;
+ const thisMonday=new Date(base);thisMonday.setDate(base.getDate()-day);
+ const start=new Date(thisMonday);start.setDate(start.getDate()+7);
+ const finish=new Date(start);finish.setDate(finish.getDate()+6);
+ return {start:dateISO(start),finish:dateISO(finish)};
+}
+function plannedActivityCountForRange(activityId,start,finish){
+ const seen=new Set();
+ state.records.forEach(r=>{
+  const a=findActivityByIdOrName(r,activityId,activityId==='act-measure'?'measurement works':activityId==='act-clearance'?'technical and commercial clearance':'submission to dgj');
+  if(!a||!a.targetDate||a.targetDate<start||a.targetDate>finish)return;
+  seen.add(normCmi(r.cmiNo));
+ });
+ return seen.size;
+}
+function nextWeekPlanHtml(){
+ const range=nextProgrammeWeekRange();
+ const measurement=plannedActivityCountForRange('act-measure',range.start,range.finish);
+ const clearance=plannedActivityCountForRange('act-clearance',range.start,range.finish);
+ const submission=plannedActivityCountForRange('act-submit-dgj',range.start,range.finish);
+ return `<div class="card kpi kpi-stage next-week-plan"><div class="label">Next Week Plan</div><div class="hint">${formatDateText(range.start)} to ${formatDateText(range.finish)}</div><div class="kpi-group"><div class="kpi-sub"><span class="kpi-sub-label">Measurement &amp; Valuation</span><span class="kpi-sub-value">${measurement}</span></div><div class="kpi-sub"><span class="kpi-sub-label">Tech &amp; Com. Clearance</span><span class="kpi-sub-value">${clearance}</span></div><div class="kpi-sub"><span class="kpi-sub-label">Submitted to DGJ</span><span class="kpi-sub-value">${submission}</span></div></div></div>`;
+}
+function renderKpis(){
+ const r=state.records,
+  tbs=r.filter(x=>x.status==='To be Submitted - Initial Review compelted'),
+  unallocated=r.filter(x=>x.status==='To be Submitted and Unallocated'),
+  provisional=r.filter(x=>x.status==='Provisional Sum CMI'),
+  toSubmit=tbs.concat(unallocated,provisional),
+  p=planned(),
+  measurementCompleted=p.filter(x=>activityComplete(findActivityByIdOrName(x,'act-measure','measurement works'))),
+  inprog=p.filter(x=>{const measure=findActivityByIdOrName(x,'act-measure','measurement works');return !!(measure&&measure.actualStartDate)}),
+  clearancePending=p.filter(x=>{const measure=findActivityByIdOrName(x,'act-measure','measurement works'),clearance=findActivityByIdOrName(x,'act-clearance','technical and commercial clearance');return activityComplete(measure)&&!activityComplete(clearance)}),
+  submittedDgj=p.filter(x=>operationalStage(x)==='Submitted to DGJ');
+ const cards=[
+  `<div class="card kpi kpi-stage"><div class="label">To be Submitted</div><div class="value">${toSubmit.length}<span class="value-context">out of ${r.length}</span></div>${submissionBreakdownHtml(toSubmit)}</div>`,
+  stageKpiHtml('In Delivery Plan',p),
+  stageKpiHtml('Measurement Completed',measurementCompleted),
+  stageKpiHtml('In Progress',inprog),
+  stageKpiHtml('Tech & Com. Clearance Pending',clearancePending,'warn'),
+  stageKpiHtml('Submitted to DGJ',submittedDgj,'good'),
+  nextWeekPlanHtml()
+ ];
+ document.getElementById('kpiGrid').innerHTML=cards.join('');
+}
 function portfolioMoney(v){const n=Number(v)||0;const a=Math.abs(n);const txt=a>=1000000?'$'+(a/1000000).toLocaleString('en-US',{maximumFractionDigits:2})+'m':a>=1000?'$'+(a/1000).toLocaleString('en-US',{maximumFractionDigits:1})+'k':'$'+a.toLocaleString('en-US',{maximumFractionDigits:0});return n<0?'('+txt+')':txt}
 const PIE_COLORS=['#18835d','#2563a8','#bc7410','#6b4cb5','#b62d25','#23adc8','#75899b','#147e8b'];
 function renderDonut(id,slices,opt={}){
