@@ -2092,10 +2092,12 @@ function progressSearchRecords(){
  const el=document.getElementById('progressCmiSearch'),raw=(el?.value||'').trim();
  if(!raw)return [];
  const key=normCmi(raw),q=raw.toLowerCase();
- return state.records.filter(r=>ACTIONABLE.has(r.status)).filter(r=>{
-  const rk=String(r.cmiKey||normCmi(r.cmiNo));
-  return rk===key||String(r.cmiNo||'').toLowerCase()===q||String(r.cmiNo||'').toLowerCase().includes(q);
- });
+ return state.records
+  .filter(r=>ACTIONABLE.has(r.status)&&isInDeliveryPlanRecord(r))
+  .filter(r=>{
+   const rk=String(r.cmiKey||normCmi(r.cmiNo));
+   return rk===key||String(r.cmiNo||'').toLowerCase()===q||String(r.cmiNo||'').toLowerCase().includes(q);
+  });
 }
 function progressActivitiesForRecord(r){
  return (r.cmiActivities||[]).slice().sort((a,b)=>{
@@ -2132,7 +2134,7 @@ function renderProgress(){
  if(status)status.textContent='';
  if(!raw){body.innerHTML='<tr><td colspan="4" class="muted">Enter a CMI No. above.</td></tr>';if(btn)btn.disabled=true;return}
  const records=progressSearchRecords();
- if(!records.length){body.innerHTML='<tr><td colspan="4" class="muted">No matching CMI found.</td></tr>';if(btn)btn.disabled=true;return}
+ if(!records.length){body.innerHTML='<tr><td colspan="4" class="muted">No matching CMI found in the Delivery Plan.</td></tr>';if(btn)btn.disabled=true;return}
  let html='',activityCount=0;
  records.forEach(r=>{
   const activities=progressActivitiesForRecord(r);
