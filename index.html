@@ -363,7 +363,7 @@
   }
 
   function mergeSharedState(payload) {
-    if(!payload||!Array.isArray(payload.records))return false;
+    if(!payload||typeof payload!=='object')return false;
     if(payload.meta){
       ['highLevelPlan','deliveryLevel1','activityList'].forEach(k=>{
         if(Array.isArray(payload.meta[k])&&payload.meta[k].length)state.meta[k]=clone(payload.meta[k]);
@@ -379,20 +379,12 @@
     }else{
       state.meta.resourceAssignmentResetVersion=Math.max(1,Number(state.meta.resourceAssignmentResetVersion)||0);
     }
-    payload.records.forEach(sr=>{
-      const r=state.records.find(x=>x.id===sr.id)||state.records.find(x=>String(x.cmiKey||'')===String(sr.cmiKey||''));
-      if(!r)return;
-      // Shared roll-ups are authoritative, including explicit blanks/zero.
-      // This keeps every dashboard view aligned to the central Supabase plan state.
-      ['siteResource','offsiteResource','startDate','targetDate','finishDate'].forEach(k=>{
-        r[k]=sr[k]===undefined||sr[k]===null?'':String(sr[k]);
-      });
-      r.deliveryStatus=sr.deliveryStatus||'To be Started';
-      r.progressPct=Math.max(0,Math.min(100,Number(sr.progressPct)||0));
-      r.cmiActivities=mergeActivityCollections(r.cmiActivities,sr.cmiActivities);
-      r.inDeliveryPlan=isInDeliveryPlanRecord(r);
-    });
-    state.meta.resourceAssignmentResetVersion=Math.max(1,Number(state.meta.resourceAssignmentResetVersion)||0);
+
+    // IMPORTANT: record-level resources, dates and progress are intentionally
+    // NOT merged from the shared-state blob. The dedicated
+    // cmi_delivery_activities table is the single authoritative source for the
+    // Delivery Plan. This prevents a delayed/older shared-state save from
+    // temporarily resetting the Executive Dashboard to zero after an allocation.
     state=ensureShape(state);
     try{localStorage.setItem(STORAGE_KEY,JSON.stringify(state))}catch(e){}
     return true;
@@ -1467,7 +1459,14 @@ function refreshAllocationPlanState(r){
 }
 function autoSyncCmiActivityPlan(id){
  const r=state.records.find(x=>x.id===id);if(!r)return;
- readCmiActivityPanel(r);rollupCmiActivityPlan(r);persistStateOnly();refreshAllocationPlanState(r);renderGantt();
+ readCmiActivityPanel(r);
+ rollupCmiActivityPlan(r);
+ persistStateOnly();
+ refreshAllocationPlanState(r);
+ // Keep Executive Dashboard KPIs, Weekly Activity Plan and resource performance
+ // current immediately while the allocation is being edited.
+ renderDashboard();
+ renderGantt();
 }
 async function saveCmiActivityPlan(id){
  if(!canManageDelivery()){alert('Your access level cannot change the Delivery Plan.');return}
@@ -1487,10 +1486,18 @@ async function saveCmiActivityPlan(id){
  if(invalid){rollupCmiActivityPlan(r);persistStateOnly();refreshAllocationPlanState(r);alert(invalid);return}
  rollupCmiActivityPlan(r);
  try{
+  if(sharedStateSyncTimer){clearTimeout(sharedStateSyncTimer);sharedStateSyncTimer=null}
   await saveCmiPlanToSupabase(r);
+
+  // Re-read the authoritative Delivery Plan table immediately. This makes the
+  // on-screen dashboard match the database in the same interaction, with no refresh.
+  await loadDeliveryActivitiesFromSupabase();
+
+  // Store the now-confirmed state for the shared metadata/fallback snapshot.
+  await saveSharedDashboardState(true);
   try{localStorage.setItem(STORAGE_KEY,JSON.stringify(state))}catch(e){}
   renderAll();
-  alert(`${r.cmiNo} activity plan saved to Supabase. The shared Delivery Plan has been updated for everyone using this dashboard.`);
+  alert(`${r.cmiNo} activity plan saved to Supabase. The Dashboard and Delivery Plan are now updated immediately.`);
  }catch(e){
   console.error('Unable to save CMI Activity Plan to Supabase:',e);
   alert('The activity plan could not be saved to Supabase. No shared Delivery Plan update was confirmed. '+(e.message||''));
