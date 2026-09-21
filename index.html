@@ -1340,16 +1340,17 @@ function resourcePerformanceStatus(r,name){
  const measure=findActivityByIdOrName(r,'act-measure','measurement works');
  const submission=findActivityByIdOrName(r,'act-submit-dgj','submission to dgj');
 
- // Off-site resource work is complete when Measurement Works & Valuation is complete.
+ // Off-site resource performance follows the same Measurement & Valuation rules
+ // used by the Executive Dashboard: 100% = completed; Actual Start + <100% = in progress.
  if(location==='Off-Site'){
-  if(activityComplete(measure))return 'Completed';
-  if(activityStarted(measure))return 'In Progress';
+  if(activityProgressAt100(measure))return 'Completed';
+  if(measure&&measure.actualStartDate&&!activityProgressAt100(measure))return 'In Progress';
   return 'To be Started';
  }
 
- // On-site resource work remains open until the CMI has been submitted to DGJ.
+ // On-site completion follows the same 100% DGJ submission rule used by the KPI.
  if(location==='On-Site'){
-  if(activityComplete(submission))return 'Completed';
+  if(activityProgressAt100(submission))return 'Completed';
   const acts=(r.cmiActivities||[]).filter(a=>a.siteResource===name||a.offsiteResource===name);
   if(acts.some(activityStarted)||hasActivityProgress(r))return 'In Progress';
   return 'To be Started';
@@ -1452,34 +1453,35 @@ function weeklyActivityPlanHtml(){
  }).join('');
  return `<div class="card kpi weekly-activity-plan"><div class="label">Weekly Activity Plan</div><div class="weekly-plan-head"><span>Activity</span><span>Last Week<br><span class="weekly-plan-dates">${dateLabel(ranges.last)}</span></span><span>This Week<br><span class="weekly-plan-dates">${dateLabel(ranges.current)}</span></span><span>Cumulative<br><span class="weekly-plan-dates">to ${formatDateText(ranges.current.finish)}</span></span><span>Next Week<br><span class="weekly-plan-dates">${dateLabel(ranges.next)}</span></span></div>${body}</div>`;
 }
+function deliveryStageMetrics(){
+ const p=planned();
+ const rows=p.map(record=>({
+  record,
+  measure:findActivityByIdOrName(record,'act-measure','measurement works'),
+  clearance:findActivityByIdOrName(record,'act-clearance','technical and commercial clearance'),
+  submission:findActivityByIdOrName(record,'act-submit-dgj','submission to dgj')
+ }));
+ const measurementCompleted=rows.filter(x=>activityProgressAt100(x.measure)).map(x=>x.record);
+ const measurementInProgress=rows.filter(x=>x.measure&&!!x.measure.actualStartDate&&!activityProgressAt100(x.measure)).map(x=>x.record);
+ const assessmentCommenced=rows.filter(x=>activityProgressAt100(x.measure)||(x.measure&&!!x.measure.actualStartDate)).map(x=>x.record);
+ const clearanceCompleted=rows.filter(x=>activityProgressAt100(x.clearance)).map(x=>x.record);
+ const clearancePending=rows.filter(x=>activityProgressAt100(x.measure)&&!activityProgressAt100(x.clearance)).map(x=>x.record);
+ const submittedDgj=rows.filter(x=>activityProgressAt100(x.submission)).map(x=>x.record);
+ return {p,assessmentCommenced,measurementCompleted,measurementInProgress,clearanceCompleted,clearancePending,submittedDgj};
+}
 function renderKpis(){
  const r=state.records,
   tbs=r.filter(x=>x.status==='To be Submitted - Initial Review compelted'),
   unallocated=r.filter(x=>x.status==='To be Submitted and Unallocated'),
   provisional=r.filter(x=>x.status==='Provisional Sum CMI'),
   toSubmit=tbs.concat(unallocated,provisional),
-  p=planned(),
-  assessmentCommenced=p.filter(x=>{
-   const measure=findActivityByIdOrName(x,'act-measure','measurement works');
-   return activityStarted(measure);
-  }),
-  measurementCompleted=p.filter(x=>{
-   const measure=findActivityByIdOrName(x,'act-measure','measurement works');
-   return activityProgressAt100(measure);
-  }),
-  clearancePending=p.filter(x=>{
-   const measure=findActivityByIdOrName(x,'act-measure','measurement works');
-   const clearance=findActivityByIdOrName(x,'act-clearance','technical and commercial clearance');
-   return activityProgressAt100(measure)&&!activityProgressAt100(clearance);
-  }),
-  clearanceCompleted=p.filter(x=>{
-   const clearance=findActivityByIdOrName(x,'act-clearance','technical and commercial clearance');
-   return activityProgressAt100(clearance);
-  }),
-  submittedDgj=p.filter(x=>{
-   const submission=findActivityByIdOrName(x,'act-submit-dgj','submission to dgj');
-   return activityProgressAt100(submission);
-  });
+  stages=deliveryStageMetrics(),
+  p=stages.p,
+  assessmentCommenced=stages.assessmentCommenced,
+  measurementCompleted=stages.measurementCompleted,
+  clearancePending=stages.clearancePending,
+  clearanceCompleted=stages.clearanceCompleted,
+  submittedDgj=stages.submittedDgj;
  const cards=[
   `<div class="card kpi kpi-stage kpi-submit-card"><div class="label">To be Submitted</div><div class="value">${toSubmit.length}<span class="value-context">out of ${r.length}</span></div>${submissionBreakdownHtml(toSubmit)}</div>`,
   `<div class="kpi-delivery-plan">${stageKpiHtml('In Delivery Plan',p,'',toSubmit.length)}</div>`,
@@ -1550,16 +1552,14 @@ function savePortfolioAssumptions(){
  state.meta.unallocatedPortfolioAllowance=u;state.meta.provisionalPortfolioAllowance=p;persistStateOnly();renderBars();
 }
 function renderDeliverySnapshot(){
- const p=planned();
- const measurementComplete=r=>activityComplete(findActivityByIdOrName(r,'act-measure','measurement works'));
- const clearanceComplete=r=>activityComplete(findActivityByIdOrName(r,'act-clearance','technical and commercial clearance'));
- const startedItems=p.filter(r=>derivedDeliveryStatus(r)!=='To be Started');
- const started=startedItems.length;
- const measurementCompleted=p.filter(measurementComplete).length;
- const clearanceCompleted=p.filter(clearanceComplete).length;
- const inprog=startedItems.filter(r=>!measurementComplete(r)).length;
- const submitted=p.filter(r=>derivedDeliveryStatus(r)==='Submitted').length;
- document.getElementById('deliverySnapshot').innerHTML=`<div class="metric-line"><span>Total planned</span><b>${p.length}</b></div><div class="metric-line"><span>Started</span><b>${started}</b></div><div class="metric-line"><span>Measurement and Valuation Completed</span><b>${measurementCompleted}</b></div><div class="metric-line"><span>Technical and Commercial Clearance Obtained</span><b>${clearanceCompleted}</b></div><div class="metric-line"><span>Completed / Submitted</span><b>${submitted}</b></div><div class="metric-line"><span>In Progress</span><b>${inprog}</b></div>`;
+ const stages=deliveryStageMetrics();
+ const p=stages.p;
+ const started=stages.assessmentCommenced.length;
+ const measurementCompleted=stages.measurementCompleted.length;
+ const measurementInProgress=stages.measurementInProgress.length;
+ const clearanceCompleted=stages.clearanceCompleted.length;
+ const submitted=stages.submittedDgj.length;
+ document.getElementById('deliverySnapshot').innerHTML=`<div class="metric-line"><span>Total planned</span><b>${p.length}</b></div><div class="metric-line"><span>Started</span><b>${started}</b></div><div class="metric-line"><span>Measurement and Valuation Completed</span><b>${measurementCompleted}</b></div><div class="metric-line"><span>Technical and Commercial Clearance Obtained</span><b>${clearanceCompleted}</b></div><div class="metric-line"><span>Completed / Submitted</span><b>${submitted}</b></div><div class="metric-line"><span>Measurement and Valuation in Progress</span><b>${measurementInProgress}</b></div>`;
 }
 const DASHBOARD_OFFSITE_ORDER=['Kosala Gamage','Damith Samarasinghe','Devmini Amarasinghe'];
 const DASHBOARD_ONSITE_ORDER=['Dinuka Maduranga','Orville Mathew Gayatin','Chamara Ranasinghe'];
