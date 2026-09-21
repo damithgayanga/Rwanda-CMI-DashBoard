@@ -129,7 +129,7 @@
 .audit-filters{display:grid;grid-template-columns:1.2fr 1fr 1fr 1fr;gap:8px;margin-bottom:12px}
 .audit-table{min-width:1150px}.audit-json{max-width:360px;white-space:pre-wrap;word-break:break-word;font-size:9px;line-height:1.35}
 @media(max-width:800px){.audit-filters{grid-template-columns:1fr}}
-.readiness-overview-grid{display:grid;grid-template-columns:repeat(4,minmax(150px,1fr));gap:12px;margin-bottom:18px}.readiness-stat{padding:14px 16px}.readiness-stat span{display:block;font-size:9px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:850}.readiness-stat b{display:block;margin-top:6px;font-size:24px;color:var(--navy)}.readiness-summary-table{min-width:850px}.readiness-summary-table td:first-child{white-space:nowrap;font-weight:850;color:var(--navy)}.readiness-cmi-list{display:flex;flex-wrap:wrap;gap:5px}.readiness-cmi-chip{display:inline-flex;align-items:center;padding:3px 6px;border-radius:999px;background:#edf4fa;border:1px solid #d4e1eb;font-size:8px;font-weight:800;color:#29465f;white-space:nowrap}.readiness-detail-table{min-width:1380px}.readiness-detail-table td{vertical-align:middle}.readiness-detail-table td:nth-child(1),.readiness-detail-table td:nth-child(4){white-space:nowrap}.readiness-detail-table input[type="date"],.readiness-detail-table select{min-width:165px}.readiness-status{display:inline-flex;align-items:center;padding:4px 7px;border-radius:999px;font-size:8px;font-weight:850;white-space:nowrap}.readiness-status.given{background:#e4f5ec;color:#176b4e}.readiness-status.pending{background:#edf3f8;color:#52697b}.readiness-status.overdue{background:#fde9e7;color:#a33b31}.readiness-filters{grid-template-columns:1.4fr 1fr .8fr}@media(max-width:900px){.readiness-overview-grid{grid-template-columns:repeat(2,minmax(130px,1fr))}.readiness-filters{grid-template-columns:1fr}}
+.readiness-overview-grid{display:grid;grid-template-columns:repeat(4,minmax(150px,1fr));gap:12px;margin-bottom:18px}.readiness-stat{padding:14px 16px}.readiness-stat span{display:block;font-size:9px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:850}.readiness-stat b{display:block;margin-top:6px;font-size:24px;color:var(--navy)}.readiness-summary-table{min-width:850px}.readiness-summary-table td:first-child{white-space:nowrap;font-weight:850;color:var(--navy)}.readiness-cmi-list{display:flex;flex-wrap:wrap;gap:5px}.readiness-cmi-chip{display:inline-flex;align-items:center;padding:3px 6px;border-radius:999px;background:#edf4fa;border:1px solid #d4e1eb;font-size:8px;font-weight:800;color:#29465f;white-space:nowrap}.readiness-detail-table{min-width:1380px}.readiness-detail-table td{vertical-align:middle}.readiness-detail-table td:nth-child(1),.readiness-detail-table td:nth-child(4){white-space:nowrap}.readiness-detail-table input[type="date"],.readiness-detail-table select{min-width:165px}.readiness-display-value{min-height:30px;display:flex;align-items:center;padding:6px 8px;border:1px solid transparent;border-radius:6px;color:var(--ink);font-size:10px}.readiness-display-value.blank{color:#94a3b8}.readiness-edit-actions{display:flex;gap:5px;white-space:nowrap}.readiness-status{display:inline-flex;align-items:center;padding:4px 7px;border-radius:999px;font-size:8px;font-weight:850;white-space:nowrap}.readiness-status.given{background:#e4f5ec;color:#176b4e}.readiness-status.pending{background:#edf3f8;color:#52697b}.readiness-status.overdue{background:#fde9e7;color:#a33b31}.readiness-filters{grid-template-columns:1.4fr 1fr .8fr}@media(max-width:900px){.readiness-overview-grid{grid-template-columns:repeat(2,minmax(130px,1fr))}.readiness-filters{grid-template-columns:1fr}}
 </style>
 
 <!-- Supabase -->
@@ -146,14 +146,14 @@
 
   const ROLE_TABS={
     admin:['dashboard','register','process','organisation','delivery','readiness','progress','activities','allocation','quality','changes','audit'],
-    management:['dashboard','register','process','organisation','delivery','readiness','progress','allocation','changes'],
+    management:['dashboard','register','process','organisation','delivery','readiness','progress','allocation'],
     progress:['dashboard','register','progress']
   };
 
   function currentRole(){return currentDashboardUser?.access_role||''}
   function canManageDelivery(){return currentRole()==='admin'||currentRole()==='management'}
   function canAdmin(){return currentRole()==='admin'}
-  function canViewChanges(){return currentRole()==='admin'||currentRole()==='management'}
+  function canViewChanges(){return currentRole()==='admin'}
 
   async function fetchDashboardProfile(){
     const {data:{user}}=await supabaseClient.auth.getUser();
@@ -698,7 +698,7 @@
       const actualDate=row.actual_given_date||'';
       const dataDate=programmeDataDate||todayISO();
       let status='Pending';
-      if(actualDate)status='Given';
+      if(actualDate)status='Handed Over';
       else if(requiredDate&&requiredDate<dataDate)status='Overdue';
       return{
         r,
@@ -716,14 +716,14 @@
   }
 
   function readinessStatusHtml(status){
-    const cls=status==='Given'?'given':status==='Overdue'?'overdue':'pending';
+    const cls=status==='Handed Over'?'given':status==='Overdue'?'overdue':'pending';
     return '<span class="readiness-status '+cls+'">'+esc(status)+'</span>';
   }
 
   function renderReadiness(){
     if(!canManageDelivery())return;
     const all=documentReadinessItems();
-    const given=all.filter(x=>x.actualDate).length;
+    const given=all.filter(x=>x.status==='Handed Over').length;
     const due=all.filter(x=>x.status==='Overdue').length;
     const totalEl=document.getElementById('readinessTotal'),givenEl=document.getElementById('readinessGiven'),pendingEl=document.getElementById('readinessPending'),dueEl=document.getElementById('readinessDue');
     if(totalEl)totalEl.textContent=all.length;
@@ -756,17 +756,31 @@
     );
 
     const body=document.getElementById('readinessDetailBody');
-    const readonly=!canManageDelivery()?'disabled':'';
-    if(body)body.innerHTML=filtered.map(x=>'<tr data-readiness-row="'+esc(x.cmiRecordId)+'">'+
-      '<td><b>'+esc(x.cmiNo)+'</b></td>'+
-      '<td>'+esc(x.reference||'—')+'</td>'+
-      '<td class="desc">'+esc(x.description||'')+'</td>'+
-      '<td><b>'+esc(formatDateText(x.requiredDate))+'</b>'+(INITIAL_DOCUMENT_READINESS_RECORD_IDS.has(x.cmiRecordId)?'<div class="tiny muted">Initial programme CMI</div>':'<div class="tiny muted">Friday before M&V start</div>')+'</td>'+
-      '<td><input type="date" data-readiness-field="actual_given_date" value="'+esc(x.actualDate)+'" '+readonly+'></td>'+
-      '<td><select data-readiness-field="responsible_resource" '+readonly+'>'+resourceOptions(currentSiteResources(),x.responsibleResource,'Select On-Site resource')+'</select></td>'+
-      '<td>'+esc(x.offsiteResource||'—')+'</td>'+
-      '<td>'+readinessStatusHtml(x.status)+'</td>'+
-      '</tr>').join('')||'<tr><td colspan="8" class="muted">No document-readiness records match the current filters.</td></tr>';
+    if(body)body.innerHTML=filtered.map(x=>{
+      const editing=window.readinessEditingId===x.cmiRecordId && canManageDelivery();
+      const actualCell=editing
+        ? '<input type="date" data-readiness-field="actual_given_date" value="'+esc(x.actualDate)+'">'
+        : '<div class="readiness-display-value '+(!x.actualDate?'blank':'')+'">'+(x.actualDate?esc(formatDateText(x.actualDate)):'')+'</div>';
+      const responsibleCell=editing
+        ? '<select data-readiness-field="responsible_resource">'+resourceOptions(currentSiteResources(),x.responsibleResource,'Select On-Site resource')+'</select>'
+        : '<div class="readiness-display-value '+(!x.responsibleResource?'blank':'')+'">'+esc(x.responsibleResource||'')+'</div>';
+      const actionCell=canManageDelivery()
+        ? (editing
+            ? '<div class="readiness-edit-actions"><button class="iconbtn" type="button" data-readiness-action="save">Save</button><button class="iconbtn" type="button" data-readiness-action="cancel">Cancel</button></div>'
+            : '<button class="iconbtn" type="button" data-readiness-action="edit">Edit</button>')
+        : '';
+      return '<tr data-readiness-row="'+esc(x.cmiRecordId)+'">'+
+        '<td><b>'+esc(x.cmiNo)+'</b></td>'+
+        '<td>'+esc(x.reference||'—')+'</td>'+
+        '<td class="desc">'+esc(x.description||'')+'</td>'+
+        '<td><b>'+esc(formatDateText(x.requiredDate))+'</b>'+(INITIAL_DOCUMENT_READINESS_RECORD_IDS.has(x.cmiRecordId)?'<div class="tiny muted">Initial programme CMI</div>':'<div class="tiny muted">Friday before M&V start</div>')+'</td>'+
+        '<td>'+actualCell+'</td>'+
+        '<td>'+responsibleCell+'</td>'+
+        '<td>'+esc(x.offsiteResource||'—')+'</td>'+
+        '<td>'+readinessStatusHtml(x.status)+'</td>'+
+        '<td>'+actionCell+'</td>'+
+        '</tr>';
+    }).join('')||'<tr><td colspan="9" class="muted">No document-readiness records match the current filters.</td></tr>';
   }
 
   async function saveDocumentReadinessField(recordId){
@@ -791,6 +805,7 @@
       return;
     }
     await loadDocumentReadinessFromSupabase();
+    window.readinessEditingId='';
     if(statusEl)statusEl.textContent='Saved.';
     renderReadiness();
   }
@@ -972,10 +987,10 @@
 </section>
 
 <section class="tab" id="tab-readiness">
- <div class="section-title"><h2>Document Readiness Plan</h2><span class="note">Plan and track the document packs that On-Site resources must compile and hand over before Off-Site Measurement & Valuation starts.</span></div>
+ <div class="section-title"><h2>CMI Readiness for Measurement</h2><span class="note">Plan and track the document packs that On-Site resources must compile and hand over before Off-Site Measurement & Valuation starts.</span></div>
  <div class="readiness-overview-grid">
   <div class="card readiness-stat"><span>CMIs in Delivery Plan</span><b id="readinessTotal">0</b></div>
-  <div class="card readiness-stat"><span>Documents Given</span><b id="readinessGiven">0</b></div>
+  <div class="card readiness-stat"><span>Documents Handed Over</span><b id="readinessGiven">0</b></div>
   <div class="card readiness-stat"><span>Pending</span><b id="readinessPending">0</b></div>
   <div class="card readiness-stat"><span>Due / Overdue by Data Date</span><b id="readinessDue">0</b></div>
  </div>
@@ -995,12 +1010,12 @@
   <div class="filters readiness-filters">
    <input id="readinessSearch" placeholder="Search CMI / reference / description">
    <select id="readinessResponsibleFilter"><option value="">All responsible On-Site resources</option></select>
-   <select id="readinessStatusFilter"><option value="">All readiness statuses</option><option value="Pending">Pending</option><option value="Given">Given</option><option value="Overdue">Overdue</option></select>
+   <select id="readinessStatusFilter"><option value="">All readiness statuses</option><option value="Pending">Pending</option><option value="Handed Over">Handed Over</option><option value="Overdue">Overdue</option></select>
   </div>
   <div class="small muted" id="readinessSaveStatus" style="margin-bottom:8px"></div>
   <div class="table-wrap">
    <table class="data-table readiness-detail-table">
-    <thead><tr><th>CMI No.</th><th>CMI Reference</th><th>Description</th><th>Documents Required Date</th><th>Actual Date Given to Off-Site</th><th>Responsible On-Site Resource</th><th>Off-Site Resource</th><th>Status</th></tr></thead>
+    <thead><tr><th>CMI No.</th><th>CMI Reference</th><th>Description</th><th>Documents Required Date</th><th>Actual Date Given to Off-Site</th><th>Responsible On-Site Resource</th><th>Off-Site Resource</th><th>Status</th><th>Action</th></tr></thead>
     <tbody id="readinessDetailBody"></tbody>
    </table>
   </div>
@@ -2505,7 +2520,14 @@ document.querySelectorAll('.tabbtn').forEach(b=>b.addEventListener('click',()=>{
 const readinessSearchEl=document.getElementById('readinessSearch');if(readinessSearchEl)readinessSearchEl.addEventListener('input',renderReadiness);
 const readinessResponsibleFilterEl=document.getElementById('readinessResponsibleFilter');if(readinessResponsibleFilterEl)readinessResponsibleFilterEl.addEventListener('change',renderReadiness);
 const readinessStatusFilterEl=document.getElementById('readinessStatusFilter');if(readinessStatusFilterEl)readinessStatusFilterEl.addEventListener('change',renderReadiness);
-const readinessDetailBodyEl=document.getElementById('readinessDetailBody');if(readinessDetailBodyEl)readinessDetailBodyEl.addEventListener('change',e=>{if(!e.target.matches('[data-readiness-field]'))return;const tr=e.target.closest('[data-readiness-row]');if(tr)saveDocumentReadinessField(tr.dataset.readinessRow)});
+const readinessDetailBodyEl=document.getElementById('readinessDetailBody');if(readinessDetailBodyEl)readinessDetailBodyEl.addEventListener('click',e=>{
+ const btn=e.target.closest('[data-readiness-action]');if(!btn)return;
+ const tr=btn.closest('[data-readiness-row]');if(!tr)return;
+ const recordId=tr.dataset.readinessRow,action=btn.dataset.readinessAction;
+ if(action==='edit'){window.readinessEditingId=recordId;renderReadiness();return}
+ if(action==='cancel'){window.readinessEditingId='';renderReadiness();return}
+ if(action==='save'){saveDocumentReadinessField(recordId)}
+});
 const progressCmiSearchEl=document.getElementById('progressCmiSearch');if(progressCmiSearchEl)progressCmiSearchEl.addEventListener('input',renderProgress);
 const applyDataDateBtn=document.getElementById('applyDataDateBtn');if(applyDataDateBtn)applyDataDateBtn.addEventListener('click',applyDataDate);
 const resetDataDateBtn=document.getElementById('resetDataDateBtn');if(resetDataDateBtn)resetDataDateBtn.addEventListener('click',resetDataDate);
