@@ -434,8 +434,19 @@
 
   const DELIVERY_ACTIVITY_TABLE = 'cmi_delivery_activities';
 
+  function deliveryRecordIdentity(r) {
+    return String(r?.id || r?.cmiKey || normCmi(r?.cmiNo || '')).trim();
+  }
+
   function deliveryActivityKey(r) {
-    return String(r?.cmiKey || normCmi(r?.cmiNo || '')).trim();
+    const base=String(r?.cmiKey || normCmi(r?.cmiNo || '')).trim();
+    // Some register rows legitimately share the same displayed CMI number.
+    // Supabase requires (cmi_key, activity_id) to be unique, so only duplicate
+    // displayed numbers use the stable register row id as a suffix.
+    const duplicateCount=(state?.records||[]).filter(x=>
+      String(x?.cmiKey || normCmi(x?.cmiNo || '')).trim()===base
+    ).length;
+    return duplicateCount>1 ? base+'__'+deliveryRecordIdentity(r) : base;
   }
 
   function applyDeliveryActivityRow(row) {
@@ -1169,7 +1180,7 @@ function plannedActivityCountForRange(activityId,start,finish){
   if(!deliveryPlanApplicable(r)||!ACTIONABLE.has(r.status)||!isInDeliveryPlanRecord(r))return;
   const a=findActivityByIdOrName(r,activityId,activityNamePart(activityId));
   if(!a||!a.targetDate||a.targetDate<start||a.targetDate>finish)return;
-  seen.add(normCmi(r.cmiNo));
+  seen.add(deliveryRecordIdentity(r));
  });
  return seen.size;
 }
@@ -1180,7 +1191,7 @@ function cumulativePlannedActivityCount(activityId,throughDate){
   if(!deliveryPlanApplicable(r)||!ACTIONABLE.has(r.status)||!isInDeliveryPlanRecord(r))return;
   const a=findActivityByIdOrName(r,activityId,activityNamePart(activityId));
   if(!a||!a.targetDate||a.targetDate>throughDate)return;
-  seen.add(normCmi(r.cmiNo));
+  seen.add(deliveryRecordIdentity(r));
  });
  return seen.size;
 }
@@ -1987,7 +1998,7 @@ function weeklyHighLevelCounts(a,dateField,timelineStart,weeks,groupMode=false){
    const d=ca[dateField];if(!d)return;
    const idx=Math.floor(calendarDayDiff(d,timelineStart)/7);
    if(idx<0||idx>=weeks)return;
-   const key=normCmi(r.cmiNo)+'|'+idx;
+   const key=deliveryRecordIdentity(r)+'|'+idx;
    if(seen.has(key))return;
    seen.add(key);counts[idx]++;
   });
@@ -2004,7 +2015,7 @@ function weeklyHighLevelResourceCounts(a,resource,dateField,timelineStart,weeks)
   const d=ca[dateField];if(!d)return;
   const idx=Math.floor(calendarDayDiff(d,timelineStart)/7);
   if(idx<0||idx>=weeks)return;
-  const key=normCmi(r.cmiNo)+'|'+idx;
+  const key=deliveryRecordIdentity(r)+'|'+idx;
   if(seen.has(key))return;
   seen.add(key);counts[idx]++;
  });
@@ -2023,7 +2034,7 @@ function weeklyDeliveryRootCounts(groupRows,dateField,timelineStart,weeks){
    }
    if(!date)continue;
    const idx=Math.floor(calendarDayDiff(date,timelineStart)/7);
-   if(idx>=0&&idx<weeks){const key=normCmi(r.cmiNo)+'|'+idx;if(!seen.has(key)){seen.add(key);counts[idx]++;}}
+   if(idx>=0&&idx<weeks){const key=deliveryRecordIdentity(r)+'|'+idx;if(!seen.has(key)){seen.add(key);counts[idx]++;}}
    break;
   }
  });
@@ -2035,7 +2046,7 @@ function deliveryRootProgress(groups){
  return values.length?Math.round(values.reduce((sum,v)=>sum+v,0)/values.length):0;
 }
 function deliveryRootCmiCount(groupRows){
- const seen=new Set();state.records.forEach(r=>{if(groupRows.some(a=>highLevelRecordMatches(a,r)))seen.add(normCmi(r.cmiNo))});return seen.size;
+ const seen=new Set();state.records.forEach(r=>{if(groupRows.some(a=>highLevelRecordMatches(a,r)))seen.add(deliveryRecordIdentity(r))});return seen.size;
 }
 
 const DELIVERY_SUMMARY_ROOT_COUNT=491;
@@ -2122,7 +2133,7 @@ function weeklyDeliverySummaryActivityCounts(activityId,dateField,timelineStart,
    if(isActual&&(!a.actualFinishDate||Number(a.progressPct)!==100))return;
    const d=a[dateField];if(!d)return;
    const idx=Math.floor(calendarDayDiff(d,timelineStart)/7);if(idx<0||idx>=weeks)return;
-   const key=normCmi(r.cmiNo)+'|'+idx;if(seen.has(key))return;seen.add(key);counts[idx]++;
+   const key=deliveryRecordIdentity(r)+'|'+idx;if(seen.has(key))return;seen.add(key);counts[idx]++;
   });
  });
  return counts;
@@ -2133,7 +2144,7 @@ function weeklyDeliverySummaryResourceCounts(activityId,resource,dateField,timel
   if(isActual&&(!ca.actualFinishDate||Number(ca.progressPct)!==100))return;
   const d=ca[dateField];if(!d)return;
   const idx=Math.floor(calendarDayDiff(d,timelineStart)/7);if(idx<0||idx>=weeks)return;
-  const key=normCmi(r.cmiNo)+'|'+idx;if(seen.has(key))return;seen.add(key);counts[idx]++;
+  const key=deliveryRecordIdentity(r)+'|'+idx;if(seen.has(key))return;seen.add(key);counts[idx]++;
  });
  return counts;
 }
