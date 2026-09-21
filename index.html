@@ -197,6 +197,11 @@
   }
 
   async function signOutDashboard(){
+    if(deliveryRealtimeRefreshTimer){clearTimeout(deliveryRealtimeRefreshTimer);deliveryRealtimeRefreshTimer=null}
+    if(deliveryRealtimeChannel){
+      try{await supabaseClient.removeChannel(deliveryRealtimeChannel)}catch(e){}
+      deliveryRealtimeChannel=null;
+    }
     await supabaseClient.auth.signOut();
     location.reload();
   }
@@ -272,6 +277,7 @@
     await loadSharedDashboardState();
     await loadDeliveryActivitiesFromSupabase();
     await loadResourcesFromSupabase();
+    startDeliveryRealtimeSubscription();
 
     // Every authenticated opening starts at today's Data Date and with the
     // first two programme WBS levels visible. User changes remain session-only.
@@ -301,6 +307,8 @@
 
   const SHARED_STATE_RESOURCE_NAME = '__CMI_DASHBOARD_SHARED_STATE__';
   let sharedStateSyncTimer = null;
+  let deliveryRealtimeChannel = null;
+  let deliveryRealtimeRefreshTimer = null;
   let sharedStateLoaded = false;
 
   function compactSharedState() {
@@ -506,6 +514,35 @@
       console.error('Delivery Plan activity load failed:',e);
       return false;
     }
+  }
+
+  function queueDeliveryRealtimeRefresh() {
+    if(deliveryRealtimeRefreshTimer)clearTimeout(deliveryRealtimeRefreshTimer);
+    deliveryRealtimeRefreshTimer=setTimeout(async()=>{
+      deliveryRealtimeRefreshTimer=null;
+      try{
+        await loadDeliveryActivitiesFromSupabase();
+        renderAll();
+      }catch(e){
+        console.error('Unable to refresh live Delivery Plan state:',e);
+      }
+    },80);
+  }
+
+  function startDeliveryRealtimeSubscription() {
+    if(deliveryRealtimeChannel)return;
+    deliveryRealtimeChannel=supabaseClient
+      .channel('cmi-delivery-activities-live')
+      .on(
+        'postgres_changes',
+        {event:'*',schema:'public',table:DELIVERY_ACTIVITY_TABLE},
+        ()=>queueDeliveryRealtimeRefresh()
+      )
+      .subscribe(status=>{
+        if(status==='CHANNEL_ERROR'||status==='TIMED_OUT'){
+          console.error('Delivery Plan realtime subscription status:',status);
+        }
+      });
   }
 
   async function saveCmiPlanToSupabase(r) {
@@ -1461,7 +1498,12 @@ function autoSyncCmiActivityPlan(id){
  const r=state.records.find(x=>x.id===id);if(!r)return;
  readCmiActivityPanel(r);
  rollupCmiActivityPlan(r);
- persistStateOnly();
+
+ // Draft edits stay local until "Save CMI Activity Plan" is pressed.
+ // Do not queue a shared-state write for each field change because that can race
+ // the authoritative cmi_delivery_activities save and temporarily regress KPIs.
+ try{localStorage.setItem(STORAGE_KEY,JSON.stringify(state))}catch(e){}
+
  refreshAllocationPlanState(r);
  // Keep Executive Dashboard KPIs, Weekly Activity Plan and resource performance
  // current immediately while the allocation is being edited.
@@ -1493,10 +1535,15 @@ async function saveCmiActivityPlan(id){
   // on-screen dashboard match the database in the same interaction, with no refresh.
   await loadDeliveryActivitiesFromSupabase();
 
-  // Store the now-confirmed state for the shared metadata/fallback snapshot.
-  await saveSharedDashboardState(true);
+  // Render immediately from the confirmed authoritative DB rows.
+  // Never wait for the secondary shared-state snapshot before updating the UI.
   try{localStorage.setItem(STORAGE_KEY,JSON.stringify(state))}catch(e){}
   renderAll();
+
+  // Shared state now acts only as a secondary metadata/fallback snapshot.
+  // Run it asynchronously so it cannot block or regress the live dashboard.
+  saveSharedDashboardState(true).catch(e=>console.error('Unable to update shared metadata snapshot:',e));
+
   alert(`${r.cmiNo} activity plan saved to Supabase. The Dashboard and Delivery Plan are now updated immediately.`);
  }catch(e){
   console.error('Unable to save CMI Activity Plan to Supabase:',e);
