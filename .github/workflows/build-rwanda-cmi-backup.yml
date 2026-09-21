@@ -1,0 +1,50 @@
+name: Build Rwanda CMI Backup
+on:
+  push:
+    paths:
+      - 'backup-staging/rwanda-cmi-db-2026-09-21.pgp.b64'
+      - '.github/workflows/build-rwanda-cmi-backup.yml'
+permissions:
+  contents: read
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build recovery package
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p backup/package
+          tr -d '\n\r ' < backup-staging/rwanda-cmi-db-2026-09-21.pgp.b64 | base64 -d > backup/package/rwanda-cmi-database.pgp
+          cp index.html backup/package/index.html
+          cp -R supabase backup/package/supabase
+          cat > backup/package/README-RESTORE.txt <<'EOF'
+Rwanda CMI Dashboard Recovery Backup
+Created: 21-Sep-2026
+Supabase project: bihinnobxcpotuctursj
+Application repository: damithgayanga/Rwanda-CMI-DashBoard
+
+Contents:
+- rwanda-cmi-database.pgp : AES-256 encrypted database recovery payload
+- index.html : application code snapshot
+- supabase/ : database schema/setup SQL scripts
+- manifest.txt : source commit information
+
+To decrypt the database payload, use the separate recovery key stored with this backup in the private OneDrive backup folder.
+Authentication secrets, password hashes, access tokens, and service keys are intentionally excluded.
+EOF
+          {
+            echo "Backup date: 2026-09-21"
+            echo "Repository: damithgayanga/Rwanda-CMI-DashBoard"
+            echo "Source commit: f59a28008bd135b4c9c5bb18a6aff3ef7f2f9d70"
+            echo "Build commit: $GITHUB_SHA"
+            echo "Supabase project: bihinnobxcpotuctursj"
+          } > backup/package/manifest.txt
+          cd backup
+          zip -r Rwanda-CMI-Backup-2026-09-21.zip package >/dev/null
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Rwanda-CMI-Backup-2026-09-21
+          path: backup/Rwanda-CMI-Backup-2026-09-21.zip
+          retention-days: 1
