@@ -952,7 +952,7 @@
 </section>
 
 <section class="tab" id="tab-allocation">
- <div class="section-title"><h2>Resource Allocation</h2><span class="note">Allocate CMI activities, resources and dates first; the Delivery Plan updates automatically from these allocations.</span></div>
+ <div class="section-title"><h2>Resource Allocation</h2></div>
 
  <div class="subsection-title"><h3>Detailed CMI Activity Allocation</h3><span class="note">Add the relevant activity or activities to each CMI, then allocate site/off-site resources and dates to every activity.</span></div>
  <div class="card">
@@ -964,28 +964,26 @@
 
  <div class="subsection-title"><h3>High-Level Activity Resource Allocation</h3><div class="toolbar"><button class="btn good" id="saveHighLevelPlanBtn" type="button">Save High-Level Activity Plan</button></div></div>
  <div class="card">
-  <div class="callout">Resources, dates, status and progress entered here are synchronised automatically to the first Delivery Plan Gantt. The Save button remains available as a manual confirmation.</div>
   <div class="table-wrap" style="margin-top:12px;max-height:62vh"><table class="data-table hl-allocation-table"><thead><tr><th>Workstream</th><th>Activity</th><th>Start</th><th>Target</th><th>Resources</th><th>Status</th><th>Progress %</th></tr></thead><tbody id="highLevelAllocationBody"></tbody></table></div>
  </div>
 </section>
 
 <section class="tab" id="tab-delivery">
  <div class="callout read-only-banner"><b>View only:</b> your access level can view the Delivery Plan but cannot change planned dates, resources, WBS or other Delivery Plan settings.</div>
- <div class="section-title"><h2>CMI Delivery Plan</h2><div class="section-title-actions"><button class="section-collapse-btn" type="button" aria-expanded="false" title="Expand CMI Delivery Plan" onclick="toggleDeliverySection('cmiDeliveryPlanPanel',this)">&#9662;</button></div></div>
- <div class="card hidden" id="cmiDeliveryPlanPanel" style="display:none"><div class="plan-controls"><div class="field"><label>Delivery target</label><input type="date" id="targetDateInput"></div><div class="field"><label>Current combined capacity / week</label><input type="number" min="1" step="1" id="capacityInput"></div><div class="field"><label>Pre-tracker completions</label><input type="number" min="0" step="1" id="preCompletedInput"></div><div class="field"><label>Full off-site team start</label><input type="date" id="fullTeamInput"></div></div><div id="deliveryCapacity"></div></div>
+ <div style="display:none" aria-hidden="true"><div class="card hidden" id="cmiDeliveryPlanPanel"><div class="plan-controls"><div class="field"><label>Delivery target</label><input type="date" id="targetDateInput"></div><div class="field"><label>Current combined capacity / week</label><input type="number" min="1" step="1" id="capacityInput"></div><div class="field"><label>Pre-tracker completions</label><input type="number" min="0" step="1" id="preCompletedInput"></div><div class="field"><label>Full off-site team start</label><input type="date" id="fullTeamInput"></div></div><div id="deliveryCapacity"></div></div></div>
  <div class="data-date-control"><div class="field"><label>Data Date</label><input id="dataDateInput" type="date" title="Select Data Date from calendar"></div><button class="btn primary" id="applyDataDateBtn" type="button">Apply Data Date</button><button class="btn" id="resetDataDateBtn" type="button">Reset to Today</button><span class="data-date-status" id="dataDateStatus"></span></div>
  <div class="section-title"><h2>1. Delivery Plan - High Level Summary</h2></div>
- <div class="card"><div id="deliverySummaryGanttSummary" class="small muted" style="margin-bottom:10px"></div><div class="gantt-wrap"><div class="hl-gantt delivery-summary-gantt" id="deliverySummaryGantt"></div></div></div>
+ <div class="card"><div class="gantt-wrap"><div class="hl-gantt delivery-summary-gantt" id="deliverySummaryGantt"></div></div></div>
  <div class="section-title"><h2>2. Delivery Plan for CMI Categories</h2></div>
- <div class="card"><div id="highLevelGanttSummary" class="small muted" style="margin-bottom:10px"></div><div class="gantt-wrap"><div class="hl-gantt" id="highLevelGantt"></div></div></div>
+ <div class="card"><div class="gantt-wrap"><div class="hl-gantt" id="highLevelGantt"></div></div></div>
  <div class="section-title"><h2>3. Delivery Plan - CMI by CMI</h2><span class="note">Programme-style CMI WBS view showing Planned (P, blue) and Actual (A, green) dates and separate thin bars at parent, activity and resource levels. Bar position and length update automatically from the corresponding dates; Resource Allocation changes are reflected here automatically.</span></div>
- <div class="card"><div id="ganttSummary" class="small muted" style="margin-bottom:10px"></div><div class="gantt-wrap"><div class="hl-gantt detailed-cmi-gantt" id="ganttChart"></div></div></div>
+ <div class="card"><div class="gantt-wrap"><div class="hl-gantt detailed-cmi-gantt" id="ganttChart"></div></div></div>
  <div class="section-title"><h2>Delivery Plan Register</h2><div class="toolbar"><button class="btn" id="deliveryExportBtn">Export Delivery Plan CSV</button></div></div>
  <div class="card"><div class="table-wrap"><table class="data-table"><thead><tr><th>CMI</th><th>Description</th><th>Priority</th><th>Initial Estimate</th><th>Site Resource</th><th>Off-site Resource</th><th>Start</th><th>Target</th><th>Finish</th><th>Delivery Status</th><th>Delivery Value</th><th>Action</th></tr></thead><tbody id="deliveryBody"></tbody></table></div></div>
 </section>
 
 <section class="tab" id="tab-readiness">
- <div class="section-title"><h2>CMI Readiness for Measurement</h2><span class="note">Plan and track the document packs that On-Site resources must compile and hand over before Off-Site Measurement & Valuation starts.</span></div>
+ <div class="section-title"><h2>CMI Readiness for Measurement</h2></div>
  <div class="readiness-overview-grid">
   <div class="card readiness-stat"><span>CMIs in Delivery Plan</span><b id="readinessTotal">0</b></div>
   <div class="card readiness-stat"><span>Documents Handed Over</span><b id="readinessGiven">0</b></div>
@@ -993,7 +991,7 @@
   <div class="card readiness-stat"><span>Due / Overdue by Data Date</span><b id="readinessDue">0</b></div>
  </div>
 
- <div class="section-title"><h2>1. CMI Document Handover Schedule to Off-Site Resources - Weekly Summary</h2><span class="note">Grouped by the date documents are required to be ready for Off-Site resources.</span></div>
+ <div class="section-title"><h2>1. CMI Document Handover Schedule to Off-Site Resources - Weekly Summary</h2></div>
  <div class="card">
   <div class="table-wrap" style="max-height:420px">
    <table class="data-table readiness-summary-table">
@@ -1003,7 +1001,7 @@
   </div>
  </div>
 
- <div class="section-title"><h2>2. CMI Document Handover Tracker - Detailed</h2><span class="note">Sorted by planned document handover date. Actual Date Given and Responsible On-Site Resource are saved centrally.</span></div>
+ <div class="section-title"><h2>2. CMI Document Handover Tracker - Detailed</h2></div>
  <div class="card">
   <div class="filters readiness-filters">
    <input id="readinessSearch" placeholder="Search CMI / reference / description">
