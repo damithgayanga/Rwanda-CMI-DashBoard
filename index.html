@@ -346,14 +346,17 @@
       const key=keyOf(ra);
       let la=out.find(a=>keyOf(a)===key);
       if(!la){out.push(clone(ra));return}
-      ['activityId','activityName','startDate','targetDate','finishDate','actualStartDate','actualFinishDate','status','notes'].forEach(k=>{
+      ['activityId','activityName','notes'].forEach(k=>{
         la[k]=sharedValue(la[k],ra[k]);
       });
-      // Shared resource assignments are authoritative, including an explicit blank.
-      // This allows a centrally-cleared assignment to remove stale browser/localStorage values.
-      la.siteResource=ra.siteResource===undefined||ra.siteResource===null?'':String(ra.siteResource);
-      la.offsiteResource=ra.offsiteResource===undefined||ra.offsiteResource===null?'':String(ra.offsiteResource);
-      la.progressPct=Math.max(Number(la.progressPct)||0,Number(ra.progressPct)||0);
+      // Shared delivery-plan fields are authoritative, including explicit blanks/zero.
+      // This prevents stale browser/localStorage dates, resources and progress from
+      // reappearing after a central reset or reallocation.
+      ['siteResource','offsiteResource','startDate','targetDate','finishDate','actualStartDate','actualFinishDate'].forEach(k=>{
+        la[k]=ra[k]===undefined||ra[k]===null?'':String(ra[k]);
+      });
+      la.status=ra.status||'To be Started';
+      la.progressPct=Math.max(0,Math.min(100,Number(ra.progressPct)||0));
       la.resourceProgress=clone(ra.resourceProgress||{});
     });
     return out;
@@ -379,13 +382,13 @@
     payload.records.forEach(sr=>{
       const r=state.records.find(x=>x.id===sr.id)||state.records.find(x=>String(x.cmiKey||'')===String(sr.cmiKey||''));
       if(!r)return;
-      // Resource roll-ups from the shared state are authoritative, including explicit blanks.
-      // Do not preserve stale local resource assignments after a central clear/reallocation.
-      r.siteResource=sr.siteResource===undefined||sr.siteResource===null?'':String(sr.siteResource);
-      r.offsiteResource=sr.offsiteResource===undefined||sr.offsiteResource===null?'':String(sr.offsiteResource);
-      ['startDate','targetDate','finishDate'].forEach(k=>{r[k]=sharedValue(r[k],sr[k])});
-      if(sr.deliveryStatus&&sr.deliveryStatus!=='To be Started')r.deliveryStatus=sr.deliveryStatus;
-      r.progressPct=Math.max(Number(r.progressPct)||0,Number(sr.progressPct)||0);
+      // Shared roll-ups are authoritative, including explicit blanks/zero.
+      // This keeps every dashboard view aligned to the central Supabase plan state.
+      ['siteResource','offsiteResource','startDate','targetDate','finishDate'].forEach(k=>{
+        r[k]=sr[k]===undefined||sr[k]===null?'':String(sr[k]);
+      });
+      r.deliveryStatus=sr.deliveryStatus||'To be Started';
+      r.progressPct=Math.max(0,Math.min(100,Number(sr.progressPct)||0));
       r.cmiActivities=mergeActivityCollections(r.cmiActivities,sr.cmiActivities);
       r.inDeliveryPlan=isInDeliveryPlanRecord(r);
     });
@@ -1133,7 +1136,8 @@ function activityNamePart(activityId){
 function plannedActivityCountForRange(activityId,start,finish){
  const seen=new Set();
  state.records.forEach(r=>{
-  if(!deliveryPlanApplicable(r))return;
+  // Weekly Activity Plan must be a direct view of the current Delivery Plan only.
+  if(!deliveryPlanApplicable(r)||!ACTIONABLE.has(r.status)||!isInDeliveryPlanRecord(r))return;
   const a=findActivityByIdOrName(r,activityId,activityNamePart(activityId));
   if(!a||!a.targetDate||a.targetDate<start||a.targetDate>finish)return;
   seen.add(normCmi(r.cmiNo));
@@ -1143,7 +1147,8 @@ function plannedActivityCountForRange(activityId,start,finish){
 function cumulativePlannedActivityCount(activityId,throughDate){
  const seen=new Set();
  state.records.forEach(r=>{
-  if(!deliveryPlanApplicable(r))return;
+  // Cumulative plan uses the same Delivery Plan population as the KPI card.
+  if(!deliveryPlanApplicable(r)||!ACTIONABLE.has(r.status)||!isInDeliveryPlanRecord(r))return;
   const a=findActivityByIdOrName(r,activityId,activityNamePart(activityId));
   if(!a||!a.targetDate||a.targetDate>throughDate)return;
   seen.add(normCmi(r.cmiNo));
