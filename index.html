@@ -506,17 +506,29 @@
 
   async function loadDeliveryActivitiesFromSupabase() {
     try{
-      const {data,error}=await supabaseClient
-        .from(DELIVERY_ACTIVITY_TABLE)
-        .select('cmi_key,cmi_no,cmi_record_id,activity_id,activity_name,planned_start,planned_finish,actual_start,actual_finish,progress_pct,site_resource,offsite_resource,display_order,updated_at')
-        .order('cmi_key',{ascending:true})
-        .order('display_order',{ascending:true});
-      if(error){
-        console.error('Unable to load Delivery Plan activities from Supabase:',error);
-        return false;
+      // Supabase/PostgREST caps a single select response. The Delivery Plan now
+      // contains 5 activity rows per CMI, so load every page rather than only
+      // the first ~1,000 rows (which previously made the KPI stop near 200 CMIs).
+      const PAGE_SIZE=1000;
+      const allRows=[];
+      for(let from=0;;from+=PAGE_SIZE){
+        const {data,error}=await supabaseClient
+          .from(DELIVERY_ACTIVITY_TABLE)
+          .select('cmi_key,cmi_no,cmi_record_id,activity_id,activity_name,planned_start,planned_finish,actual_start,actual_finish,progress_pct,site_resource,offsite_resource,display_order,updated_at')
+          .order('cmi_key',{ascending:true})
+          .order('display_order',{ascending:true})
+          .range(from,from+PAGE_SIZE-1);
+        if(error){
+          console.error('Unable to load Delivery Plan activities from Supabase:',error);
+          return false;
+        }
+        const page=data||[];
+        allRows.push(...page);
+        if(page.length<PAGE_SIZE)break;
       }
+
       const touched=new Set();
-      (data||[]).forEach(row=>{
+      allRows.forEach(row=>{
         const recordId=applyDeliveryActivityRow(row);
         if(recordId)touched.add(recordId);
       });
