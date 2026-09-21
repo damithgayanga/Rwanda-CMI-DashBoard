@@ -129,7 +129,7 @@
 .audit-filters{display:grid;grid-template-columns:1.2fr 1fr 1fr 1fr;gap:8px;margin-bottom:12px}
 .audit-table{min-width:1150px}.audit-json{max-width:360px;white-space:pre-wrap;word-break:break-word;font-size:9px;line-height:1.35}
 @media(max-width:800px){.audit-filters{grid-template-columns:1fr}}
-.readiness-overview-grid{display:grid;grid-template-columns:repeat(4,minmax(150px,1fr));gap:12px;margin-bottom:18px}.readiness-stat{padding:14px 16px}.readiness-stat span{display:block;font-size:9px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:850}.readiness-stat b{display:block;margin-top:6px;font-size:24px;color:var(--navy)}.readiness-summary-table{min-width:850px}.readiness-summary-table td:first-child{white-space:nowrap;font-weight:850;color:var(--navy)}.readiness-cmi-list{display:flex;flex-wrap:wrap;gap:5px}.readiness-cmi-chip{display:inline-flex;align-items:center;padding:3px 6px;border-radius:999px;background:#edf4fa;border:1px solid #d4e1eb;font-size:8px;font-weight:800;color:#29465f;white-space:nowrap}.readiness-detail-table{min-width:1380px}.readiness-detail-table td{vertical-align:middle}.readiness-detail-table td:nth-child(1),.readiness-detail-table td:nth-child(4){white-space:nowrap}.readiness-detail-table input[type="date"],.readiness-detail-table select{min-width:165px}.readiness-display-value{min-height:30px;display:flex;align-items:center;padding:6px 8px;border:1px solid transparent;border-radius:6px;color:var(--ink);font-size:10px}.readiness-display-value.blank{color:#94a3b8}.readiness-edit-actions{display:flex;gap:5px;white-space:nowrap}.readiness-status{display:inline-flex;align-items:center;padding:4px 7px;border-radius:999px;font-size:8px;font-weight:850;white-space:nowrap}.readiness-status.given{background:#e4f5ec;color:#176b4e}.readiness-status.pending{background:#edf3f8;color:#52697b}.readiness-status.overdue{background:#fde9e7;color:#a33b31}.readiness-filters{grid-template-columns:1.4fr 1fr .8fr}@media(max-width:900px){.readiness-overview-grid{grid-template-columns:repeat(2,minmax(130px,1fr))}.readiness-filters{grid-template-columns:1fr}}
+.readiness-overview-grid{display:grid;grid-template-columns:repeat(4,minmax(150px,1fr));gap:12px;margin-bottom:18px}.readiness-stat{padding:14px 16px}.readiness-stat span{display:block;font-size:9px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:850}.readiness-stat b{display:block;margin-top:6px;font-size:24px;color:var(--navy)}.readiness-summary-table{min-width:850px}.readiness-summary-table td:first-child{white-space:nowrap;font-weight:850;color:var(--navy)}.readiness-cmi-list{display:flex;flex-wrap:wrap;gap:5px}.readiness-cmi-chip{display:inline-flex;align-items:center;padding:3px 6px;border-radius:999px;background:#edf4fa;border:1px solid #d4e1eb;font-size:8px;font-weight:800;color:#29465f;white-space:nowrap}.readiness-detail-table{min-width:1380px}.readiness-detail-table td{vertical-align:middle}.readiness-detail-table td:nth-child(1),.readiness-detail-table td:nth-child(4){white-space:nowrap}.progress-cmi-group td{background:#edf4f8!important;border-top:1px solid #cbd8e2;border-bottom:1px solid #dbe5ec;padding:9px 10px!important}.progress-cmi-group-title{display:flex;align-items:baseline;gap:10px;min-width:0}.progress-cmi-group-title b{font-size:10px;color:var(--navy);white-space:nowrap}.progress-cmi-group-title span{font-size:9px;color:#516576;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.progress-activity-name{padding-left:24px!important;position:relative}.progress-activity-name:before{content:"↳";position:absolute;left:9px;color:#718096;font-weight:900}.readiness-detail-table input[type="date"],.readiness-detail-table select{min-width:165px}.readiness-display-value{min-height:30px;display:flex;align-items:center;padding:6px 8px;border:1px solid transparent;border-radius:6px;color:var(--ink);font-size:10px}.readiness-display-value.blank{color:#94a3b8}.readiness-edit-actions{display:flex;gap:5px;white-space:nowrap}.readiness-status{display:inline-flex;align-items:center;padding:4px 7px;border-radius:999px;font-size:8px;font-weight:850;white-space:nowrap}.readiness-status.given{background:#e4f5ec;color:#176b4e}.readiness-status.pending{background:#edf3f8;color:#52697b}.readiness-status.overdue{background:#fde9e7;color:#a33b31}.readiness-filters{grid-template-columns:1.4fr 1fr .8fr}@media(max-width:900px){.readiness-overview-grid{grid-template-columns:repeat(2,minmax(130px,1fr))}.readiness-filters{grid-template-columns:1fr}}
 </style>
 
 <!-- Supabase -->
@@ -1023,7 +1023,7 @@
 <section class="tab" id="tab-progress">
  <div class="section-title"><h2>Progress Update</h2></div>
  <div class="card">
-  <div class="field" style="max-width:420px;margin-bottom:14px"><label>CMI No.</label><input id="progressCmiSearch" placeholder="Enter CMI No. e.g. 238"></div>
+  <div class="field" style="max-width:420px;margin-bottom:14px"><label>CMI No.</label><input id="progressCmiSearch" placeholder="Enter CMI No. e.g. 00015"></div>
   <div class="table-wrap" style="max-height:70vh"><table class="data-table" style="min-width:760px"><thead><tr><th>Activity</th><th>Actual Start Date</th><th>Actual Finish Date</th><th>Progress %</th></tr></thead><tbody id="progressActivityBody"></tbody></table></div>
   <div class="toolbar" style="justify-content:flex-end;margin-top:14px"><span class="small muted" id="progressSubmitStatus" style="margin-right:auto"></span><button class="btn good" id="submitProgressUpdateBtn" type="button">Submit Progress Update</button></div>
  </div>
@@ -2097,10 +2097,10 @@ function progressSearchRecords(){
   return rk===key||String(r.cmiNo||'').toLowerCase()===q||String(r.cmiNo||'').toLowerCase().includes(q);
  });
 }
-function progressActivitiesForSearch(){
- return progressSearchRecords().flatMap(r=>(r.cmiActivities||[]).map(a=>({r,a}))).sort((x,y)=>{
-  const dx=activityDef(x.a.activityId),dy=activityDef(y.a.activityId),ox=dx?Number(dx.order)||999:999,oy=dy?Number(dy.order)||999:999;
-  return ox-oy||activityLabel(x.a).localeCompare(activityLabel(y.a));
+function progressActivitiesForRecord(r){
+ return (r.cmiActivities||[]).slice().sort((a,b)=>{
+  const dx=activityDef(a.activityId),dy=activityDef(b.activityId),ox=dx?Number(dx.order)||999:999,oy=dy?Number(dy.order)||999:999;
+  return ox-oy||activityLabel(a).localeCompare(activityLabel(b));
  });
 }
 function rollupCmiProgress(r){
@@ -2131,11 +2131,21 @@ function renderProgress(){
  const input=document.getElementById('progressCmiSearch'),raw=(input?.value||'').trim(),btn=document.getElementById('submitProgressUpdateBtn'),status=document.getElementById('progressSubmitStatus');
  if(status)status.textContent='';
  if(!raw){body.innerHTML='<tr><td colspan="4" class="muted">Enter a CMI No. above.</td></tr>';if(btn)btn.disabled=true;return}
- const records=progressSearchRecords(),rows=progressActivitiesForSearch();
+ const records=progressSearchRecords();
  if(!records.length){body.innerHTML='<tr><td colspan="4" class="muted">No matching CMI found.</td></tr>';if(btn)btn.disabled=true;return}
- if(!rows.length){body.innerHTML='<tr><td colspan="4" class="muted">No activities are allocated to this CMI.</td></tr>';if(btn)btn.disabled=true;return}
- body.innerHTML=rows.map(({r,a})=>`<tr data-progress-activity="${r.id}|${a.id}"><td><b>${esc(activityLabel(a))}</b></td><td><input class="inline-input" type="date" data-progress-field="actualStartDate" value="${a.actualStartDate||''}"></td><td><input class="inline-input" type="date" data-progress-field="actualFinishDate" value="${a.actualFinishDate||''}"></td><td><input class="inline-input" type="number" min="0" max="100" step="1" data-progress-field="progressPct" value="${Number(a.progressPct)||0}"></td></tr>`).join('');
- if(btn)btn.disabled=false;
+ let html='',activityCount=0;
+ records.forEach(r=>{
+  const activities=progressActivitiesForRecord(r);
+  html+=`<tr class="progress-cmi-group"><td colspan="4"><div class="progress-cmi-group-title"><b>${esc(r.cmiNo||('CMI '+(r.cmiKey||'')))}</b><span>${esc(r.description||'')}</span></div></td></tr>`;
+  if(!activities.length){
+   html+='<tr><td colspan="4" class="muted progress-activity-name">No activities allocated to this CMI record.</td></tr>';
+   return;
+  }
+  activityCount+=activities.length;
+  html+=activities.map(a=>`<tr data-progress-activity="${r.id}|${a.id}"><td class="progress-activity-name"><b>${esc(activityLabel(a))}</b></td><td><input class="inline-input" type="date" data-progress-field="actualStartDate" value="${a.actualStartDate||''}"></td><td><input class="inline-input" type="date" data-progress-field="actualFinishDate" value="${a.actualFinishDate||''}"></td><td><input class="inline-input" type="number" min="0" max="100" step="1" data-progress-field="progressPct" value="${Number(a.progressPct)||0}"></td></tr>`).join('');
+ });
+ body.innerHTML=html;
+ if(btn)btn.disabled=activityCount===0;
 }
 async function submitProgressUpdate(){
  if(!['admin','management','progress'].includes(currentRole()))return;
