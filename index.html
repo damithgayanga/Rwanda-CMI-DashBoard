@@ -916,8 +916,6 @@
    </div>
   </div>
  </div>
- <div class="section-title"><h2>Highest-value open items</h2><span class="note">Known initial estimate; current register status = To be Submitted - Initial Review compelted.</span></div>
- <div class="card"><div class="table-wrap" style="max-height:420px"><table class="data-table" style="min-width:950px"><thead><tr><th>CMI</th><th>Asset</th><th>Location</th><th>Description</th><th>Initial Estimate</th><th>Priority</th></tr></thead><tbody id="topValueBody"></tbody></table></div></div>
 </section>
 
 <section class="tab" id="tab-register">
@@ -1586,8 +1584,6 @@ function renderResourcePerformance(){
  const onsiteDashboardResources=dashboardResourceOrder(currentSiteResources().filter(n=>n!=='Michael Dullaghan'),DASHBOARD_ONSITE_ORDER);
  if(onsite)onsite.innerHTML=resourcePerformanceGroupHtml(onsiteDashboardResources,false);
 }
-function renderTop(){const top=state.records.filter(r=>r.status==='To be Submitted - Initial Review compelted'&&r.initialEstimate!==null).sort((a,b)=>b.initialEstimate-a.initialEstimate).slice(0,15);document.getElementById('topValueBody').innerHTML=top.map(r=>`<tr><td><b>${esc(r.cmiNo)}</b></td><td>${esc(r.assetCode)}</td><td>${esc(r.location)}</td><td class="desc">${esc(r.description)}</td><td class="money"><b>${money(r.initialEstimate)}</b></td><td>${priorityPill(calcPriority(r))}</td></tr>`).join('')}
-
 function populateFilters(){
  const standardStatuses=['Agreed','Submitted','To be Submitted - Initial Review compelted','To be Submitted and Unallocated','Included in Other CMIs','Provisional Sum CMI'];
  const statuses=uniq(state.records.map(r=>String(r.status||'').trim()).filter(Boolean).concat(standardStatuses)),assets=uniq(state.records.flatMap(r=>String(r.assetCode||'').split(/\n|,/).map(x=>x.trim()).filter(Boolean)));
@@ -2189,7 +2185,7 @@ function goProgress(id){
 }
 function renderQuality(){const recs=state.records,groups={};recs.forEach(r=>(groups[r.cmiKey]??=[]).push(r));const multi=Object.values(groups).filter(g=>g.length>1),tbs=recs.filter(r=>r.status==='To be Submitted - Initial Review compelted'),unv=tbs.filter(r=>calcPriority(r)==='Unvalued').length,unalloc=recs.filter(r=>ACTIONABLE.has(r.status)&&!isInDeliveryPlanRecord(r)).length;document.getElementById('qualityMetrics').innerHTML=`<div class="metric-line"><span>Populated log rows</span><b>${recs.length}</b></div><div class="metric-line"><span>Unique CMI references</span><b>${Object.keys(groups).length}</b></div><div class="metric-line"><span>Multi-line CMI references</span><b>${multi.length}</b></div><div class="metric-line"><span>To be Submitted - Initial Review compelted — unvalued</span><b>${unv}</b></div><div class="metric-line"><span>Actionable items not yet planned</span><b>${unalloc}</b></div>`;document.getElementById('duplicateBody').innerHTML=multi.sort((a,b)=>b.length-a.length).map(g=>{const sts=uniq(g.map(x=>x.status)),known=sum(g.filter(x=>x.initialEstimate!==null).map(x=>x.initialEstimate));return `<tr><td><b>CMI ${esc(g[0].cmiKey)}</b></td><td>${g.length}</td><td>${sts.map(statusPill).join(' ')}</td><td class="money">${money(known)}</td><td>${sts.length>1?'<span class="pill investigate">Mixed statuses — track by work item</span>':'Multiple source rows'}</td></tr>`}).join('')}
 
-function renderDashboard(){renderKpis();renderBars();renderDeliverySnapshot();renderResourcePerformance();renderTop()}
+function renderDashboard(){renderKpis();renderBars();renderDeliverySnapshot();renderResourcePerformance()}
 function renderActiveTab(){const active=document.querySelector('.tabbtn.active')?.dataset.tab||'dashboard';if(active==='dashboard')renderDashboard();else if(active==='register')renderRegister();else if(active==='activities'){renderActivityList();renderDeliveryWbsManager();}else if(active==='allocation')renderAllocation();else if(active==='delivery')renderDelivery();else if(active==='readiness')renderReadiness();else if(active==='progress')renderProgress();else if(active==='organisation')renderOrganisation();else if(active==='quality')renderQuality();else if(active==='changes')renderChangesLog();else if(active==='audit')renderAuditLog()}
 function renderAll(){setHeader();populateFilters();renderDashboard();renderActiveTab()}
 function openEdit(id){if(!canManageDelivery())return;const r=state.records.find(x=>x.id===id);if(!r)return;document.getElementById('modalTitle').textContent='Edit CMI Register';const map={eId:r.id,eCmiNo:r.cmiNo,eReference:r.reference,eDescription:r.description,eCmiDate:r.cmiDate,eStatus:r.status,eAsset:r.assetCode,eLocation:r.location,eInitial:r.initialEstimate??'',eSubmittedValue:r.submittedValue??'',eAgreedAmount:r.agreedAmount??'',eSubmittedDate:r.submittedDate,eAgreedDate:r.agreedDate,eRemarks:r.remarks,eNotes:r.notes};Object.entries(map).forEach(([i,v])=>document.getElementById(i).value=v);document.getElementById('editModal').classList.add('open')}
