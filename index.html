@@ -25,6 +25,31 @@
 .gantt-wrap{overflow:auto;border:1px solid var(--line);border-radius:10px;background:#fff}.gantt{min-width:1150px}.gantt-head,.gantt-row{display:grid;grid-template-columns:90px 260px 130px 130px 1fr;border-bottom:1px solid #edf1f5}.gantt-head{position:sticky;top:0;z-index:4;background:#edf3f7;font-size:9px;font-weight:850;color:#3a4d60}.gantt-head>div,.gantt-row>div{padding:8px;border-right:1px solid #edf1f5}.gantt-info{font-size:10px}.gantt-timeline{position:relative;min-height:36px;background:repeating-linear-gradient(to right,#fff 0,#fff calc(var(--dayw) - 1px),#edf1f5 calc(var(--dayw) - 1px),#edf1f5 var(--dayw))}.gantt-bar{position:absolute;top:8px;height:20px;border-radius:5px;background:var(--blue);min-width:4px;color:#fff;font-size:8px;font-weight:800;display:flex;align-items:center;padding:0 5px;overflow:hidden;white-space:nowrap}.gantt-bar.completed{background:var(--green)}.gantt-bar.submitted{background:var(--teal)}.gantt-bar.pending{background:#75899b}.gantt-scale{position:relative;height:32px;background:#f5f8fa;overflow:hidden}.weekmark{position:absolute;top:0;height:100%;border-left:1px solid #bfcbd6;padding:4px 0 0 4px;font-size:8px;color:#55697b;white-space:nowrap}
 .dashboard-delivery-performance{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:stretch;margin-top:18px}.dashboard-delivery-performance>div{display:flex;flex-direction:column;min-width:0}.dashboard-delivery-performance .section-title{flex:0 0 auto;margin:0 0 9px}.dashboard-delivery-performance .section-title h2{font-size:15px}.delivery-tracking-card{flex:1 1 auto;height:100%;padding:13px 15px}.delivery-tracking-card .metric-line{padding:7px 0}.delivery-tracking-card .metric-line span{font-size:10px;line-height:1.25}.delivery-tracking-card .metric-line b{font-size:12px}.resource-performance-panel{flex:1 1 auto;height:100%;display:flex;padding:10px 11px}.resource-performance-split{display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:stretch;flex:1 1 auto;width:100%}.resource-group-card{height:100%;box-shadow:none;padding:9px;border-radius:9px;background:#fbfdff}.resource-group-card h3{margin-bottom:7px;font-size:11px}.resource-performance-list{display:grid;gap:6px}.resource-performance-head,.resource-performance-row{display:grid;grid-template-columns:minmax(110px,1.45fr) repeat(3,minmax(54px,.65fr));gap:5px;align-items:center}.resource-performance-head{padding:0 5px 3px;color:var(--muted);font-size:7px;text-transform:uppercase;font-weight:850;letter-spacing:.04em}.resource-performance-head div:not(:first-child){text-align:center}.resource-performance-row{border:1px solid #e3eaf0;border-radius:7px;padding:6px;background:#fff}.resource-performance-name{min-width:0}.resource-performance-name b{display:block;font-size:9px;color:var(--navy);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.resource-start-date{display:block;margin-top:2px;font-size:7.5px;line-height:1.2;color:var(--muted);font-weight:700;white-space:nowrap}.resource-performance-metric{background:#f3f7fa;border-radius:5px;padding:4px 3px;text-align:center}.resource-performance-metric b{display:block;font-size:12px;line-height:1.05;color:var(--navy)}.resource-performance-metric span{display:none}@media(max-width:1000px){.dashboard-delivery-performance{grid-template-columns:1fr}.resource-performance-split{grid-template-columns:1fr 1fr}}@media(max-width:760px){.resource-performance-split{grid-template-columns:1fr}.resource-performance-head,.resource-performance-row{grid-template-columns:minmax(125px,1.45fr) repeat(3,minmax(52px,.65fr))}}
 
+
+/* Executive Dashboard operational action tables */
+.dashboard-operations{margin-top:20px}
+.dashboard-operations .section-title{margin-top:18px}
+.dashboard-operations .section-title h2{font-size:15px}
+.dashboard-ops-card{padding:10px}
+.dashboard-ops-table{min-width:1120px}
+.dashboard-ops-table.compact{min-width:720px}
+.dashboard-ops-table th,.dashboard-ops-table td{padding:7px 8px}
+.dashboard-ops-table .desc{min-width:220px;max-width:380px}
+.dashboard-ops-meta{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:8px;font-size:9px;color:var(--muted)}
+.dashboard-action-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
+.dashboard-status{display:inline-flex;align-items:center;border-radius:999px;padding:4px 8px;font-size:8px;font-weight:850;line-height:1.2;white-space:normal}
+.dashboard-status.measure{background:#e0efff;color:#1859a9}
+.dashboard-status.review{background:#e8f4ff;color:#315d82}
+.dashboard-status.clearance{background:#fff1cf;color:#8b5a00}
+.dashboard-status.finalreview{background:#ede9fe;color:#5b36a5}
+.dashboard-status.ready{background:#dff6f4;color:#0f6f72}
+.dashboard-status.submitted{background:#dcfae6;color:#176b4d}
+.dashboard-responsibility{font-weight:850;color:var(--navy);white-space:nowrap}
+.dashboard-date-plan{font-weight:800;color:var(--navy);white-space:nowrap}
+.dashboard-date-actual{font-weight:850;color:var(--green);white-space:nowrap}
+.dashboard-empty{padding:18px!important;text-align:center;color:var(--muted)}
+@media(max-width:1100px){.dashboard-action-grid{grid-template-columns:1fr}}
+
 /* High-level delivery plan */
 .hl-allocation-table{min-width:1450px}.hl-allocation-table td{vertical-align:middle}.hl-resource-picks{display:flex;flex-wrap:wrap;gap:5px;min-width:430px}.hl-resource-check{display:inline-flex;align-items:center;gap:4px;padding:5px 7px;border:1px solid #d5e0e9;border-radius:999px;background:#fff;font-size:9px;white-space:nowrap}.hl-resource-check input{width:13px;height:13px;margin:0}.hl-activity-name{font-weight:850;color:var(--navy);line-height:1.3}.hl-group-tag{font-size:9px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:800}.hl-gantt{width:max-content;min-width:100%}.hl-gantt-head,.hl-gantt-row{display:grid;grid-template-columns:370px 120px 120px 90px max-content;width:max-content;min-width:100%;border-bottom:1px solid #e8eef4}.hl-gantt-head{position:sticky;top:0;z-index:5;background:#eaf1f6;color:#31475a;font-size:9px;font-weight:850}.hl-gantt-head>div,.hl-gantt-row>div{padding:8px;border-right:1px solid #e7edf3}
 .hl-gantt-head>div:nth-child(-n+4),.hl-gantt-row>div:nth-child(-n+4){position:sticky;z-index:12;background:#fff;box-sizing:border-box;overflow:hidden}
@@ -733,7 +758,6 @@
   }
 
   async function loadDocumentReadinessFromSupabase(){
-    if(!canManageDelivery())return true;
     try{
       const {data,error}=await supabaseClient
         .from(DOCUMENT_READINESS_TABLE)
@@ -890,12 +914,13 @@
   }
 
   function startReadinessRealtimeSubscription(){
-    if(readinessRealtimeChannel||!canManageDelivery())return;
+    if(readinessRealtimeChannel||!(ROLE_TABS[currentRole()]||[]).includes('dashboard'))return;
     readinessRealtimeChannel=supabaseClient
       .channel('cmi-document-readiness-live')
       .on('postgres_changes',{event:'*',schema:'public',table:DOCUMENT_READINESS_TABLE},async()=>{
         await loadDocumentReadinessFromSupabase();
         if(document.getElementById('tab-readiness')?.classList.contains('active'))renderReadiness();
+        if(document.getElementById('tab-dashboard')?.classList.contains('active'))renderDashboardOperationalTables();
       })
       .subscribe(status=>{
         if(status==='CHANNEL_ERROR'||status==='TIMED_OUT')console.error('Document readiness realtime subscription status:',status);
@@ -990,6 +1015,46 @@
      <div class="card resource-group-card">
       <h3>On-Site</h3>
       <div id="onsiteResourcePerformance" class="resource-performance-list"></div>
+     </div>
+    </div>
+   </div>
+  </div>
+ </div>
+
+ <div class="dashboard-operations">
+  <div class="section-title"><h2>CMIs Currently in Progress</h2></div>
+  <div class="card dashboard-ops-card">
+   <div class="dashboard-ops-meta"><span>Current workflow position and next required action</span><span id="dashboardProgressingCount"></span></div>
+   <div class="table-wrap" style="max-height:48vh">
+    <table class="data-table dashboard-ops-table">
+     <thead><tr><th>CMI No.</th><th>Description</th><th>Current Status</th><th>Next Step</th><th>DGJ Submission Date</th><th>Responsible Personnel</th></tr></thead>
+     <tbody id="dashboardProgressingBody"></tbody>
+    </table>
+   </div>
+  </div>
+
+  <div class="dashboard-action-grid">
+   <div>
+    <div class="section-title"><h2>CMIs Due to Start but Not Handed Over</h2></div>
+    <div class="card dashboard-ops-card">
+     <div class="dashboard-ops-meta"><span id="dashboardDueHandoverAsAt"></span><span id="dashboardDueHandoverCount"></span></div>
+     <div class="table-wrap" style="max-height:38vh">
+      <table class="data-table dashboard-ops-table compact">
+       <thead><tr><th>CMI No.</th><th>Description</th><th>Planned M&amp;V Start</th><th>Documents Required</th><th>Responsible Personnel</th></tr></thead>
+       <tbody id="dashboardDueHandoverBody"></tbody>
+      </table>
+     </div>
+    </div>
+   </div>
+   <div>
+    <div class="section-title"><h2>CMIs Planned to Start Next Week</h2></div>
+    <div class="card dashboard-ops-card">
+     <div class="dashboard-ops-meta"><span id="dashboardNextWeekRange"></span><span id="dashboardNextWeekCount"></span></div>
+     <div class="table-wrap" style="max-height:38vh">
+      <table class="data-table dashboard-ops-table compact">
+       <thead><tr><th>CMI No.</th><th>Description</th><th>Planned M&amp;V Start</th><th>Handover Status</th><th>Responsible Personnel</th></tr></thead>
+       <tbody id="dashboardNextWeekBody"></tbody>
+      </table>
      </div>
     </div>
    </div>
@@ -2325,7 +2390,138 @@ function goProgress(id){
 }
 function renderQuality(){const recs=state.records,groups={};recs.forEach(r=>(groups[r.cmiKey]??=[]).push(r));const multi=Object.values(groups).filter(g=>g.length>1),tbs=recs.filter(r=>r.status==='To be Submitted - Initial Review compelted'),unv=tbs.filter(r=>calcPriority(r)==='Unvalued').length,unalloc=recs.filter(r=>ACTIONABLE.has(r.status)&&!isInDeliveryPlanRecord(r)).length;document.getElementById('qualityMetrics').innerHTML=`<div class="metric-line"><span>Populated log rows</span><b>${recs.length}</b></div><div class="metric-line"><span>Unique CMI references</span><b>${Object.keys(groups).length}</b></div><div class="metric-line"><span>Multi-line CMI references</span><b>${multi.length}</b></div><div class="metric-line"><span>To be Submitted - Initial Review compelted — unvalued</span><b>${unv}</b></div><div class="metric-line"><span>Actionable items not yet planned</span><b>${unalloc}</b></div>`;document.getElementById('duplicateBody').innerHTML=multi.sort((a,b)=>b.length-a.length).map(g=>{const sts=uniq(g.map(x=>x.status)),known=sum(g.filter(x=>x.initialEstimate!==null).map(x=>x.initialEstimate));return `<tr><td><b>CMI ${esc(g[0].cmiKey)}</b></td><td>${g.length}</td><td>${sts.map(statusPill).join(' ')}</td><td class="money">${money(known)}</td><td>${sts.length>1?'<span class="pill investigate">Mixed statuses — track by work item</span>':'Multiple source rows'}</td></tr>`}).join('')}
 
-function renderDashboard(){renderKpis();renderBars();renderDeliverySnapshot();renderResourcePerformance()}
+
+function dashboardCmiActivities(r){
+ return{
+  measure:findActivityByIdOrName(r,'act-measure','measurement works'),
+  review:findActivityByIdOrName(r,'act-finalise','review of valuation'),
+  clearance:findActivityByIdOrName(r,'act-clearance','technical and commercial clearance'),
+  finalReview:findActivityByIdOrName(r,'act-final-review','final review of the submission'),
+  submission:findActivityByIdOrName(r,'act-submit-dgj','submission to dgj')
+ };
+}
+function dashboardWorkflowState(r){
+ const a=dashboardCmiActivities(r);
+ const measure100=activityProgressAt100(a.measure);
+ const review100=activityProgressAt100(a.review);
+ const clearance100=activityProgressAt100(a.clearance);
+ const final100=activityProgressAt100(a.finalReview);
+ const submission100=activityProgressAt100(a.submission);
+
+ if(measure100&&review100&&clearance100&&final100&&submission100){
+  return{label:'Submitted',next:'To be Finalised with DGJ',cls:'submitted',rank:6};
+ }
+ if(measure100&&review100&&clearance100&&final100&&!submission100){
+  return{label:'Ready for Submission to DGJ',next:'Submit CMI to DGJ',cls:'ready',rank:5};
+ }
+ if(measure100&&review100&&clearance100&&!final100&&activityStarted(a.finalReview)){
+  return{label:'Under Final Review for Submission',next:'Submit CMI to DGJ',cls:'finalreview',rank:4};
+ }
+ if(measure100&&review100&&!clearance100){
+  return{label:'Pending Tech & Comm. Clearance',next:'Final Review before submitting to DGJ',cls:'clearance',rank:3};
+ }
+ if(measure100&&!review100){
+  return{label:'Under Review of the Deliverables received from Off-Site Team',next:'Technical and Commercial Clearance',cls:'review',rank:2};
+ }
+ if(a.measure?.actualStartDate&&!measure100){
+  return{label:'Measurement and Valuation Ongoing',next:'Review the Deliverables received from Off-Site Team',cls:'measure',rank:1};
+ }
+ return null;
+}
+function dashboardResponsiblePersonnel(r){
+ const a=dashboardCmiActivities(r);
+ const offsite=a.measure?.offsiteResource||r.offsiteResource||'';
+ const onsite=(r.cmiActivities||[]).map(x=>x.siteResource).find(Boolean)||r.siteResource||'';
+ return{
+  onsite,
+  offsite,
+  label:'('+resourceInitials(onsite)+' / '+resourceInitials(offsite)+')'
+ };
+}
+function dashboardHandoverItemForRecord(r){
+ const saved=documentReadinessMap().get(String(r.id||''))||{};
+ const a=dashboardCmiActivities(r);
+ return{
+  actualDate:saved.actual_given_date||'',
+  responsibleResource:saved.responsible_resource||'',
+  requiredDate:documentRequiredDate(r),
+  measureStart:a.measure?.startDate||'',
+  offsiteResource:a.measure?.offsiteResource||r.offsiteResource||''
+ };
+}
+function dashboardHandoverStatusHtml(item){
+ if(item.actualDate)return '<span class="readiness-status given">Handed Over</span>';
+ const dataDate=programmeDataDate||todayISO();
+ if(item.requiredDate&&item.requiredDate<dataDate)return '<span class="readiness-status overdue">Overdue</span>';
+ return '<span class="readiness-status pending">Pending</span>';
+}
+function renderDashboardOperationalTables(){
+ const progressBody=document.getElementById('dashboardProgressingBody');
+ const progressCount=document.getElementById('dashboardProgressingCount');
+ const progressing=planned().map(r=>{
+   const workflow=dashboardWorkflowState(r);
+   if(!workflow)return null;
+   const acts=dashboardCmiActivities(r),resp=dashboardResponsiblePersonnel(r);
+   const submitted=workflow.label==='Submitted';
+   const submissionDate=submitted?(acts.submission?.actualFinishDate||acts.submission?.targetDate||''):(acts.submission?.targetDate||'');
+   return{r,workflow,resp,submissionDate,submitted};
+ }).filter(Boolean).sort((x,y)=>x.workflow.rank-y.workflow.rank||String(x.r.cmiNo||'').localeCompare(String(y.r.cmiNo||''),undefined,{numeric:true}));
+
+ if(progressCount)progressCount.textContent=progressing.length+' CMI'+(progressing.length===1?'':'s');
+ if(progressBody)progressBody.innerHTML=progressing.map(x=>
+  '<tr>'+
+   '<td><b>'+esc(x.r.cmiNo||x.r.cmiKey||'—')+'</b></td>'+
+   '<td class="desc">'+esc(x.r.description||'')+'</td>'+
+   '<td><span class="dashboard-status '+x.workflow.cls+'">'+esc(x.workflow.label)+'</span></td>'+
+   '<td>'+esc(x.workflow.next)+'</td>'+
+   '<td class="'+(x.submitted?'dashboard-date-actual':'dashboard-date-plan')+'">'+(x.submissionDate?esc(formatDateText(x.submissionDate)):'—')+'</td>'+
+   '<td class="dashboard-responsibility" title="On-Site: '+esc(x.resp.onsite||'Not assigned')+' | Off-Site: '+esc(x.resp.offsite||'Not assigned')+'">'+esc(x.resp.label)+'</td>'+
+  '</tr>'
+ ).join('')||'<tr><td colspan="6" class="dashboard-empty">No CMIs are currently progressing.</td></tr>';
+
+ const dataDate=programmeDataDate||todayISO();
+ const due=planned().map(r=>{
+   const handover=dashboardHandoverItemForRecord(r),resp=dashboardResponsiblePersonnel(r);
+   return{r,handover,resp};
+ }).filter(x=>x.handover.measureStart&&x.handover.measureStart<=dataDate&&!x.handover.actualDate)
+   .sort((a,b)=>a.handover.measureStart.localeCompare(b.handover.measureStart)||String(a.r.cmiNo||'').localeCompare(String(b.r.cmiNo||''),undefined,{numeric:true}));
+ const dueBody=document.getElementById('dashboardDueHandoverBody');
+ const dueCount=document.getElementById('dashboardDueHandoverCount');
+ const dueAsAt=document.getElementById('dashboardDueHandoverAsAt');
+ if(dueCount)dueCount.textContent=due.length+' CMI'+(due.length===1?'':'s');
+ if(dueAsAt)dueAsAt.textContent='As at '+formatDateText(dataDate);
+ if(dueBody)dueBody.innerHTML=due.map(x=>
+  '<tr>'+
+   '<td><b>'+esc(x.r.cmiNo||x.r.cmiKey||'—')+'</b></td>'+
+   '<td class="desc">'+esc(x.r.description||'')+'</td>'+
+   '<td class="dashboard-date-plan">'+esc(formatDateText(x.handover.measureStart))+'</td>'+
+   '<td>'+(x.handover.requiredDate?esc(formatDateText(x.handover.requiredDate)):'—')+'</td>'+
+   '<td class="dashboard-responsibility" title="On-Site: '+esc(x.resp.onsite||'Not assigned')+' | Off-Site: '+esc(x.resp.offsite||'Not assigned')+'">'+esc(x.resp.label)+'</td>'+
+  '</tr>'
+ ).join('')||'<tr><td colspan="5" class="dashboard-empty">No overdue or due CMI handovers.</td></tr>';
+
+ const ranges=programmeWeekRanges(),next=ranges.next;
+ const nextRows=planned().map(r=>{
+   const acts=dashboardCmiActivities(r),handover=dashboardHandoverItemForRecord(r),resp=dashboardResponsiblePersonnel(r);
+   return{r,measureStart:acts.measure?.startDate||'',handover,resp};
+ }).filter(x=>x.measureStart&&x.measureStart>=next.start&&x.measureStart<=next.finish)
+   .sort((a,b)=>a.measureStart.localeCompare(b.measureStart)||String(a.r.cmiNo||'').localeCompare(String(b.r.cmiNo||''),undefined,{numeric:true}));
+ const nextBody=document.getElementById('dashboardNextWeekBody');
+ const nextCount=document.getElementById('dashboardNextWeekCount');
+ const nextRange=document.getElementById('dashboardNextWeekRange');
+ if(nextCount)nextCount.textContent=nextRows.length+' CMI'+(nextRows.length===1?'':'s');
+ if(nextRange)nextRange.textContent='From '+formatDateText(next.start)+' to '+formatDateText(next.finish);
+ if(nextBody)nextBody.innerHTML=nextRows.map(x=>
+  '<tr>'+
+   '<td><b>'+esc(x.r.cmiNo||x.r.cmiKey||'—')+'</b></td>'+
+   '<td class="desc">'+esc(x.r.description||'')+'</td>'+
+   '<td class="dashboard-date-plan">'+esc(formatDateText(x.measureStart))+'</td>'+
+   '<td>'+dashboardHandoverStatusHtml(x.handover)+'</td>'+
+   '<td class="dashboard-responsibility" title="On-Site: '+esc(x.resp.onsite||'Not assigned')+' | Off-Site: '+esc(x.resp.offsite||'Not assigned')+'">'+esc(x.resp.label)+'</td>'+
+  '</tr>'
+ ).join('')||'<tr><td colspan="5" class="dashboard-empty">No CMIs are planned to start next week.</td></tr>';
+}
+function renderDashboard(){renderKpis();renderBars();renderDeliverySnapshot();renderResourcePerformance();renderDashboardOperationalTables()}
 function renderActiveTab(){const active=document.querySelector('.tabbtn.active')?.dataset.tab||'dashboard';if(active==='dashboard')renderDashboard();else if(active==='register')renderRegister();else if(active==='activities'){renderActivityList();renderDeliveryWbsManager();}else if(active==='allocation')renderAllocation();else if(active==='delivery')renderDelivery();else if(active==='readiness')renderReadiness();else if(active==='progress')renderProgress();else if(active==='organisation')renderOrganisation();else if(active==='quality')renderQuality();else if(active==='changes')renderChangesLog();else if(active==='audit')renderAuditLog()}
 function renderAll(){recalculateAllCmiProgress();syncHighLevelProgressFromActivities();setHeader();populateFilters();renderDashboard();renderActiveTab()}
 function openEdit(id){if(!canManageDelivery())return;const r=state.records.find(x=>x.id===id);if(!r)return;document.getElementById('modalTitle').textContent='Edit CMI Register';const map={eId:r.id,eCmiNo:r.cmiNo,eReference:r.reference,eDescription:r.description,eCmiDate:r.cmiDate,eStatus:r.status,eAsset:r.assetCode,eLocation:r.location,eInitial:r.initialEstimate??'',eSubmittedValue:r.submittedValue??'',eAgreedAmount:r.agreedAmount??'',eSubmittedDate:r.submittedDate,eAgreedDate:r.agreedDate,eRemarks:r.remarks,eNotes:r.notes};Object.entries(map).forEach(([i,v])=>document.getElementById(i).value=v);document.getElementById('editModal').classList.add('open')}
