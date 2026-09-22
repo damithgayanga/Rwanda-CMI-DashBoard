@@ -141,7 +141,15 @@
   const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_Vf4h_Nmo4Er-oTuCXEXOfg_z5QRCG71';
   const supabaseClient = window.supabase.createClient(
     SUPABASE_URL,
-    SUPABASE_PUBLISHABLE_KEY
+    SUPABASE_PUBLISHABLE_KEY,
+    {
+      auth:{
+        persistSession:true,
+        autoRefreshToken:true,
+        detectSessionInUrl:true,
+        storage:window.localStorage
+      }
+    }
   );
 
   let currentDashboardUser=null;
@@ -157,10 +165,64 @@
   function canAdmin(){return currentRole()==='admin'}
   function canViewChanges(){return currentRole()==='admin'}
 
-  async function fetchDashboardProfile(){
-    const {data:{user}}=await supabaseClient.auth.getUser();
-    if(!user)return null;
-    const {data,error}=await supabaseClient.from('dashboard_users').select('id,username,display_name,access_role,active').eq('id',user.id).single();
+  const NAV_STATE_KEY='cmi-dashboard-navigation-v1';
+
+  function readNavigationState(){
+    try{return JSON.parse(sessionStorage.getItem(NAV_STATE_KEY)||'{}')||{}}
+    catch(e){return {}}
+  }
+
+  function rememberNavigationState(tabKey='',scrollY=window.scrollY){
+    const active=tabKey||document.querySelector('.tabbtn.active')?.dataset.tab||'dashboard';
+    try{
+      sessionStorage.setItem(NAV_STATE_KEY,JSON.stringify({
+        activeTab:active,
+        scrollY:Math.max(0,Number(scrollY)||0)
+      }));
+    }catch(e){}
+  }
+
+  function activateDashboardTab(tabKey,restoreScroll=false){
+    const allowed=ROLE_TABS[currentRole()]||[];
+    const target=allowed.includes(tabKey)?tabKey:(allowed[0]||'dashboard');
+    document.querySelectorAll('.tabbtn').forEach(x=>x.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+    const btn=document.querySelector(`.tabbtn[data-tab="${target}"]`);
+    const tab=document.getElementById('tab-'+target);
+    if(btn)btn.classList.add('active');
+    if(tab)tab.classList.add('active');
+
+    const fitted=target==='process'||target==='organisation';
+    if(fitted){
+      window.scrollTo(0,0);
+      document.documentElement.style.overflow='hidden';
+      document.body.style.overflow='hidden';
+    }else{
+      document.documentElement.style.overflow='';
+      document.body.style.overflow='';
+      const pt=document.getElementById('tab-process');if(pt)pt.style.height='';
+      const ot=document.getElementById('tab-organisation');if(ot)ot.style.height='';
+      if(restoreScroll){
+        const nav=readNavigationState();
+        requestAnimationFrame(()=>window.scrollTo(0,Math.max(0,Number(nav.scrollY)||0)));
+      }
+    }
+    return target;
+  }
+
+  function restoreNavigationState(restoreScroll=false){
+    const nav=readNavigationState();
+    return activateDashboardTab(nav.activeTab||'dashboard',restoreScroll);
+  }
+
+  async function fetchDashboardProfile(userId=''){
+    let id=String(userId||'').trim();
+    if(!id){
+      const {data:{session}}=await supabaseClient.auth.getSession();
+      id=String(session?.user?.id||'').trim();
+    }
+    if(!id)return null;
+    const {data,error}=await supabaseClient.from('dashboard_users').select('id,username,display_name,access_role,active').eq('id',id).single();
     if(error||!data||!data.active)return null;
     return data;
   }
@@ -223,6 +285,7 @@
       try{await supabaseClient.removeChannel(readinessRealtimeChannel)}catch(e){}
       readinessRealtimeChannel=null;
     }
+    try{sessionStorage.removeItem(NAV_STATE_KEY)}catch(e){}
     await supabaseClient.auth.signOut();
     location.reload();
   }
@@ -295,6 +358,7 @@
     // This prevents users landing on an empty Executive Dashboard while the
     // Supabase-backed state, delivery activities and resources are still loading.
     applyRoleAccess();
+    restoreNavigationState(false);
     await loadSharedDashboardState();
     await loadDeliveryActivitiesFromSupabase();
     await loadResourcesFromSupabase();
@@ -322,7 +386,11 @@
     // the Executive Dashboard is fully populated immediately on login and also
     // covers any layout-sensitive content.
     await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+    restoreNavigationState(true);
     renderAll();
+    const restoredTab=document.querySelector('.tabbtn.active')?.dataset.tab||'dashboard';
+    if(restoredTab==='process')requestAnimationFrame(resizeProcessFlow);
+    if(restoredTab==='organisation')requestAnimationFrame(resizeOrganisationTab);
 
     if(canViewChanges())await loadChangesLog();
     if(canAdmin()){await loadAuditLog();await loadDashboardUsers();}
@@ -2560,26 +2628,14 @@ const flowFitBtn=document.getElementById('flowFitBtn');if(flowFitBtn){
  });
 }
 window.addEventListener('resize',()=>requestAnimationFrame(()=>{resizeProcessFlow();resizeOrganisationTab()}));
+window.addEventListener('pagehide',()=>rememberNavigationState());
 document.querySelectorAll('.tabbtn').forEach(b=>b.addEventListener('click',()=>{
  if(!(ROLE_TABS[currentRole()]||[]).includes(b.dataset.tab))return;
- document.querySelectorAll('.tabbtn').forEach(x=>x.classList.remove('active'));
- document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
- b.classList.add('active');
- document.getElementById('tab-'+b.dataset.tab).classList.add('active');
- const fitted=b.dataset.tab==='process'||b.dataset.tab==='organisation';
- if(fitted){
-  window.scrollTo(0,0);
-  document.documentElement.style.overflow='hidden';
-  document.body.style.overflow='hidden';
- }else{
-  document.documentElement.style.overflow='';
-  document.body.style.overflow='';
-  const pt=document.getElementById('tab-process');if(pt)pt.style.height='';
-  const ot=document.getElementById('tab-organisation');if(ot)ot.style.height='';
- }
+ const target=activateDashboardTab(b.dataset.tab,false);
+ rememberNavigationState(target,0);
  renderActiveTab();
- if(b.dataset.tab==='process')requestAnimationFrame(resizeProcessFlow);
- if(b.dataset.tab==='organisation')requestAnimationFrame(resizeOrganisationTab);
+ if(target==='process')requestAnimationFrame(resizeProcessFlow);
+ if(target==='organisation')requestAnimationFrame(resizeOrganisationTab);
 }));
 ['fSearch','fStatus','fPriority','fAsset','fPlan','fResource'].forEach(id=>document.getElementById(id).addEventListener('input',renderRegister));
 ['aSearch','aStatus','aPriority','aPlan','aSite','aOffsite'].forEach(id=>document.getElementById(id).addEventListener('input',renderAllocation));
@@ -2617,12 +2673,12 @@ const logoutBtn=document.getElementById('logoutBtn');if(logoutBtn)logoutBtn.addE
 
 (async function bootstrapDashboard(){
  const {data:{session}}=await supabaseClient.auth.getSession();
- if(session)currentDashboardUser=await fetchDashboardProfile();
+ if(session?.user?.id)currentDashboardUser=await fetchDashboardProfile(session.user.id);
  if(currentDashboardUser){
    await startAuthenticatedDashboard();
    return;
  }
- await supabaseClient.auth.signOut();
+ if(session)await supabaseClient.auth.signOut();
  document.getElementById('authScreen')?.classList.remove('auth-hidden');
  document.getElementById('dashboardApp')?.classList.add('auth-hidden');
 })();
