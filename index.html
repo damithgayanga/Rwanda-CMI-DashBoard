@@ -2150,8 +2150,18 @@ function progressSearchRecords(){
   });
 }
 function progressActivitiesForRecord(r){
+ const progressActivityOrder=[
+  'Measurement Works & Valuation',
+  'Review of Valuation and Compilation of all Documents',
+  'Technical and Commercial Clearance',
+  'Final Review of the Submission',
+  'Submission to DGJ'
+ ];
+ const normaliseActivityName=name=>String(name||'').trim().toLowerCase().replace(/\s+/g,' ');
+ const orderMap=new Map(progressActivityOrder.map((name,index)=>[normaliseActivityName(name),index]));
  return (r.cmiActivities||[]).slice().sort((a,b)=>{
-  const dx=activityDef(a.activityId),dy=activityDef(b.activityId),ox=dx?Number(dx.order)||999:999,oy=dy?Number(dy.order)||999:999;
+  const ax=normaliseActivityName(activityLabel(a)),bx=normaliseActivityName(activityLabel(b));
+  const ox=orderMap.has(ax)?orderMap.get(ax):999,oy=orderMap.has(bx)?orderMap.get(bx):999;
   return ox-oy||activityLabel(a).localeCompare(activityLabel(b));
  });
 }
