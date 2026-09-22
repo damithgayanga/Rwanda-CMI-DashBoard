@@ -57,6 +57,8 @@
 .org-left-pane .company-tag{font-size:8px}
 .org-left-pane .org-line{height:22px}
 .org-left-pane .org-tier{gap:10px}
+.org-left-pane .org-tier.org-tier-two{grid-template-columns:repeat(2,minmax(0,1fr));max-width:650px;width:72%;margin:0 auto;gap:16px}
+.org-left-pane .org-tier.org-tier-two:before{left:25%;right:25%;top:-11px}
 .org-left-pane .org-tier:before{top:-11px}
 .org-left-pane .org-tier .org-node:before{top:-12px;height:12px}
 .org-left-pane .org-band{padding:6px 8px;font-size:8px;margin:8px 0 18px}
@@ -1045,7 +1047,7 @@
    <div class="org-chart">
     <div class="org-node"><div class="company-tag">UMC JV</div><b>Jason Mark Swatton</b><span>Contracts and Commercial Director</span></div><div class="org-line"></div>
     <div class="org-node"><div class="company-tag">DMD Consult</div><b>Michael Dullaghan</b><span>Change Manager · In Country — Part-time Secondment</span></div><div class="org-line"></div>
-    <div class="org-tier"><div class="org-node"><div class="company-tag">DMD · Site</div><b>Dinuka Maduranga</b><span>Senior Consultant · Site Resource 2</span></div><div class="org-node"><div class="company-tag">UMC JV · Site</div><b>Orville Mathew Gayatin</b><span>Senior Quantity Surveyor · Site Resource 3</span></div></div>
+    <div class="org-tier org-tier-two"><div class="org-node"><div class="company-tag">DMD · Site</div><b>Dinuka Maduranga</b><span>Senior Consultant · Site Resource 1</span></div><div class="org-node"><div class="company-tag">UMC JV · Site</div><b>Orville Mathew Gayatin</b><span>Senior Quantity Surveyor · Site Resource 2</span></div></div>
     <div class="org-band">In Country — Full Time Secondment · CMI Administration, Valuation, Reporting + Negotiation</div>
     <div class="org-tier"><div class="org-node"><div class="company-tag">DMD · Remote</div><b>Damith Samarasinghe</b><span>Quantity Surveyor · Off-site Resource 2</span></div><div class="org-node"><div class="company-tag">DMD · Remote</div><b>Kosala Gamage</b><span>Senior Quantity Surveyor · Off-site Resource 1</span></div><div class="org-node"><div class="company-tag">DMD · Remote</div><b>Devmini Amarasinghe</b><span>Quantity Surveyor · Off-site Resource 3</span></div></div>
     <div class="org-band">Remote — Full Time Secondments · CMI Measurement incl. CostX, Take Off, Marked Up Drawings & Measurement Sheets</div>
@@ -1131,8 +1133,8 @@ const SITE_RESOURCES=['Dinuka Maduranga','Orville Mathew Gayatin'];
 const OFFSITE_RESOURCES=['Kosala Gamage','Damith Samarasinghe','Devmini Amarasinghe'];
 const ALL_RESOURCES=[...SITE_RESOURCES,...OFFSITE_RESOURCES];
 const RESOURCE_ROLES={
- 'Dinuka Maduranga':'Site Resource 2 · Finalise CMI submission with measurement team',
- 'Orville Mathew Gayatin':'Site Resource 3 · Unallocated judgement / Included-in-Other / investigations',
+ 'Dinuka Maduranga':'Site Resource 1 · Finalise CMI submission with measurement team',
+ 'Orville Mathew Gayatin':'Site Resource 2 · Unallocated judgement / Included-in-Other / investigations',
  'Kosala Gamage':'Off-site Resource 1 · Site liaison, valuation, QA/QC & delivery',
  'Damith Samarasinghe':'Off-site Resource 2 · Measurement, BOQ & marked-up drawings',
  'Devmini Amarasinghe':'Off-site Resource 3 · Measurement, BOQ & marked-up drawings'};
@@ -2134,7 +2136,7 @@ async function deleteResourceMaster(id){
 }
 function renderOrganisation(){renderResourceMaster()}
 
-function renderResources(){const cards=[['Dinuka Maduranga','Site Resource 2','Liaise with measurement team and finalise CMI submission.','Site-based · mobilised from beginning Sep 2026'],['Orville Mathew Gayatin','Site Resource 3','Initial judgement/value for Unallocated items; investigate Included in Other CMIs and Provisional Sum CMI.','Site-based · UMC JV'],['Kosala Gamage','Off-site Resource 1','Site liaison; deliver assessments; valuation after measurement; QA/QC and delivery quality.','Started 9 Sep 2026 · 4 completed by 16 Sep'],['Damith Samarasinghe','Off-site Resource 2','CMI measurement; prepare BOQ and markup drawings.','Starts 21 Sep 2026'],['Devmini Amarasinghe','Off-site Resource 3','CMI measurement; prepare BOQ and markup drawings.','Starts 21 Sep 2026']];document.getElementById('resourceCards').innerHTML=cards.map(c=>`<div class="resource"><div class="type">${c[1]}</div><b>${c[0]}</b><p>${c[2]}</p><div class="badge-note">${c[3]}</div></div>`).join('')}
+function renderResources(){const cards=[['Dinuka Maduranga','Site Resource 1','Liaise with measurement team and finalise CMI submission.','Site-based · mobilised from beginning Sep 2026'],['Orville Mathew Gayatin','Site Resource 2','Initial judgement/value for Unallocated items; investigate Included in Other CMIs and Provisional Sum CMI.','Site-based · UMC JV'],['Kosala Gamage','Off-site Resource 1','Site liaison; deliver assessments; valuation after measurement; QA/QC and delivery quality.','Started 9 Sep 2026 · 4 completed by 16 Sep'],['Damith Samarasinghe','Off-site Resource 2','CMI measurement; prepare BOQ and markup drawings.','Starts 21 Sep 2026'],['Devmini Amarasinghe','Off-site Resource 3','CMI measurement; prepare BOQ and markup drawings.','Starts 21 Sep 2026']];document.getElementById('resourceCards').innerHTML=cards.map(c=>`<div class="resource"><div class="type">${c[1]}</div><b>${c[0]}</b><p>${c[2]}</p><div class="badge-note">${c[3]}</div></div>`).join('')}
 
 function progressSearchRecords(){
  const el=document.getElementById('progressCmiSearch'),raw=(el?.value||'').trim();
