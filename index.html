@@ -2655,6 +2655,18 @@ async function submitProgressUpdate(){
         finish=tr.querySelector('[data-progress-field="actualFinishDate"]')?.value||'',
         pct=Math.max(0,Math.min(100,Number(tr.querySelector('[data-progress-field="progressPct"]')?.value)||0));
   if(start&&finish&&finish<start){const msg='Actual Finish Date cannot be before Actual Start Date for '+activityLabel(a)+'.';if(status)status.textContent=msg;alert(msg);return}
+  if(pct>=100&&!finish){
+    const msg='Actual Finish Date is mandatory when '+activityLabel(a)+' is updated to 100%.';
+    if(status)status.textContent=msg;alert(msg);
+    const el=tr.querySelector('[data-progress-field="actualFinishDate"]');if(el)el.focus();
+    return;
+  }
+  if(finish&&pct<100){
+    const msg=activityLabel(a)+' must be updated to 100% when an Actual Finish Date is entered.';
+    if(status)status.textContent=msg;alert(msg);
+    const el=tr.querySelector('[data-progress-field="progressPct"]');if(el)el.focus();
+    return;
+  }
 
   const isMeasure=a.activityId==='act-measure'||String(activityLabel(a)||'').toLowerCase().includes('measurement works');
   const isSubmission=a.activityId==='act-submit-dgj'||String(activityLabel(a)||'').toLowerCase().includes('submission to dgj');
