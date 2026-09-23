@@ -832,7 +832,7 @@
     const avg=days.length?Math.round(days.reduce((a,b)=>a+b,0)/days.length):0;
     const oldest=days.length?Math.max(...days):0;
     return '<div class="card kpi kpi-stage">'+
-      '<div class="label">RFI / Information Holds</div>'+
+      '<div class="label">Measurement Hold Pending RFI</div>'+
       '<div class="value">'+open.length+'<span class="value-context">open</span></div>'+
       '<div class="rfi-kpi-lines">'+
        '<div class="rfi-kpi-line"><span>CMIs on Hold</span><b>'+cmis.size+'</b></div>'+
@@ -1941,10 +1941,10 @@ function renderKpis(){
   : '';
  const cards=[
   `<div class="card kpi kpi-stage kpi-submit-card"><div class="label">To be Submitted</div><div class="value">${toSubmit.length}<span class="value-context">out of ${r.length}</span></div>${submissionBreakdownHtml(toSubmit)}${unplannedNote}</div>`,
-  `<div class="kpi-rfi">${rfiDashboardKpiHtml()}</div>`,
   weeklyActivityPlanHtml(),
   `<div class="kpi-standard">${stageKpiHtml('CMI Assessment Commenced',assessmentCommenced,'',p.length)}</div>`,
   `<div class="kpi-standard">${stageKpiHtml('Measurement Completed',measurementCompleted,'',assessmentCommenced.length)}</div>`,
+  `<div class="kpi-rfi">${rfiDashboardKpiHtml()}</div>`,
   `<div class="kpi-standard kpi-clearance-pending">${stageKpiHtml('Tech & Com. Clearance Pending',clearancePending,'warn',measurementCompleted.length)}</div>`,
   `<div class="kpi-standard">${stageKpiHtml('Submitted to DGJ',submittedDgj,'good',clearanceCompleted.length)}</div>`
  ];
