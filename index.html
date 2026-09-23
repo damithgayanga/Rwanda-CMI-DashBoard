@@ -2410,10 +2410,15 @@ function filterDetailedCmiOptions(){
   el.style.display=!q||String(el.dataset.filterSearch||'').includes(q)?'flex':'none';
  });
 }
+function closeDetailedCmiFilterDropdown(){
+ const dropdown=document.getElementById('detailedCmiFilterDropdown');
+ if(dropdown)dropdown.open=false;
+}
 function clearDetailedCmiFilter(){
  document.querySelectorAll('#detailedCmiFilterOptions input[data-detailed-cmi-filter]').forEach(x=>x.checked=false);
  const search=document.getElementById('detailedCmiFilterSearch');if(search)search.value='';
  renderGantt();
+ closeDetailedCmiFilterDropdown();
 }
 function recordAssignedToDetailedOffsiteResource(r,name){
  if(!name)return true;
@@ -3480,7 +3485,7 @@ const progressCmiSearchEl=document.getElementById('progressCmiSearch');if(progre
 const applyDataDateBtn=document.getElementById('applyDataDateBtn');if(applyDataDateBtn)applyDataDateBtn.addEventListener('click',applyDataDate);
 const resetDataDateBtn=document.getElementById('resetDataDateBtn');if(resetDataDateBtn)resetDataDateBtn.addEventListener('click',resetDataDate);
 const dataDateInputEl=document.getElementById('dataDateInput');if(dataDateInputEl)dataDateInputEl.addEventListener('change',applyDataDate);
-const detailedCmiFilterOptionsEl=document.getElementById('detailedCmiFilterOptions');if(detailedCmiFilterOptionsEl)detailedCmiFilterOptionsEl.addEventListener('change',e=>{if(e.target.matches('[data-detailed-cmi-filter]'))renderGantt()});
+const detailedCmiFilterOptionsEl=document.getElementById('detailedCmiFilterOptions');if(detailedCmiFilterOptionsEl)detailedCmiFilterOptionsEl.addEventListener('change',e=>{if(e.target.matches('[data-detailed-cmi-filter]')){renderGantt();closeDetailedCmiFilterDropdown()}});
 const detailedCmiFilterSearchEl=document.getElementById('detailedCmiFilterSearch');if(detailedCmiFilterSearchEl)detailedCmiFilterSearchEl.addEventListener('input',filterDetailedCmiOptions);
 const detailedOffsiteResourceFilterEl=document.getElementById('detailedOffsiteResourceFilter');if(detailedOffsiteResourceFilterEl)detailedOffsiteResourceFilterEl.addEventListener('change',renderGantt);
 const clearDetailedCmiFilterBtn=document.getElementById('clearDetailedCmiFilterBtn');if(clearDetailedCmiFilterBtn)clearDetailedCmiFilterBtn.addEventListener('click',clearDetailedCmiFilter);
