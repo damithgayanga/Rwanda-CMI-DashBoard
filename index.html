@@ -646,6 +646,17 @@
     a.actualFinishDate=row.actual_finish||'';
     a.finishDate=row.actual_finish||'';
     a.progressPct=Math.max(0,Math.min(100,Number(row.progress_pct)||0));
+    if(a.activityId==='act-measure'||String(a.activityName||'').toLowerCase().includes('measurement works')){
+      const v=row.offsite_estimate;
+      if(v!==null&&v!==undefined&&v!==''){
+        r.offsiteEstimate=Number(v);
+        if(r.initialEstimate===null||r.initialEstimate===undefined||r.initialEstimate==='')r.initialEstimate=Number(v);
+      }
+    }
+    if(a.activityId==='act-submit-dgj'||String(a.activityName||'').toLowerCase().includes('submission to dgj')){
+      const v=row.submitted_value;
+      if(v!==null&&v!==undefined&&v!=='')r.submittedValue=Number(v);
+    }
     if(a.actualFinishDate||a.progressPct>=100)a.status='Completed';
     else if(a.actualStartDate||a.progressPct>0)a.status='In Progress';
     else a.status='To be Started';
@@ -665,7 +676,7 @@
       for(let from=0;;from+=PAGE_SIZE){
         const {data,error}=await supabaseClient
           .from(DELIVERY_ACTIVITY_TABLE)
-          .select('cmi_key,cmi_no,cmi_record_id,activity_id,activity_name,planned_start,planned_finish,actual_start,actual_finish,progress_pct,site_resource,offsite_resource,display_order,updated_at')
+          .select('cmi_key,cmi_no,cmi_record_id,activity_id,activity_name,planned_start,planned_finish,actual_start,actual_finish,progress_pct,offsite_estimate,submitted_value,site_resource,offsite_resource,display_order,updated_at')
           .order('cmi_key',{ascending:true})
           .order('display_order',{ascending:true})
           .range(from,from+PAGE_SIZE-1);
@@ -769,7 +780,7 @@
 
   async function saveCmiProgressToSupabase(pending) {
     for(const x of pending){
-      const {r,a,start,finish,pct}=x;
+      const {r,a,start,finish,pct,offsiteEstimate,submittedValue}=x;
       const key=deliveryActivityKey(r);
       const payload={
         cmi_key:key,
@@ -779,7 +790,9 @@
         activity_name:activityLabel(a),
         actual_start:start||null,
         actual_finish:finish||null,
-        progress_pct:pct
+        progress_pct:pct,
+        offsite_estimate:offsiteEstimate,
+        submitted_value:submittedValue
       };
       const {error}=await supabaseClient.rpc('dashboard_save_progress',{
         p_cmi_key:payload.cmi_key,
@@ -789,7 +802,9 @@
         p_activity_name:payload.activity_name,
         p_actual_start:payload.actual_start,
         p_actual_finish:payload.actual_finish,
-        p_progress_pct:payload.progress_pct
+        p_progress_pct:payload.progress_pct,
+        p_offsite_estimate:payload.offsite_estimate,
+        p_submitted_value:payload.submitted_value
       });
       if(error)throw error;
     }
@@ -1301,7 +1316,7 @@
  <div class="section-title"><h2>CMI Register</h2><div class="toolbar"><button class="btn primary" id="addCmiBtn">+ Add CMI</button><button class="btn" id="exportCsvBtn">Export filtered CSV</button><button class="btn" id="exportJsonBtn">Backup JSON</button><button class="btn danger" id="resetBtn">Reset local changes</button></div></div>
  <div class="card"><div class="filters"><input id="fSearch" placeholder="Search CMI / reference / description / location"><select id="fStatus"><option value="">All statuses</option></select><select id="fPriority"><option value="">All priorities</option><option>High</option><option>Medium</option><option>Low</option><option>Unvalued</option></select><select id="fAsset"><option value="">All assets</option></select><select id="fPlan"><option value="">All plan status</option><option value="planned">In Delivery Plan</option><option value="notplanned">Not Planned</option></select><select id="fResource"><option value="">All resources</option></select></div>
  <div class="small muted" id="registerCount" style="margin-bottom:10px"></div>
- <div class="table-wrap"><table class="data-table"><thead><tr><th>CMI</th><th>Reference</th><th>Description</th><th>CMI Date</th><th>Asset</th><th>Location</th><th>Initial Estimate</th><th>Submitted Value</th><th>Agreed Amount</th><th>Register Status</th><th>Priority</th><th>Site Resource</th><th>Off-site Resource</th><th>Delivery Status</th><th>Action</th></tr></thead><tbody id="registerBody"></tbody></table></div></div>
+ <div class="table-wrap"><table class="data-table"><thead><tr><th>CMI</th><th>Reference</th><th>Description</th><th>CMI Date</th><th>Asset</th><th>Location</th><th>Initial Estimate</th><th>Off-Site Estimate</th><th>Submitted Value</th><th>Agreed Amount</th><th>Register Status</th><th>Priority</th><th>Site Resource</th><th>Off-site Resource</th><th>Delivery Status</th><th>Action</th></tr></thead><tbody id="registerBody"></tbody></table></div></div>
 </section>
 
 <section class="tab" id="tab-activities">
@@ -1436,7 +1451,7 @@
  <div class="section-title"><h2>Progress Update</h2></div>
  <div class="card">
   <div class="field" style="max-width:420px;margin-bottom:14px"><label>CMI No.</label><input id="progressCmiSearch" placeholder="Enter CMI No. e.g. 00015"></div>
-  <div class="table-wrap" style="max-height:70vh"><table class="data-table" style="min-width:760px"><thead><tr><th>Activity</th><th>Actual Start Date</th><th>Actual Finish Date</th><th>Progress %</th></tr></thead><tbody id="progressActivityBody"></tbody></table></div>
+  <div class="table-wrap" style="max-height:70vh"><table class="data-table" style="min-width:930px"><thead><tr><th>Activity</th><th>Actual Start Date</th><th>Actual Finish Date</th><th>Progress %</th><th>Amount</th></tr></thead><tbody id="progressActivityBody"></tbody></table></div>
   <div class="toolbar" style="justify-content:flex-end;margin-top:14px"><span class="small muted" id="progressSubmitStatus" style="margin-right:auto"></span><button class="btn good" id="submitProgressUpdateBtn" type="button">Submit Progress Update</button></div>
  </div>
 </section>
@@ -2066,7 +2081,7 @@ function populateFilters(){
  let es=document.getElementById('eStatus');if(es){let ev=es.value;es.innerHTML=uniq(statuses.concat(['To be Submitted - Initial Review compelted','To be Submitted and Unallocated','Included in Other CMIs','Provisional Sum CMI','Submitted','Agreed'])).map(s=>`<option>${esc(s)}</option>`).join('');if(ev)es.value=ev}
 }
 function registerFilters(){const q=document.getElementById('fSearch').value.trim().toLowerCase(),st=document.getElementById('fStatus').value,p=document.getElementById('fPriority').value,a=document.getElementById('fAsset').value,pl=document.getElementById('fPlan').value,rs=document.getElementById('fResource').value;return state.records.filter(r=>{const hay=[r.cmiNo,r.reference,r.description,r.location,r.assetCode,r.remarks,r.notes].join(' ').toLowerCase();return(!q||hay.includes(q))&&(!st||r.status===st)&&(!p||calcPriority(r)===p)&&(!a||String(r.assetCode||'').split(/\n|,/).map(x=>x.trim()).includes(a))&&(!pl||(pl==='planned'?isInDeliveryPlanRecord(r):!isInDeliveryPlanRecord(r)))&&(!rs||resourceMatches(r,rs))})}
-function renderRegister(){filteredRegister=registerFilters();document.getElementById('registerCount').textContent=`Showing ${filteredRegister.length} of ${state.records.length} work items`;document.getElementById('registerBody').innerHTML=filteredRegister.map(r=>`<tr><td class="nowrap"><b>${esc(r.cmiNo)}</b></td><td>${esc(r.reference)}</td><td class="desc">${esc(r.description)}</td><td>${fmtDate(r.cmiDate)}</td><td>${esc(r.assetCode)}</td><td>${esc(r.location)}</td><td class="money">${money(r.initialEstimate)}</td><td class="money">${money(r.submittedValue)}</td><td class="money">${money(r.agreedAmount)}</td><td>${statusPill(r.status)}</td><td>${priorityPill(calcPriority(r))}</td><td>${r.siteResource?esc(r.siteResource):'<span class="empty">—</span>'}</td><td>${r.offsiteResource?esc(r.offsiteResource):'<span class="empty">—</span>'}</td><td>${deliveryPill(derivedDeliveryStatus(r))}</td><td><button class="iconbtn" onclick="openEdit('${r.id}')">Edit Register</button></td></tr>`).join('')}
+function renderRegister(){filteredRegister=registerFilters();document.getElementById('registerCount').textContent=`Showing ${filteredRegister.length} of ${state.records.length} work items`;document.getElementById('registerBody').innerHTML=filteredRegister.map(r=>`<tr><td class="nowrap"><b>${esc(r.cmiNo)}</b></td><td>${esc(r.reference)}</td><td class="desc">${esc(r.description)}</td><td>${fmtDate(r.cmiDate)}</td><td>${esc(r.assetCode)}</td><td>${esc(r.location)}</td><td class="money">${money(r.initialEstimate)}</td><td class="money">${money(r.offsiteEstimate)}</td><td class="money">${money(r.submittedValue)}</td><td class="money">${money(r.agreedAmount)}</td><td>${statusPill(r.status)}</td><td>${priorityPill(calcPriority(r))}</td><td>${r.siteResource?esc(r.siteResource):'<span class="empty">—</span>'}</td><td>${r.offsiteResource?esc(r.offsiteResource):'<span class="empty">—</span>'}</td><td>${deliveryPill(derivedDeliveryStatus(r))}</td><td><button class="iconbtn" onclick="openEdit('${r.id}')">Edit Register</button></td></tr>`).join('')}
 
 function allocationFilters(){const q=document.getElementById('aSearch').value.trim().toLowerCase(),st=document.getElementById('aStatus').value,p=document.getElementById('aPriority').value,pl=document.getElementById('aPlan').value,sr=document.getElementById('aSite').value,or=document.getElementById('aOffsite').value;return state.records.filter(r=>ACTIONABLE.has(r.status)).filter(r=>{const hay=[r.cmiNo,r.description,r.location,r.assetCode].join(' ').toLowerCase(),acts=r.cmiActivities||[];const sm=!sr||acts.some(a=>a.siteResource===sr)||r.siteResource===sr,om=!or||acts.some(a=>a.offsiteResource===or)||r.offsiteResource===or;return(!q||hay.includes(q))&&(!st||r.status===st)&&(!p||calcPriority(r)===p)&&(!pl||(pl==='planned'?isInDeliveryPlanRecord(r):!isInDeliveryPlanRecord(r)))&&sm&&om})}
 
@@ -2599,19 +2614,31 @@ function renderProgress(){
  const body=document.getElementById('progressActivityBody');if(!body)return;
  const input=document.getElementById('progressCmiSearch'),raw=(input?.value||'').trim(),btn=document.getElementById('submitProgressUpdateBtn'),status=document.getElementById('progressSubmitStatus');
  if(status)status.textContent='';
- if(!raw){body.innerHTML='<tr><td colspan="4" class="muted">Enter a CMI No. above.</td></tr>';if(btn)btn.disabled=true;return}
+ if(!raw){body.innerHTML='<tr><td colspan="5" class="muted">Enter a CMI No. above.</td></tr>';if(btn)btn.disabled=true;return}
  const records=progressSearchRecords();
- if(!records.length){body.innerHTML='<tr><td colspan="4" class="muted">No matching CMI found in the Delivery Plan.</td></tr>';if(btn)btn.disabled=true;return}
+ if(!records.length){body.innerHTML='<tr><td colspan="5" class="muted">No matching CMI found in the Delivery Plan.</td></tr>';if(btn)btn.disabled=true;return}
  let html='',activityCount=0;
  records.forEach(r=>{
   const activities=progressActivitiesForRecord(r);
-  html+=`<tr class="progress-cmi-group"><td colspan="4"><div class="progress-cmi-group-title"><b>${esc(r.cmiNo||('CMI '+(r.cmiKey||'')))}</b><span>${esc(r.description||'')}</span></div></td></tr>`;
+  html+=`<tr class="progress-cmi-group"><td colspan="5"><div class="progress-cmi-group-title"><b>${esc(r.cmiNo||('CMI '+(r.cmiKey||'')))}</b><span>${esc(r.description||'')}</span></div></td></tr>`;
   if(!activities.length){
-   html+='<tr><td colspan="4" class="muted progress-activity-name">No activities allocated to this CMI record.</td></tr>';
+   html+='<tr><td colspan="5" class="muted progress-activity-name">No activities allocated to this CMI record.</td></tr>';
    return;
   }
   activityCount+=activities.length;
-  html+=activities.map(a=>`<tr data-progress-activity="${r.id}|${a.id}"><td class="progress-activity-name"><b>${esc(activityLabel(a))}</b></td><td><input class="inline-input" type="date" data-progress-field="actualStartDate" value="${a.actualStartDate||''}"></td><td><input class="inline-input" type="date" data-progress-field="actualFinishDate" value="${a.actualFinishDate||''}"></td><td><input class="inline-input" type="number" min="0" max="100" step="1" data-progress-field="progressPct" value="${Number(a.progressPct)||0}"></td></tr>`).join('');
+  html+=activities.map(a=>{
+    const isMeasure=a.activityId==='act-measure'||String(activityLabel(a)||'').toLowerCase().includes('measurement works');
+    const isSubmission=a.activityId==='act-submit-dgj'||String(activityLabel(a)||'').toLowerCase().includes('submission to dgj');
+    let amountCell='<span class="muted">—</span>';
+    if(isMeasure){
+      const v=r.offsiteEstimate===null||r.offsiteEstimate===undefined?'':r.offsiteEstimate;
+      amountCell='<div class="field"><label>Off-Site Estimate</label><input class="inline-input" type="number" step="0.01" data-progress-field="offsiteEstimate" placeholder="Enter Off-Site Estimate" value="'+esc(v)+'"></div>';
+    }else if(isSubmission){
+      const v=r.submittedValue===null||r.submittedValue===undefined?'':r.submittedValue;
+      amountCell='<div class="field"><label>Submitted Value</label><input class="inline-input" type="number" step="0.01" data-progress-field="submittedValue" placeholder="Enter Submitted Value" value="'+esc(v)+'"></div>';
+    }
+    return `<tr data-progress-activity="${r.id}|${a.id}"><td class="progress-activity-name"><b>${esc(activityLabel(a))}</b></td><td><input class="inline-input" type="date" data-progress-field="actualStartDate" value="${a.actualStartDate||''}"></td><td><input class="inline-input" type="date" data-progress-field="actualFinishDate" value="${a.actualFinishDate||''}"></td><td><input class="inline-input" type="number" min="0" max="100" step="1" data-progress-field="progressPct" value="${Number(a.progressPct)||0}"></td><td>${amountCell}</td></tr>`;
+  }).join('');
  });
  body.innerHTML=html;
  if(btn)btn.disabled=activityCount===0;
@@ -2624,9 +2651,28 @@ async function submitProgressUpdate(){
  const pending=[];
  for(const tr of rows){
   const parts=String(tr.dataset.progressActivity||'').split('|'),r=state.records.find(x=>x.id===parts[0]),a=r&&(r.cmiActivities||[]).find(x=>x.id===parts[1]);if(!r||!a)continue;
-  const start=tr.querySelector('[data-progress-field="actualStartDate"]')?.value||'',finish=tr.querySelector('[data-progress-field="actualFinishDate"]')?.value||'',pct=Math.max(0,Math.min(100,Number(tr.querySelector('[data-progress-field="progressPct"]')?.value)||0));
-  if(start&&finish&&finish<start){alert('Actual Finish Date cannot be before Actual Start Date for '+activityLabel(a)+'.');return}
-  pending.push({r,a,start,finish,pct});
+  const start=tr.querySelector('[data-progress-field="actualStartDate"]')?.value||'',
+        finish=tr.querySelector('[data-progress-field="actualFinishDate"]')?.value||'',
+        pct=Math.max(0,Math.min(100,Number(tr.querySelector('[data-progress-field="progressPct"]')?.value)||0));
+  if(start&&finish&&finish<start){const msg='Actual Finish Date cannot be before Actual Start Date for '+activityLabel(a)+'.';if(status)status.textContent=msg;alert(msg);return}
+
+  const isMeasure=a.activityId==='act-measure'||String(activityLabel(a)||'').toLowerCase().includes('measurement works');
+  const isSubmission=a.activityId==='act-submit-dgj'||String(activityLabel(a)||'').toLowerCase().includes('submission to dgj');
+  const measureInput=tr.querySelector('[data-progress-field="offsiteEstimate"]');
+  const submissionInput=tr.querySelector('[data-progress-field="submittedValue"]');
+  const offsiteEstimate=measureInput&&measureInput.value!==''?Number(measureInput.value):(isMeasure&&r.offsiteEstimate!==null&&r.offsiteEstimate!==undefined?Number(r.offsiteEstimate):null);
+  const submittedValue=submissionInput&&submissionInput.value!==''?Number(submissionInput.value):(isSubmission&&r.submittedValue!==null&&r.submittedValue!==undefined?Number(r.submittedValue):null);
+  const completed=pct>=100||!!finish;
+
+  if(completed&&isMeasure&&(offsiteEstimate===null||!Number.isFinite(offsiteEstimate))){
+    const msg='Off-Site Estimate is mandatory before Measurement Works & Valuation can be set to 100% or given an Actual Finish Date for '+(r.cmiNo||r.cmiKey)+'.';
+    if(status)status.textContent=msg;alert(msg);if(measureInput)measureInput.focus();return;
+  }
+  if(completed&&isSubmission&&(submittedValue===null||!Number.isFinite(submittedValue))){
+    const msg='Submitted Value is mandatory before Submission to DGJ can be set to 100% or given an Actual Finish Date for '+(r.cmiNo||r.cmiKey)+'.';
+    if(status)status.textContent=msg;alert(msg);if(submissionInput)submissionInput.focus();return;
+  }
+  pending.push({r,a,start,finish,pct,offsiteEstimate:isMeasure?offsiteEstimate:null,submittedValue:isSubmission?submittedValue:null});
  }
  if(!pending.length){if(status)status.textContent='No activity progress rows to submit.';return}
  if(status)status.textContent='Saving progress to shared database…';
@@ -2634,15 +2680,23 @@ async function submitProgressUpdate(){
   await saveCmiProgressToSupabase(pending);
  }catch(e){
   console.error('Unable to save Progress Update to Supabase:',e);
-  if(status)status.textContent='Progress was not saved to the shared database.';
-  alert('The progress update could not be saved to Supabase. '+(e.message||''));
+  const msg=e.message||'Progress was not saved to the shared database.';
+  if(status)status.textContent=msg;
+  alert('The progress update could not be saved to Supabase. '+msg);
   return;
  }
  const touched=new Set();
  pending.forEach(x=>{
-  const {r,a,start,finish,pct}=x;
+  const {r,a,start,finish,pct,offsiteEstimate,submittedValue}=x;
   a.actualStartDate=start;a.actualFinishDate=finish;a.progressPct=pct;a.finishDate=finish||'';
   if(finish||pct>=100)a.status='Completed';else if(start||pct>0)a.status='In Progress';else a.status='To be Started';
+  const isMeasure=a.activityId==='act-measure'||String(activityLabel(a)||'').toLowerCase().includes('measurement works');
+  const isSubmission=a.activityId==='act-submit-dgj'||String(activityLabel(a)||'').toLowerCase().includes('submission to dgj');
+  if(isMeasure&&offsiteEstimate!==null){
+    r.offsiteEstimate=offsiteEstimate;
+    if(r.initialEstimate===null||r.initialEstimate===undefined||r.initialEstimate==='')r.initialEstimate=offsiteEstimate;
+  }
+  if(isSubmission&&submittedValue!==null)r.submittedValue=submittedValue;
   const resources=uniq([a.siteResource,a.offsiteResource]).filter(Boolean);
   if(!a.resourceProgress||typeof a.resourceProgress!=='object')a.resourceProgress={};
   resources.forEach(n=>a.resourceProgress[n]=pct);
@@ -2653,7 +2707,7 @@ async function submitProgressUpdate(){
  try{localStorage.setItem(STORAGE_KEY,JSON.stringify(state))}catch(e){}
  renderAll();
  const key=progressSearchRecords()[0]?.cmiKey||normCmi(document.getElementById('progressCmiSearch')?.value||'');
- const msg='Progress update saved to Supabase for CMI '+key+'. The shared Delivery Plan has been updated.';
+ const msg='Progress update saved to Supabase for CMI '+key+'. The shared Delivery Plan and CMI values have been updated.';
  const st=document.getElementById('progressSubmitStatus');if(st)st.textContent=msg;
 }
 function goProgress(id){
@@ -2808,7 +2862,7 @@ function closeModal(){document.getElementById('editModal').classList.remove('ope
 function saveEdit(){if(!canManageDelivery())return;const id=document.getElementById('eId').value;let r=id?state.records.find(x=>x.id===id):null;if(!r){r={id:'new-'+Date.now(),sourceRow:null,createdInTracker:true,cmiKey:'',siteResource:'',offsiteResource:'',inDeliveryPlan:false,deliveryStatus:'To be Started',deliveryValue:null,startDate:'',targetDate:'',finishDate:'',progressPct:0,progressNotes:'',cmiActivities:[]};state.records.push(r)}r.cmiNo=document.getElementById('eCmiNo').value.trim();r.cmiKey=normCmi(r.cmiNo);r.reference=document.getElementById('eReference').value.trim();r.description=document.getElementById('eDescription').value.trim();r.cmiDate=document.getElementById('eCmiDate').value;r.status=document.getElementById('eStatus').value;r.assetCode=document.getElementById('eAsset').value.trim();r.location=document.getElementById('eLocation').value.trim();const ini=document.getElementById('eInitial').value,sv=document.getElementById('eSubmittedValue').value,av=document.getElementById('eAgreedAmount').value;r.initialEstimate=ini===''?null:Number(ini);r.submittedValue=sv===''?null:Number(sv);r.agreedAmount=av===''?null:Number(av);if(!['Agreed','Submitted'].includes(r.status)){if(r.initialEstimate===0)r.initialEstimate=null;if(r.submittedValue===0)r.submittedValue=null}r.submittedDate=document.getElementById('eSubmittedDate').value;r.agreedDate=document.getElementById('eAgreedDate').value;r.remarks=document.getElementById('eRemarks').value;r.notes=document.getElementById('eNotes').value;closeModal();saveState()}
 function download(name,text,type='text/plain'){const b=new Blob([text],{type}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500)}
 function csvEscape(v){const s=String(v??'');return /[",\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s}
-function exportCsv(rows,name){const h=['CMI No','Reference','Description','CMI Date','Asset Code','Location','Initial Estimate','Submitted Value','Agreed Amount','Register Status','Priority','Site Resource','Off-site Resource','In Delivery Plan','Delivery Status','Delivery Value','Start Date','Target Date','Finish Date','Progress %','Progress Notes'];const lines=[h.join(',')];rows.forEach(r=>lines.push([r.cmiNo,r.reference,r.description,r.cmiDate,r.assetCode,r.location,moneyText(r.initialEstimate),moneyText(r.submittedValue),moneyText(r.agreedAmount),r.status,calcPriority(r),r.siteResource,r.offsiteResource,isInDeliveryPlanRecord(r)?'Yes':'No',derivedDeliveryStatus(r),moneyText(r.deliveryValue),r.startDate,r.targetDate,r.finishDate,weightedCmiProgress(r),r.progressNotes].map(csvEscape).join(',')));download(name,'\ufeff'+lines.join('\n'),'text/csv;charset=utf-8')}
+function exportCsv(rows,name){const h=['CMI No','Reference','Description','CMI Date','Asset Code','Location','Initial Estimate','Off-Site Estimate','Submitted Value','Agreed Amount','Register Status','Priority','Site Resource','Off-site Resource','In Delivery Plan','Delivery Status','Delivery Value','Start Date','Target Date','Finish Date','Progress %','Progress Notes'];const lines=[h.join(',')];rows.forEach(r=>lines.push([r.cmiNo,r.reference,r.description,r.cmiDate,r.assetCode,r.location,moneyText(r.initialEstimate),moneyText(r.offsiteEstimate),moneyText(r.submittedValue),moneyText(r.agreedAmount),r.status,calcPriority(r),r.siteResource,r.offsiteResource,isInDeliveryPlanRecord(r)?'Yes':'No',derivedDeliveryStatus(r),moneyText(r.deliveryValue),r.startDate,r.targetDate,r.finishDate,weightedCmiProgress(r),r.progressNotes].map(csvEscape).join(',')));download(name,'\ufeff'+lines.join('\n'),'text/csv;charset=utf-8')}
 
 // WBS delivery-plan view: programme root → CMI priority group → activity → assigned resource.
 const DELIVERY_ROOT_LABEL='Outstanding CMI Assessment and Delivery';
