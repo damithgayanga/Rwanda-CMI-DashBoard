@@ -798,7 +798,6 @@
       const {data,error}=await supabaseClient
         .from(RFI_INFORMATION_TABLE)
         .select('id,cmi_record_id,cmi_key,cmi_no,cmi_description,rfi_reference,raised_date,rfi_description,responsible_onsite_person,offsite_qs,information_received_date,remarks,created_at,updated_at')
-        .order('raised_date',{ascending:false})
         .order('id',{ascending:false});
       if(error){console.error('Unable to load RFI / information holds:',error);return false}
       rfiInformationRows=data||[];
@@ -813,6 +812,10 @@
   function openRfisForRecord(r){
     const id=String(r?.id||'');
     return rfiOpenRows().filter(x=>String(x.cmi_record_id||'')===id);
+  }
+
+  function latestOpenRfiForRecord(r){
+    return openRfisForRecord(r).sort((a,b)=>Number(b.id)-Number(a.id))[0]||null;
   }
 
   function rfiDaysBetween(start,end=''){
@@ -845,6 +848,15 @@
     }).sort((a,b)=>String(a.cmiNo||'').localeCompare(String(b.cmiNo||''),undefined,{numeric:true}));
   }
 
+  function rfiResponsiblePeopleForRecord(r){
+    const measure=findActivityByIdOrName(r,'act-measure','measurement works');
+    const review=findActivityByIdOrName(r,'act-finalise','review of valuation');
+    return {
+      offsite:measure?.offsiteResource||r?.offsiteResource||'',
+      onsite:review?.siteResource||r?.siteResource||''
+    };
+  }
+
   function populateRfiFormOptions(){
     const cmiSel=document.getElementById('rfiCmiSelect');
     if(cmiSel){
@@ -855,15 +867,11 @@
       ).join('');
       if([...cmiSel.options].some(o=>o.value===prev))cmiSel.value=prev;
     }
-    const resp=document.getElementById('rfiResponsibleOnsite');
-    if(resp){
-      const prev=resp.value;
-      resp.innerHTML=resourceOptions(currentSiteResources(),prev,'Select On-Site resource');
-    }
     const filter=document.getElementById('rfiResponsibleFilter');
     if(filter){
       const prev=filter.value;
-      filter.innerHTML='<option value="">All responsible On-Site resources</option>'+currentSiteResources().map(n=>'<option value="'+esc(n)+'">'+esc(n)+'</option>').join('');
+      const names=[...new Set((rfiInformationRows||[]).map(x=>x.responsible_onsite_person).filter(Boolean))].sort();
+      filter.innerHTML='<option value="">All responsible On-Site resources</option>'+names.map(n=>'<option value="'+esc(n)+'">'+esc(n)+'</option>').join('');
       if([...filter.options].some(o=>o.value===prev))filter.value=prev;
     }
     syncRfiSelectedCmi();
@@ -872,19 +880,17 @@
   function syncRfiSelectedCmi(){
     const id=document.getElementById('rfiCmiSelect')?.value||'';
     const r=state.records.find(x=>String(x.id||'')===String(id));
-    const offsite=document.getElementById('rfiOffsiteQs');
-    if(offsite){
-      const m=r?findActivityByIdOrName(r,'act-measure','measurement works'):null;
-      offsite.value=m?.offsiteResource||r?.offsiteResource||'';
-    }
+    const info=document.getElementById('rfiAutoDetails');
+    if(!info)return;
+    if(!r){info.textContent='';return}
+    const people=rfiResponsiblePeopleForRecord(r);
+    info.textContent='CMI Description: '+(r.description||'')+' | Off-Site: '+(people.offsite||'Not assigned')+' | On-Site: '+(people.onsite||'Not assigned');
   }
 
   function resetRfiForm(){
-    rfiEditingId=null;
-    ['rfiReference','rfiRaisedDate','rfiDescription','rfiOffsiteQs','rfiReceivedDate','rfiRemarks'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''});
+    ['rfiRaisedDate','rfiDescription'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''});
     const cmi=document.getElementById('rfiCmiSelect');if(cmi)cmi.value='';
-    const resp=document.getElementById('rfiResponsibleOnsite');if(resp)resp.value='';
-    const btn=document.getElementById('saveRfiBtn');if(btn)btn.textContent='Add RFI';
+    const info=document.getElementById('rfiAutoDetails');if(info)info.textContent='';
     const status=document.getElementById('rfiFormStatus');if(status)status.textContent='';
   }
 
@@ -895,70 +901,41 @@
     const r=state.records.find(x=>String(x.id||'')===String(cmiId));
     const raised=document.getElementById('rfiRaisedDate')?.value||'';
     const desc=(document.getElementById('rfiDescription')?.value||'').trim();
-    if(!r||!raised||!desc){if(status)status.textContent='Select a CMI and enter the RFI raised date and information required.';return}
-    const m=findActivityByIdOrName(r,'act-measure','measurement works');
+    if(!r||!raised||!desc){if(status)status.textContent='Select a CMI and enter the brief RFI description and issue date.';return}
+    const people=rfiResponsiblePeopleForRecord(r);
     const payload={
       cmi_record_id:String(r.id||''),
       cmi_key:r.cmiKey||normCmi(r.cmiNo||''),
       cmi_no:r.cmiNo||'',
       cmi_description:r.description||'',
-      rfi_reference:(document.getElementById('rfiReference')?.value||'').trim(),
       raised_date:raised,
       rfi_description:desc,
-      responsible_onsite_person:document.getElementById('rfiResponsibleOnsite')?.value||'',
-      offsite_qs:m?.offsiteResource||r.offsiteResource||'',
-      information_received_date:document.getElementById('rfiReceivedDate')?.value||null,
-      remarks:(document.getElementById('rfiRemarks')?.value||'').trim()
+      responsible_onsite_person:people.onsite||'',
+      offsite_qs:people.offsite||'',
+      information_received_date:null,
+      remarks:''
     };
     const btn=document.getElementById('saveRfiBtn');if(btn)btn.disabled=true;
     try{
-      let error;
-      if(rfiEditingId){
-        ({error}=await supabaseClient.from(RFI_INFORMATION_TABLE).update(payload).eq('id',rfiEditingId));
-      }else{
-        ({error}=await supabaseClient.from(RFI_INFORMATION_TABLE).insert(payload));
-      }
+      const {data,error}=await supabaseClient.from(RFI_INFORMATION_TABLE).insert(payload).select('rfi_reference').single();
       if(error)throw error;
       await loadRfiInformationFromSupabase();
       resetRfiForm();
       renderRfiTracker();
       renderDashboard();
-      if(status)status.textContent='RFI record saved.';
+      if(status)status.textContent=(data?.rfi_reference||'RFI')+' registered successfully.';
     }catch(e){console.error(e);if(status)status.textContent=e.message||'Unable to save RFI record.'}
     finally{if(btn)btn.disabled=false}
   }
 
-  function editRfiInformation(id){
-    if(!canManageDelivery())return;
-    const x=(rfiInformationRows||[]).find(r=>String(r.id)===String(id));if(!x)return;
-    rfiEditingId=x.id;
-    populateRfiFormOptions();
-    const vals={
-      rfiCmiSelect:String(x.cmi_record_id||''),rfiReference:x.rfi_reference||'',rfiRaisedDate:x.raised_date||'',
-      rfiDescription:x.rfi_description||'',rfiResponsibleOnsite:x.responsible_onsite_person||'',
-      rfiOffsiteQs:x.offsite_qs||'',rfiReceivedDate:x.information_received_date||'',rfiRemarks:x.remarks||''
-    };
-    Object.entries(vals).forEach(([id,v])=>{const el=document.getElementById(id);if(el)el.value=v});
-    const btn=document.getElementById('saveRfiBtn');if(btn)btn.textContent='Update RFI';
-    const status=document.getElementById('rfiFormStatus');if(status)status.textContent='Editing '+(x.rfi_reference||x.cmi_no||'RFI record');
-    window.scrollTo({top:document.getElementById('tab-rfi')?.offsetTop||0,behavior:'smooth'});
-  }
-
   async function closeRfiInformation(id){
     if(!canManageDelivery())return;
-    const x=(rfiInformationRows||[]).find(r=>String(r.id)===String(id));if(!x)return;
-    const date=prompt('Information received date (YYYY-MM-DD):',todayISO());
+    const x=(rfiInformationRows||[]).find(r=>String(r.id)===String(id));if(!x||x.information_received_date)return;
+    const date=prompt('Enter RFI Close Date (YYYY-MM-DD):',todayISO());
     if(!date)return;
     if(!/^\d{4}-\d{2}-\d{2}$/.test(date)){alert('Enter a valid date in YYYY-MM-DD format.');return}
     const {error}=await supabaseClient.from(RFI_INFORMATION_TABLE).update({information_received_date:date}).eq('id',id);
     if(error){alert(error.message||'Unable to close RFI.');return}
-    await loadRfiInformationFromSupabase();renderRfiTracker();renderDashboard();
-  }
-
-  async function deleteRfiInformation(id){
-    if(!canManageDelivery()||!confirm('Delete this RFI / Information Hold record?'))return;
-    const {error}=await supabaseClient.from(RFI_INFORMATION_TABLE).delete().eq('id',id);
-    if(error){alert(error.message||'Unable to delete RFI.');return}
     await loadRfiInformationFromSupabase();renderRfiTracker();renderDashboard();
   }
 
@@ -978,32 +955,27 @@
     const rf=document.getElementById('rfiResponsibleFilter')?.value||'';
     const rows=(rfiInformationRows||[]).filter(x=>{
       const status=x.information_received_date?'Closed':'Open';
-      return (!q||[x.cmi_no,x.cmi_description,x.rfi_reference,x.rfi_description,x.responsible_onsite_person,x.offsite_qs,x.remarks].some(v=>String(v||'').toLowerCase().includes(q)))
+      return (!q||[x.cmi_no,x.cmi_description,x.rfi_reference,x.rfi_description,x.responsible_onsite_person,x.offsite_qs].some(v=>String(v||'').toLowerCase().includes(q)))
         &&(!sf||status===sf)&&(!rf||x.responsible_onsite_person===rf);
     });
-    const count=document.getElementById('rfiCount');if(count)count.textContent='Showing '+rows.length+' of '+(rfiInformationRows||[]).length+' RFI / Information Hold records';
+    const count=document.getElementById('rfiCount');if(count)count.textContent='Showing '+rows.length+' of '+(rfiInformationRows||[]).length+' RFIs';
     const body=document.getElementById('rfiBody');if(!body)return;
     body.innerHTML=rows.map(x=>{
       const closed=!!x.information_received_date,status=closed?'Closed':'Open';
-      const days=rfiDaysBetween(x.raised_date,x.information_received_date||'');
-      const actions=canManageDelivery()
-        ? '<div class="row-actions"><button class="iconbtn" type="button" onclick="editRfiInformation('+x.id+')">Edit</button>'+(closed?'':'<button class="iconbtn" type="button" onclick="closeRfiInformation('+x.id+')">Received</button>')+'<button class="iconbtn" type="button" onclick="deleteRfiInformation('+x.id+')">Delete</button></div>'
-        : '';
+      const action=canManageDelivery()&&!closed?'<button class="iconbtn" type="button" onclick="closeRfiInformation('+x.id+')">Update / Close</button>':'';
       return '<tr>'+
+        '<td><b>'+esc(x.rfi_reference||'')+'</b></td>'+
         '<td><b>'+esc(x.cmi_no||x.cmi_key||'')+'</b></td>'+
         '<td class="desc">'+esc(x.cmi_description||'')+'</td>'+
-        '<td>'+esc(x.rfi_reference||'—')+'</td>'+
-        '<td class="nowrap">'+esc(formatDateText(x.raised_date))+'</td>'+
         '<td class="desc">'+esc(x.rfi_description||'')+'</td>'+
-        '<td>'+esc(x.responsible_onsite_person||'—')+'</td>'+
-        '<td>'+esc(x.offsite_qs||'—')+'</td>'+
-        '<td><span class="rfi-status '+(closed?'closed':'open')+'">'+status+'</span></td>'+
-        '<td class="rfi-wait '+(closed?'closed':'')+'">'+days+'</td>'+
+        '<td class="nowrap">'+esc(formatDateText(x.raised_date))+'</td>'+
         '<td class="nowrap">'+(x.information_received_date?esc(formatDateText(x.information_received_date)):'—')+'</td>'+
-        '<td class="desc">'+esc(x.remarks||'')+'</td>'+
-        '<td>'+actions+'</td>'+
+        '<td>'+esc(x.offsite_qs||'—')+'</td>'+
+        '<td>'+esc(x.responsible_onsite_person||'—')+'</td>'+
+        '<td><span class="rfi-status '+(closed?'closed':'open')+'">'+status+'</span></td>'+
+        '<td>'+action+'</td>'+
        '</tr>';
-    }).join('')||'<tr><td colspan="12" class="muted">No RFI / Information Hold records match the current filters.</td></tr>';
+    }).join('')||'<tr><td colspan="10" class="muted">No RFIs match the current filters.</td></tr>';
     refreshSortableTableHeadings(tab);
   }
 
@@ -1424,7 +1396,7 @@
 </section>
 
 <section class="tab" id="tab-rfi">
- <div class="section-title"><h2>RFI / Information Hold Tracker</h2><span class="note">Records information requests raised after Measurement &amp; Valuation has commenced.</span></div>
+ <div class="section-title"><h2>RFI / Information Hold Tracker</h2><span class="note">Record RFIs raised while Measurement &amp; Valuation is in progress.</span></div>
  <div class="rfi-overview-grid">
   <div class="rfi-overview-card"><div class="label">Open RFIs</div><div class="value" id="rfiOpenCount">0</div></div>
   <div class="rfi-overview-card"><div class="label">CMIs on Hold</div><div class="value" id="rfiHoldCmiCount">0</div></div>
@@ -1432,19 +1404,15 @@
   <div class="rfi-overview-card"><div class="label">Oldest Outstanding</div><div class="value" id="rfiOldestDays">0</div></div>
  </div>
  <div class="card" id="rfiEntryCard">
-  <h3>Add RFI / Information Hold</h3>
-  <div class="rfi-form-grid">
-   <div class="field rfi-wide"><label>CMI</label><select id="rfiCmiSelect"></select></div>
-   <div class="field"><label>RFI Reference</label><input id="rfiReference" placeholder="e.g. RFI-001"></div>
-   <div class="field"><label>RFI Raised Date</label><input id="rfiRaisedDate" type="date"></div>
-   <div class="field rfi-wide"><label>Information / Documents Required</label><input id="rfiDescription" placeholder="Describe the information required"></div>
-   <div class="field"><label>Responsible On-Site Person</label><select id="rfiResponsibleOnsite"></select></div>
-   <div class="field"><label>Off-Site QS</label><input id="rfiOffsiteQs" readonly></div>
-   <div class="field"><label>Information Received Date</label><input id="rfiReceivedDate" type="date"></div>
-   <div class="field rfi-wide"><label>Remarks</label><input id="rfiRemarks" placeholder="Optional remarks"></div>
-   <div class="field"><button class="btn primary" id="saveRfiBtn" type="button">Add RFI</button></div>
+  <h3>Add RFI</h3>
+  <div class="rfi-form-grid" style="grid-template-columns:1.6fr 2fr .8fr auto">
+   <div class="field"><label>CMI</label><select id="rfiCmiSelect"></select></div>
+   <div class="field"><label>Brief Description of RFI</label><input id="rfiDescription" placeholder="Brief description of information required"></div>
+   <div class="field"><label>RFI Issue Date</label><input id="rfiRaisedDate" type="date"></div>
+   <div class="field"><button class="btn primary" id="saveRfiBtn" type="button">Submit RFI</button></div>
   </div>
-  <div class="small muted" id="rfiFormStatus" style="margin-top:8px"></div>
+  <div class="small muted" id="rfiAutoDetails" style="margin-top:8px"></div>
+  <div class="small muted" id="rfiFormStatus" style="margin-top:5px"></div>
  </div>
  <div class="card" style="margin-top:14px">
   <div class="filters" style="grid-template-columns:1.4fr .8fr .8fr">
@@ -1455,7 +1423,7 @@
   <div class="small muted" id="rfiCount" style="margin-bottom:10px"></div>
   <div class="table-wrap">
    <table class="data-table rfi-table">
-    <thead><tr><th>CMI No.</th><th>Description</th><th>RFI Ref.</th><th>Raised Date</th><th>Information / Documents Required</th><th>Responsible On-Site</th><th>Off-Site QS</th><th>Status</th><th>Days Waiting</th><th>Information Received</th><th>Remarks</th><th>Action</th></tr></thead>
+    <thead><tr><th>RFI No.</th><th>CMI No.</th><th>CMI Description</th><th>Brief Description of RFI</th><th>RFI Issue Date</th><th>RFI Close Date</th><th>Responsible Off-Site Person</th><th>Responsible On-Site Person</th><th>RFI Status</th><th>Action</th></tr></thead>
     <tbody id="rfiBody"></tbody>
    </table>
   </div>
@@ -2728,8 +2696,9 @@ function dashboardWorkflowState(r){
   return{label:'Under Review of the Deliverables received from Off-Site Team',next:'Technical and Commercial Clearance',cls:'review',rank:2};
  }
  if(a.measure?.actualStartDate&&!measure100){
-  if(openRfisForRecord(r).length){
-    return{label:'Measurement & Valuation on Hold – Awaiting Site Information',next:'Receive outstanding information / documents from Site',cls:'hold',rank:1};
+  const openRfi=latestOpenRfiForRecord(r);
+  if(openRfi){
+    return{label:'Measurement on Hold Pending RFI',next:'Provide details requested in '+(openRfi.rfi_reference||'RFI'),cls:'hold',rank:1};
   }
   return{label:'Measurement and Valuation Ongoing',next:'Review the Deliverables received from Off-Site Team',cls:'measure',rank:1};
  }
