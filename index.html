@@ -1277,7 +1277,7 @@
    <div class="dashboard-ops-meta"><span>Current workflow position and next required action</span><span id="dashboardProgressingCount"></span></div>
    <div class="table-wrap" style="max-height:48vh">
     <table class="data-table dashboard-ops-table">
-     <thead><tr><th>CMI No.</th><th>Description</th><th>Current Status</th><th>Next Step</th><th>Measurement &amp; Valuation Completed Date</th><th>DGJ Submission Date</th><th>Responsible Personnel</th></tr></thead>
+     <thead><tr><th>CMI No.</th><th>Description</th><th>Current Status</th><th>Next Step</th><th>Measurement &amp; Valuation Completed Date</th><th>Off-Site Estimate</th><th>DGJ Submission Date</th><th>Responsible Personnel</th></tr></thead>
      <tbody id="dashboardProgressingBody"></tbody>
     </table>
    </div>
@@ -2809,7 +2809,8 @@ function renderDashboardOperationalTables(){
    const submitted=workflow.label==='Submitted';
    const submissionDate=submitted?(acts.submission?.actualFinishDate||acts.submission?.targetDate||''):(acts.submission?.targetDate||'');
    const measureCompletedDate=acts.measure?.actualFinishDate||'';
-   return{r,workflow,resp,submissionDate,submitted,measureCompletedDate};
+   const offsiteEstimate=r.offsiteEstimate;
+   return{r,workflow,resp,submissionDate,submitted,measureCompletedDate,offsiteEstimate};
  }).filter(Boolean).sort((x,y)=>x.workflow.rank-y.workflow.rank||String(x.r.cmiNo||'').localeCompare(String(y.r.cmiNo||''),undefined,{numeric:true}));
 
  if(progressCount)progressCount.textContent=progressing.length+' CMI'+(progressing.length===1?'':'s');
@@ -2820,10 +2821,11 @@ function renderDashboardOperationalTables(){
    '<td><span class="dashboard-status '+x.workflow.cls+'">'+esc(x.workflow.label)+'</span></td>'+
    '<td>'+esc(x.workflow.next)+'</td>'+
    '<td class="dashboard-date-actual">'+(x.measureCompletedDate?esc(formatDateText(x.measureCompletedDate)):'—')+'</td>'+
+   '<td class="money">'+(x.offsiteEstimate!==null&&x.offsiteEstimate!==undefined?money(x.offsiteEstimate):'—')+'</td>'+
    '<td class="'+(x.submitted?'dashboard-date-actual':'dashboard-date-plan')+'">'+(x.submissionDate?esc(formatDateText(x.submissionDate)):'—')+'</td>'+
    '<td class="dashboard-responsibility" title="On-Site: '+esc(x.resp.onsite||'Not assigned')+' | Off-Site: '+esc(x.resp.offsite||'Not assigned')+'">'+esc(x.resp.label)+'</td>'+
   '</tr>'
- ).join('')||'<tr><td colspan="7" class="dashboard-empty">No CMIs are currently progressing.</td></tr>';
+ ).join('')||'<tr><td colspan="8" class="dashboard-empty">No CMIs are currently progressing.</td></tr>';
 
  const dataDate=programmeDataDate||todayISO();
  const due=planned().map(r=>{
