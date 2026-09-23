@@ -1310,6 +1310,19 @@
     </div>
    </div>
   </div>
+
+  <div>
+   <div class="section-title"><h2>CMIs Handed Over but Measurement Not Started</h2></div>
+   <div class="card dashboard-ops-card">
+    <div class="dashboard-ops-meta"><span>Documents handed over to Off-Site; Measurement &amp; Valuation not yet commenced</span><span id="dashboardHandedOverNotStartedCount"></span></div>
+    <div class="table-wrap" style="max-height:38vh">
+     <table class="data-table dashboard-ops-table compact">
+      <thead><tr><th>CMI No.</th><th>Description</th><th>Planned M&amp;V Start</th><th>Documents Handed Over Date</th><th>Responsible Personnel</th></tr></thead>
+      <tbody id="dashboardHandedOverNotStartedBody"></tbody>
+     </table>
+    </div>
+   </div>
+  </div>
  </div>
 </section>
 
@@ -3015,6 +3028,24 @@ function renderDashboardOperationalTables(){
    '<td class="dashboard-responsibility" title="On-Site: '+esc(x.resp.onsite||'Not assigned')+' | Off-Site: '+esc(x.resp.offsite||'Not assigned')+'">'+esc(x.resp.label)+'</td>'+
   '</tr>'
  ).join('')||'<tr><td colspan="5" class="dashboard-empty">No overdue or due CMI handovers.</td></tr>';
+
+ const handedOverNotStarted=planned().map(r=>{
+  const acts=dashboardCmiActivities(r),handover=dashboardHandoverItemForRecord(r),resp=dashboardResponsiblePersonnel(r);
+  return{r,measure:acts.measure,handover,resp};
+ }).filter(x=>x.handover.actualDate&&!activityStarted(x.measure))
+   .sort((a,b)=>(a.handover.measureStart||'9999').localeCompare(b.handover.measureStart||'9999')||a.handover.actualDate.localeCompare(b.handover.actualDate)||String(a.r.cmiNo||'').localeCompare(String(b.r.cmiNo||''),undefined,{numeric:true}));
+ const handedBody=document.getElementById('dashboardHandedOverNotStartedBody');
+ const handedCount=document.getElementById('dashboardHandedOverNotStartedCount');
+ if(handedCount)handedCount.textContent=handedOverNotStarted.length+' CMI'+(handedOverNotStarted.length===1?'':'s');
+ if(handedBody)handedBody.innerHTML=handedOverNotStarted.map(x=>
+  '<tr>'+
+   '<td><b>'+esc(x.r.cmiNo||x.r.cmiKey||'—')+'</b></td>'+
+   '<td class="desc">'+esc(x.r.description||'')+'</td>'+
+   '<td class="dashboard-date-plan">'+(x.handover.measureStart?esc(formatDateText(x.handover.measureStart)):'—')+'</td>'+
+   '<td class="dashboard-date-actual">'+esc(formatDateText(x.handover.actualDate))+'</td>'+
+   '<td class="dashboard-responsibility" title="On-Site: '+esc(x.resp.onsite||'Not assigned')+' | Off-Site: '+esc(x.resp.offsite||'Not assigned')+'">'+esc(x.resp.label)+'</td>'+
+  '</tr>'
+ ).join('')||'<tr><td colspan="5" class="dashboard-empty">No CMIs are waiting to commence Measurement &amp; Valuation after document handover.</td></tr>';
 
  const ranges=programmeWeekRanges(),next=ranges.next;
  const nextRows=planned().map(r=>{
