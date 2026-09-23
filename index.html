@@ -2348,13 +2348,19 @@ function updateDetailedCmiGanttProgress(recordId,value){
 }
 function updateDetailedResourceGanttProgress(recordId,activityId,resource,value){
  const r=state.records.find(x=>x.id===recordId),a=r&&(r.cmiActivities||[]).find(x=>x.id===activityId);if(!a)return;
+ const nextPct=Math.max(0,Math.min(100,Number(value)||0));
+ const msg=validateCmiWorkflowActivityUpdate(r,a,{actualStartDate:a.actualStartDate,actualFinishDate:a.actualFinishDate,progressPct:nextPct},r.cmiActivities||[]);
+ if(msg){alert(msg);renderGantt();return}
  if(!a.resourceProgress||typeof a.resourceProgress!=='object')a.resourceProgress={};
- a.resourceProgress[resource]=Math.max(0,Math.min(100,Number(value)||0));
+ a.resourceProgress[resource]=nextPct;
  persistStateOnly();renderGantt();
 }
 function updateDetailedGanttProgress(recordId,activityId,value){
  const r=state.records.find(x=>x.id===recordId),a=r&&(r.cmiActivities||[]).find(x=>x.id===activityId);if(!a)return;
- a.progressPct=Math.max(0,Math.min(100,Number(value)||0));
+ const nextPct=Math.max(0,Math.min(100,Number(value)||0));
+ const msg=validateCmiWorkflowActivityUpdate(r,a,{actualStartDate:a.actualStartDate,actualFinishDate:a.actualFinishDate,progressPct:nextPct},r.cmiActivities||[]);
+ if(msg){alert(msg);renderGantt();return}
+ a.progressPct=nextPct;
  rollupCmiProgress(r);syncHighLevelProgressFromActivities();persistStateOnly();renderGantt();renderHighLevelGantt();renderDeliveryHighLevelSummary();
 }
 function autoSyncHighLevelProgressField(el){
@@ -2665,6 +2671,65 @@ function progressActivitiesForRecord(r){
   return ox-oy||activityLabel(a).localeCompare(activityLabel(b));
  });
 }
+const CMI_WORKFLOW_SEQUENCE=[
+ {id:'act-measure',label:'Measurement Works & Valuation',namePart:'measurement works'},
+ {id:'act-finalise',label:'Review of Valuation and Compilation of all Documents',namePart:'review of valuation'},
+ {id:'act-clearance',label:'Technical and Commercial Clearance',namePart:'technical and commercial clearance'},
+ {id:'act-final-review',label:'Final Review of the Submission',namePart:'final review of the submission'},
+ {id:'act-submit-dgj',label:'Submission to DGJ',namePart:'submission to dgj'}
+];
+function workflowActivityId(a){
+ if(!a)return '';
+ const name=String(activityLabel(a)||'').toLowerCase();
+ const match=CMI_WORKFLOW_SEQUENCE.find(x=>a.activityId===x.id||name.includes(x.namePart));
+ return match?.id||'';
+}
+function workflowActivityFromList(activities,id){
+ const def=CMI_WORKFLOW_SEQUENCE.find(x=>x.id===id);if(!def)return null;
+ return (activities||[]).find(a=>a.activityId===id||String(activityLabel(a)||'').toLowerCase().includes(def.namePart))||null;
+}
+function documentHandoverDateForRecord(r){
+ const row=documentReadinessMap().get(String(r?.id||''));
+ return row?.actual_given_date||'';
+}
+function validateCmiWorkflowActivityUpdate(r,a,next,activitiesOverride){
+ const id=workflowActivityId(a);if(!id)return '';
+ const start=String(next?.actualStartDate||''),finish=String(next?.actualFinishDate||''),pct=Math.max(0,Math.min(100,Number(next?.progressPct)||0));
+ const active=!!(start||finish||pct>0);if(!active)return '';
+ const cmi=normCmi(r?.cmiNo||r?.cmiKey||'');
+ const label=CMI_WORKFLOW_SEQUENCE.find(x=>x.id===id)?.label||activityLabel(a);
+
+ if(pct>0&&!start)return 'Actual Start Date is mandatory before progress can be entered for '+label+' on CMI '+cmi+'.';
+ if(start&&finish&&finish<start)return 'Actual Finish Date cannot be before Actual Start Date for '+label+' on CMI '+cmi+'.';
+ if(pct>=100&&!finish)return 'Actual Finish Date is mandatory when '+label+' is updated to 100% for CMI '+cmi+'.';
+ if(finish&&pct<100)return label+' must be updated to 100% when an Actual Finish Date is entered for CMI '+cmi+'.';
+
+ if(id==='act-measure'){
+  const handover=documentHandoverDateForRecord(r);
+  if(!handover)return 'Measurement Works & Valuation cannot commence or progress for CMI '+cmi+' until the documents have been handed over in CMI Readiness for Measurement.';
+  if(start<handover)return 'Actual Start Date for Measurement Works & Valuation on CMI '+cmi+' cannot be before the document handover date ('+formatDateText(handover)+').';
+  return '';
+ }
+
+ const index=CMI_WORKFLOW_SEQUENCE.findIndex(x=>x.id===id);
+ const predecessorDef=CMI_WORKFLOW_SEQUENCE[index-1];
+ const predecessor=workflowActivityFromList(activitiesOverride||r?.cmiActivities||[],predecessorDef.id);
+ if(!predecessor||Number(predecessor.progressPct)<100||!predecessor.actualFinishDate){
+  return label+' cannot commence or progress for CMI '+cmi+' until '+predecessorDef.label+' is 100% complete with an Actual Finish Date.';
+ }
+ if(start<predecessor.actualFinishDate){
+  return 'Actual Start Date for '+label+' on CMI '+cmi+' cannot be before the Actual Finish Date of '+predecessorDef.label+' ('+formatDateText(predecessor.actualFinishDate)+').';
+ }
+ return '';
+}
+function candidateActivitiesForProgressRows(r,pendingRows){
+ const activities=clone(r.cmiActivities||[]);
+ pendingRows.filter(x=>x.r===r).forEach(x=>{
+  const target=activities.find(a=>a.id===x.a.id);if(!target)return;
+  target.actualStartDate=x.start;target.actualFinishDate=x.finish;target.progressPct=x.pct;target.finishDate=x.finish||'';
+ });
+ return activities;
+}
 function rollupCmiProgress(r){
  const acts=(r.cmiActivities||[]).filter(activityReadyForDelivery);
  if(!acts.length)return;
@@ -2765,6 +2830,26 @@ async function submitProgressUpdate(){
   pending.push({r,a,start,finish,pct,offsiteEstimate:isMeasure?offsiteEstimate:null,submittedValue:isSubmission?submittedValue:null});
  }
  if(!pending.length){if(status)status.textContent='No activity progress rows to submit.';return}
+
+ const candidateByRecord=new Map();
+ pending.forEach(x=>{
+  const key=String(x.r.id||'');
+  if(!candidateByRecord.has(key))candidateByRecord.set(key,candidateActivitiesForProgressRows(x.r,pending));
+ });
+ for(const x of pending){
+  const candidates=candidateByRecord.get(String(x.r.id||''))||x.r.cmiActivities||[];
+  const candidate=candidates.find(a=>a.id===x.a.id)||x.a;
+  const msg=validateCmiWorkflowActivityUpdate(x.r,candidate,candidate,candidates);
+  if(msg){
+   if(status)status.textContent=msg;
+   alert(msg);
+   const tr=rows.find(row=>String(row.dataset.progressActivity||'')===String(x.r.id||'')+'|'+String(x.a.id||''));
+   const focus=tr?.querySelector('[data-progress-field="actualStartDate"]')||tr?.querySelector('[data-progress-field="progressPct"]');
+   if(focus)focus.focus();
+   return;
+  }
+ }
+
  if(status)status.textContent='Saving progress to shared database…';
  try{
   await saveCmiProgressToSupabase(pending);
