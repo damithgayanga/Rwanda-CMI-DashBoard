@@ -2662,13 +2662,13 @@ async function submitProgressUpdate(){
   const submissionInput=tr.querySelector('[data-progress-field="submittedValue"]');
   const offsiteEstimate=measureInput&&measureInput.value!==''?Number(measureInput.value):(isMeasure&&r.offsiteEstimate!==null&&r.offsiteEstimate!==undefined?Number(r.offsiteEstimate):null);
   const submittedValue=submissionInput&&submissionInput.value!==''?Number(submissionInput.value):(isSubmission&&r.submittedValue!==null&&r.submittedValue!==undefined?Number(r.submittedValue):null);
-  const completed=pct>=100||!!finish;
+  const completionChanged=(Number(a.progressPct)||0)<100&&pct>=100||(!a.actualFinishDate&&!!finish);
 
-  if(completed&&isMeasure&&(offsiteEstimate===null||!Number.isFinite(offsiteEstimate))){
+  if(completionChanged&&isMeasure&&(offsiteEstimate===null||!Number.isFinite(offsiteEstimate))){
     const msg='Off-Site Estimate is mandatory before Measurement Works & Valuation can be set to 100% or given an Actual Finish Date for '+(r.cmiNo||r.cmiKey)+'.';
     if(status)status.textContent=msg;alert(msg);if(measureInput)measureInput.focus();return;
   }
-  if(completed&&isSubmission&&(submittedValue===null||!Number.isFinite(submittedValue))){
+  if(completionChanged&&isSubmission&&(submittedValue===null||!Number.isFinite(submittedValue))){
     const msg='Submitted Value is mandatory before Submission to DGJ can be set to 100% or given an Actual Finish Date for '+(r.cmiNo||r.cmiKey)+'.';
     if(status)status.textContent=msg;alert(msg);if(submissionInput)submissionInput.focus();return;
   }
