@@ -1,0 +1,16 @@
+name: Temporary Backup Transfer Test
+on:
+  push:
+    branches:
+      - backup-test-workflow-20260927
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create test file
+        run: echo hello > test.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: backup-transfer-test
+          path: test.txt
+          retention-days: 1
