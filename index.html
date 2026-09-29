@@ -185,7 +185,28 @@
 .audit-filters{display:grid;grid-template-columns:1.2fr 1fr 1fr 1fr;gap:8px;margin-bottom:12px}
 .audit-table{min-width:1150px}.audit-json{max-width:360px;white-space:pre-wrap;word-break:break-word;font-size:9px;line-height:1.35}
 @media(max-width:800px){.audit-filters{grid-template-columns:1fr}}
-.readiness-overview-grid{display:grid;grid-template-columns:repeat(4,minmax(150px,1fr));gap:12px;margin-bottom:18px}.readiness-stat{padding:14px 16px}.readiness-stat span{display:block;font-size:9px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:850}.readiness-stat b{display:block;margin-top:6px;font-size:24px;color:var(--navy)}.readiness-summary-table{min-width:850px}.readiness-summary-table td:first-child{white-space:nowrap;font-weight:850;color:var(--navy)}.readiness-cmi-list{display:flex;flex-wrap:wrap;gap:5px}.readiness-cmi-chip{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;padding:3px 7px;border-radius:8px;background:#fff;border:1px solid #cfd8df;color:var(--ink);white-space:nowrap;line-height:1.1;transition:background .15s ease,border-color .15s ease,color .15s ease}.readiness-cmi-chip.pending{background:#fff;border-color:#cfd8df;color:var(--ink)}.readiness-cmi-chip.given{background:#e4f5ec;border-color:#a8d9c1;color:#176b4e}.readiness-cmi-chip.overdue{background:#fde9e7;border-color:#edb3ad;color:#a33b31}.readiness-cmi-chip.rfi-hold{background:#fff1cf;border-color:#e7c36d;color:#8b5a00}.readiness-cmi-chip-no{font-size:8px;font-weight:850}.readiness-cmi-chip-resources{font-size:7px;font-weight:800;color:inherit;opacity:.78;letter-spacing:.02em}.readiness-legend{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin:0 0 10px;font-size:8px;font-weight:850}.readiness-legend span{display:inline-flex;align-items:center;padding:4px 8px;border-radius:7px;border:1px solid #cfd8df;white-space:nowrap}.readiness-legend .given{background:#e4f5ec;border-color:#a8d9c1;color:#176b4e}.readiness-legend .overdue{background:#fde9e7;border-color:#edb3ad;color:#a33b31}.readiness-legend .rfi-hold{background:#fff1cf;border-color:#e7c36d;color:#8b5a00}.readiness-legend .pending{background:#fff;border-color:#cfd8df;color:var(--ink)}.readiness-detail-table{min-width:1380px}.readiness-detail-table td{vertical-align:middle}.readiness-detail-table td:nth-child(1),.readiness-detail-table td:nth-child(4){white-space:nowrap}.progress-cmi-group td{background:#edf4f8!important;border-top:1px solid #cbd8e2;border-bottom:1px solid #dbe5ec;padding:9px 10px!important}.progress-cmi-group-title{display:flex;align-items:baseline;gap:10px;min-width:0}.progress-cmi-group-title b{font-size:10px;color:var(--navy);white-space:nowrap}.progress-cmi-group-title span{font-size:9px;color:#516576;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.progress-activity-name{padding-left:24px!important;position:relative}.progress-activity-name:before{content:"↳";position:absolute;left:9px;color:#718096;font-weight:900}.readiness-detail-table input[type="date"],.readiness-detail-table select{min-width:165px}.readiness-display-value{min-height:30px;display:flex;align-items:center;padding:6px 8px;border:1px solid transparent;border-radius:6px;color:var(--ink);font-size:10px}.readiness-display-value.blank{color:#94a3b8}.readiness-edit-actions{display:flex;gap:5px;white-space:nowrap}.readiness-status{display:inline-flex;align-items:center;padding:4px 7px;border-radius:999px;font-size:8px;font-weight:850;white-space:nowrap}.readiness-status.given{background:#e4f5ec;color:#176b4e}.readiness-status.pending{background:#edf3f8;color:#52697b}.readiness-status.overdue{background:#fde9e7;color:#a33b31}.readiness-filters{grid-template-columns:1.4fr 1fr .8fr}@media(max-width:900px){.readiness-overview-grid{grid-template-columns:repeat(2,minmax(130px,1fr))}.readiness-filters{grid-template-columns:1fr}}
+.readiness-overview-grid{display:grid;grid-template-columns:repeat(4,minmax(150px,1fr));gap:12px;margin-bottom:18px}.readiness-stat{padding:14px 16px}.readiness-stat span{display:block;font-size:9px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:850}.readiness-stat b{display:block;margin-top:6px;font-size:24px;color:var(--navy)}.readiness-summary-table{min-width:850px}.readiness-summary-table td:first-child{white-space:nowrap;font-weight:850;color:var(--navy)}.readiness-cmi-list{display:flex;flex-wrap:wrap;gap:5px}.readiness-cmi-chip{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;padding:3px 7px;border-radius:8px;background:#fff;border:1px solid #cfd8df;color:var(--ink);white-space:nowrap;line-height:1.1;transition:background .15s ease,border-color .15s ease,color .15s ease}.readiness-cmi-chip.pending{background:#fff;border-color:#cfd8df;color:var(--ink)}.readiness-cmi-chip.given{background:#e4f5ec;border-color:#a8d9c1;color:#176b4e}.readiness-cmi-chip.overdue{background:#fde9e7;border-color:#edb3ad;color:#a33b31}.readiness-cmi-chip.rfi-hold{background:#fff1cf;border-color:#e7c36d;color:#8b5a00}.readiness-cmi-chip-no{font-size:8px;font-weight:850}.readiness-cmi-chip-resources{font-size:7px;font-weight:800;color:inherit;opacity:.78;letter-spacing:.02em}.readiness-legend{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin:0 0 10px;font-size:8px;font-weight:850}.readiness-legend span{display:inline-flex;align-items:center;padding:4px 8px;border-radius:7px;border:1px solid #cfd8df;white-space:nowrap}.readiness-legend .given{background:#e4f5ec;border-color:#a8d9c1;color:#176b4e}.readiness-legend .overdue{background:#fde9e7;border-color:#edb3ad;color:#a33b31}.readiness-legend .rfi-hold{background:#fff1cf;border-color:#e7c36d;color:#8b5a00}.readiness-legend .pending{background:#fff;border-color:#cfd8df;color:var(--ink)}.readiness-detail-table{min-width:1380px}.readiness-detail-table td{vertical-align:middle}.readiness-detail-table td:nth-child(1),.readiness-detail-table td:nth-child(4){white-space:nowrap}.progress-cmi-group td{background:#edf4f8!important;border-top:1px solid #cbd8e2;border-bottom:1px solid #dbe5ec;padding:9px 10px!important}.progress-cmi-group-title{display:flex;align-items:baseline;gap:10px;min-width:0}.progress-cmi-group-title b{font-size:10px;color:var(--navy);white-space:nowrap}.progress-cmi-group-title span{font-size:9px;color:#516576;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.progress-activity-name{padding-left:24px!important;position:relative}.progress-activity-name:before{content:"↳";position:absolute;left:9px;color:#718096;font-weight:900}.readiness-detail-table input[type="date"],.readiness-detail-table select{min-width:165px}.readiness-display-value{min-height:30px;display:flex;align-items:center;padding:6px 8px;border:1px solid transparent;border-radius:6px;color:var(--ink);font-size:10px}.readiness-display-value.blank{color:#94a3b8}.readiness-edit-actions{display:flex;gap:5px;white-space:nowrap}.readiness-status{display:inline-flex;align-items:center;padding:4px 7px;border-radius:999px;font-size:8px;font-weight:850;white-space:nowrap}.readiness-status.given{background:#e4f5ec;color:#176b4e}.readiness-status.pending{background:#edf3f8;color:#52697b}.readiness-status.overdue{background:#fde9e7;color:#a33b31}.readiness-filters{grid-template-columns:1.4fr 1fr .8fr}
+.readiness-summary-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:10px}
+.readiness-summary-toolbar .readiness-legend{margin:0}
+.readiness-swap-modal{width:min(760px,96vw)}
+.readiness-swap-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.cmi-swap-picker{position:relative}
+.cmi-swap-picker input{width:100%}
+.cmi-swap-results{position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:25;background:#fff;border:1px solid #cbd8e2;border-radius:8px;box-shadow:0 12px 28px rgba(16,41,63,.16);max-height:230px;overflow:auto;display:none}
+.cmi-swap-results.open{display:block}
+.cmi-swap-option{display:block;width:100%;text-align:left;border:0;border-bottom:1px solid #edf2f6;background:#fff;padding:9px 10px;cursor:pointer}
+.cmi-swap-option:last-child{border-bottom:0}
+.cmi-swap-option:hover,.cmi-swap-option:focus{background:#f1f7fb;outline:none}
+.cmi-swap-option b{display:block;color:var(--navy);font-size:10px}
+.cmi-swap-option span{display:block;color:#617487;font-size:9px;margin-top:2px;white-space:normal}
+.cmi-swap-empty{padding:10px;color:var(--muted);font-size:9px}
+.cmi-swap-selected{margin-top:6px;min-height:18px;font-size:9px;color:#52697b}
+.readiness-swap-preview{margin-top:14px;border:1px solid #d9e3eb;border-radius:9px;background:#f8fbfd;padding:11px;font-size:10px;line-height:1.55}
+.readiness-swap-preview .swap-line{display:grid;grid-template-columns:110px 1fr;gap:8px}
+.readiness-swap-status{margin-top:9px;font-size:10px;min-height:16px;color:#52697b}
+.readiness-swap-status.error{color:#a33b31}
+.readiness-swap-status.success{color:#176b4e}
+@media(max-width:900px){.readiness-overview-grid{grid-template-columns:repeat(2,minmax(130px,1fr))}.readiness-filters{grid-template-columns:1fr}.readiness-swap-grid{grid-template-columns:1fr}}
 </style>
 
 <!-- Supabase -->
@@ -1145,6 +1166,141 @@
     }).join('')||'<tr><td colspan="9" class="muted">No document-readiness records match the current filters.</td></tr>';
   }
 
+
+  const readinessSwapSelection={a:null,b:null};
+
+  function readinessSwapDeliveryRecords(){
+    return (state.records||[]).filter(r=>Array.isArray(r.cmiActivities)&&r.cmiActivities.length&&isInDeliveryPlanRecord(r));
+  }
+
+  function readinessSwapMeasurementActivity(r){
+    return (r?.cmiActivities||[]).find(a=>String(a.activityId||'')==='act-measure')
+      ||(r?.cmiActivities||[]).find(a=>String(a.activityName||'').toLowerCase().includes('measurement works'))
+      ||null;
+  }
+
+  function readinessSwapMatches(query){
+    const raw=String(query||'').trim().toLowerCase();
+    const digits=raw.replace(/\D/g,'');
+    if(!raw)return [];
+    return readinessSwapDeliveryRecords().filter(r=>{
+      const no=String(r.cmiNo||'').toLowerCase();
+      const noDigits=no.replace(/\D/g,'');
+      return digits ? noDigits.includes(digits) : no.includes(raw);
+    }).sort((a,b)=>
+      String(a.cmiNo||'').localeCompare(String(b.cmiNo||''),undefined,{numeric:true})
+      ||String(a.description||'').localeCompare(String(b.description||''))
+    ).slice(0,20);
+  }
+
+  function renderReadinessSwapResults(slot){
+    const input=document.getElementById(slot==='a'?'readinessSwapAInput':'readinessSwapBInput');
+    const box=document.getElementById(slot==='a'?'readinessSwapAResults':'readinessSwapBResults');
+    if(!input||!box)return;
+    const matches=readinessSwapMatches(input.value);
+    if(!String(input.value||'').trim()){box.classList.remove('open');box.innerHTML='';return}
+    box.innerHTML=matches.length?matches.map(r=>
+      '<button type="button" class="cmi-swap-option" data-swap-slot="'+slot+'" data-swap-record-id="'+esc(String(r.id||''))+'">'+
+      '<b>'+esc(r.cmiNo||'')+'</b>'+
+      '<span>'+esc(r.description||r.reference||'')+'</span>'+
+      '</button>'
+    ).join(''):'<div class="cmi-swap-empty">No matching CMI found in the Delivery Plan.</div>';
+    box.classList.add('open');
+  }
+
+  function selectReadinessSwapRecord(slot,recordId){
+    const r=(state.records||[]).find(x=>String(x.id||'')===String(recordId||''));
+    if(!r)return;
+    readinessSwapSelection[slot]={
+      recordId:String(r.id||''),
+      cmiKey:deliveryActivityKey(r),
+      cmiNo:r.cmiNo||'',
+      description:r.description||''
+    };
+    const input=document.getElementById(slot==='a'?'readinessSwapAInput':'readinessSwapBInput');
+    const box=document.getElementById(slot==='a'?'readinessSwapAResults':'readinessSwapBResults');
+    const selected=document.getElementById(slot==='a'?'readinessSwapASelected':'readinessSwapBSelected');
+    if(input)input.value=r.cmiNo||'';
+    if(box){box.classList.remove('open');box.innerHTML=''}
+    if(selected)selected.textContent=r.description||r.reference||'Selected';
+    updateReadinessSwapPreview();
+  }
+
+  function readinessSwapRecordFromSelection(sel){
+    return sel?(state.records||[]).find(r=>String(r.id||'')===String(sel.recordId||'')):null;
+  }
+
+  function updateReadinessSwapPreview(){
+    const a=readinessSwapRecordFromSelection(readinessSwapSelection.a);
+    const b=readinessSwapRecordFromSelection(readinessSwapSelection.b);
+    const preview=document.getElementById('readinessSwapPreview');
+    const confirm=document.getElementById('readinessSwapConfirmBtn');
+    const status=document.getElementById('readinessSwapStatus');
+    if(status){status.textContent='';status.className='readiness-swap-status'}
+    if(!a||!b){
+      if(preview)preview.textContent='Select two CMIs to preview the swap.';
+      if(confirm)confirm.disabled=true;
+      return;
+    }
+    const same=deliveryActivityKey(a)===deliveryActivityKey(b);
+    const ma=readinessSwapMeasurementActivity(a),mb=readinessSwapMeasurementActivity(b);
+    const hasProgress=r=>(r.cmiActivities||[]).some(x=>x.actualStartDate||x.actualFinishDate||Number(x.progressPct)>0);
+    const blocked=hasProgress(a)||hasProgress(b);
+    if(preview)preview.innerHTML=
+      '<div class="swap-line"><b>'+esc(a.cmiNo||'CMI 1')+'</b><span>'+esc(formatDateText(ma?.startDate||''))+' to '+esc(formatDateText(ma?.targetDate||''))+' → '+esc(formatDateText(mb?.startDate||''))+' to '+esc(formatDateText(mb?.targetDate||''))+'</span></div>'+
+      '<div class="swap-line"><b>'+esc(b.cmiNo||'CMI 2')+'</b><span>'+esc(formatDateText(mb?.startDate||''))+' to '+esc(formatDateText(mb?.targetDate||''))+' → '+esc(formatDateText(ma?.startDate||''))+' to '+esc(formatDateText(ma?.targetDate||''))+'</span></div>'+
+      '<div class="tiny muted" style="margin-top:6px">Only planned activity dates will be swapped. Actual dates, progress and resource assignments will remain unchanged.</div>';
+    if(status&&same){status.textContent='Select two different CMIs.';status.classList.add('error')}
+    else if(status&&blocked){status.textContent='Swap is blocked because one or both CMIs already contain actual dates or progress.';status.classList.add('error')}
+    if(confirm)confirm.disabled=same||blocked;
+  }
+
+  function resetReadinessSwapModal(){
+    readinessSwapSelection.a=null;readinessSwapSelection.b=null;
+    ['readinessSwapAInput','readinessSwapBInput'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''});
+    ['readinessSwapAResults','readinessSwapBResults'].forEach(id=>{const el=document.getElementById(id);if(el){el.innerHTML='';el.classList.remove('open')}});
+    ['readinessSwapASelected','readinessSwapBSelected'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=''});
+    const preview=document.getElementById('readinessSwapPreview');if(preview)preview.textContent='Select two CMIs to preview the swap.';
+    const status=document.getElementById('readinessSwapStatus');if(status){status.textContent='';status.className='readiness-swap-status'}
+    const confirm=document.getElementById('readinessSwapConfirmBtn');if(confirm)confirm.disabled=true;
+  }
+
+  function openReadinessSwapModal(){
+    if(!canManageDelivery())return;
+    resetReadinessSwapModal();
+    document.getElementById('readinessSwapModal')?.classList.add('open');
+    setTimeout(()=>document.getElementById('readinessSwapAInput')?.focus(),0);
+  }
+
+  function closeReadinessSwapModal(){
+    document.getElementById('readinessSwapModal')?.classList.remove('open');
+    resetReadinessSwapModal();
+  }
+
+  async function confirmReadinessSwap(){
+    const a=readinessSwapSelection.a,b=readinessSwapSelection.b;
+    if(!a||!b||a.cmiKey===b.cmiKey)return;
+    const btn=document.getElementById('readinessSwapConfirmBtn');
+    const status=document.getElementById('readinessSwapStatus');
+    if(btn)btn.disabled=true;
+    if(status){status.textContent='Swapping planned positions...';status.className='readiness-swap-status'}
+    const {data,error}=await supabaseClient.rpc('swap_cmi_planned_positions',{
+      p_cmi_key_a:a.cmiKey,
+      p_cmi_key_b:b.cmiKey
+    });
+    if(error){
+      console.error('Unable to swap CMI planned positions:',error);
+      if(status){status.textContent=error.message||'Unable to swap CMIs.';status.className='readiness-swap-status error'}
+      if(btn)btn.disabled=false;
+      return;
+    }
+    await loadDeliveryActivitiesFromSupabase();
+    await loadDocumentReadinessFromSupabase();
+    renderAll();
+    if(status){status.textContent='Swap completed successfully.';status.className='readiness-swap-status success'}
+    setTimeout(closeReadinessSwapModal,550);
+  }
+
   async function saveDocumentReadinessField(recordId){
     if(!canManageDelivery())return;
     const tr=[...document.querySelectorAll('[data-readiness-row]')].find(x=>x.dataset.readinessRow===recordId);
@@ -1432,11 +1588,14 @@
 
  <div class="section-title"><h2>1. CMI Document Handover Schedule to Off-Site Resources - Weekly Summary</h2></div>
  <div class="card">
-  <div class="readiness-legend" aria-label="CMI handover status colour legend">
-   <span class="given">Handed Over</span>
-   <span class="overdue">Overdue</span>
-   <span class="rfi-hold">Handed Over - RFI Hold</span>
-   <span class="pending">Future / Pending</span>
+  <div class="readiness-summary-toolbar">
+   <div class="readiness-legend" aria-label="CMI handover status colour legend">
+    <span class="given">Handed Over</span>
+    <span class="overdue">Overdue</span>
+    <span class="rfi-hold">Handed Over - RFI Hold</span>
+    <span class="pending">Future / Pending</span>
+   </div>
+   <button class="btn primary" id="openReadinessSwapBtn" type="button">Swap CMIs</button>
   </div>
   <div class="table-wrap" style="max-height:420px">
    <table class="data-table readiness-summary-table">
@@ -1592,6 +1751,31 @@
 </section>
 
 </main></div>
+
+<div class="modal-backdrop" id="readinessSwapModal">
+ <div class="modal readiness-swap-modal">
+  <div class="modal-head"><h3>Swap CMI Programme Positions</h3><button class="btn" id="readinessSwapCloseBtn" type="button">Close</button></div>
+  <div class="modal-body">
+   <div class="readiness-swap-grid">
+    <div class="field cmi-swap-picker">
+     <label>CMI 1</label>
+     <input id="readinessSwapAInput" type="text" autocomplete="off" placeholder="Type CMI number">
+     <div class="cmi-swap-results" id="readinessSwapAResults"></div>
+     <div class="cmi-swap-selected" id="readinessSwapASelected"></div>
+    </div>
+    <div class="field cmi-swap-picker">
+     <label>CMI 2</label>
+     <input id="readinessSwapBInput" type="text" autocomplete="off" placeholder="Type CMI number">
+     <div class="cmi-swap-results" id="readinessSwapBResults"></div>
+     <div class="cmi-swap-selected" id="readinessSwapBSelected"></div>
+    </div>
+   </div>
+   <div class="readiness-swap-preview" id="readinessSwapPreview">Select two CMIs to preview the swap.</div>
+   <div class="readiness-swap-status" id="readinessSwapStatus"></div>
+  </div>
+  <div class="modal-foot"><button class="btn" id="readinessSwapCancelBtn" type="button">Cancel</button><button class="btn primary" id="readinessSwapConfirmBtn" type="button" disabled>Swap CMIs</button></div>
+ </div>
+</div>
 
 <div class="modal-backdrop" id="editModal"><div class="modal"><div class="modal-head"><h3 id="modalTitle">Edit CMI</h3><button class="btn" id="modalClose">Close</button></div><div class="modal-body"><form id="editForm" class="form-grid"><input type="hidden" id="eId"><div class="field"><label>CMI No.</label><input id="eCmiNo" required></div><div class="field"><label>Reference</label><input id="eReference"></div><div class="field full"><label>Description</label><textarea id="eDescription" required></textarea></div><div class="field"><label>CMI Date</label><input type="date" id="eCmiDate"></div><div class="field"><label>Register Status</label><select id="eStatus"></select></div><div class="field"><label>Asset Code</label><input id="eAsset"></div><div class="field"><label>Location</label><input id="eLocation"></div><div class="field"><label>Initial Estimate ($)</label><input type="number" step="0.01" id="eInitial"></div><div class="field"><label>Submitted Value ($)</label><input type="number" step="0.01" id="eSubmittedValue"></div><div class="field"><label>Agreed Amount ($)</label><input type="number" step="0.01" id="eAgreedAmount"></div><div class="field"><label>Submitted Date</label><input type="date" id="eSubmittedDate"></div><div class="field"><label>Agreed Date</label><input type="date" id="eAgreedDate"></div><div class="field full"><label>Remarks</label><textarea id="eRemarks"></textarea></div><div class="field full"><label>Notes</label><textarea id="eNotes"></textarea></div></form></div><div class="modal-foot"><button class="btn" id="modalCancel">Cancel</button><button class="btn primary" id="modalSave">Save changes</button></div></div></div>
 
@@ -3511,6 +3695,13 @@ document.querySelectorAll('.tabbtn').forEach(b=>b.addEventListener('click',()=>{
 }));
 ['fSearch','fStatus','fPriority','fAsset','fPlan','fResource'].forEach(id=>document.getElementById(id).addEventListener('input',renderRegister));
 ['aSearch','aStatus','aPriority','aPlan','aSite','aOffsite'].forEach(id=>document.getElementById(id).addEventListener('input',renderAllocation));
+const openReadinessSwapBtnEl=document.getElementById('openReadinessSwapBtn');if(openReadinessSwapBtnEl)openReadinessSwapBtnEl.addEventListener('click',openReadinessSwapModal);
+const readinessSwapCloseBtnEl=document.getElementById('readinessSwapCloseBtn');if(readinessSwapCloseBtnEl)readinessSwapCloseBtnEl.addEventListener('click',closeReadinessSwapModal);
+const readinessSwapCancelBtnEl=document.getElementById('readinessSwapCancelBtn');if(readinessSwapCancelBtnEl)readinessSwapCancelBtnEl.addEventListener('click',closeReadinessSwapModal);
+const readinessSwapConfirmBtnEl=document.getElementById('readinessSwapConfirmBtn');if(readinessSwapConfirmBtnEl)readinessSwapConfirmBtnEl.addEventListener('click',confirmReadinessSwap);
+[['a','readinessSwapAInput'],['b','readinessSwapBInput']].forEach(([slot,id])=>{const el=document.getElementById(id);if(el)el.addEventListener('input',()=>{readinessSwapSelection[slot]=null;const selected=document.getElementById(slot==='a'?'readinessSwapASelected':'readinessSwapBSelected');if(selected)selected.textContent='';renderReadinessSwapResults(slot);updateReadinessSwapPreview()})});
+['readinessSwapAResults','readinessSwapBResults'].forEach(id=>{const el=document.getElementById(id);if(el)el.addEventListener('click',e=>{const opt=e.target.closest('[data-swap-record-id]');if(opt)selectReadinessSwapRecord(opt.dataset.swapSlot,opt.dataset.swapRecordId)})});
+const readinessSwapModalEl=document.getElementById('readinessSwapModal');if(readinessSwapModalEl)readinessSwapModalEl.addEventListener('click',e=>{if(e.target===readinessSwapModalEl)closeReadinessSwapModal()});
 const readinessSearchEl=document.getElementById('readinessSearch');if(readinessSearchEl)readinessSearchEl.addEventListener('input',renderReadiness);
 const readinessResponsibleFilterEl=document.getElementById('readinessResponsibleFilter');if(readinessResponsibleFilterEl)readinessResponsibleFilterEl.addEventListener('change',renderReadiness);
 const readinessStatusFilterEl=document.getElementById('readinessStatusFilter');if(readinessStatusFilterEl)readinessStatusFilterEl.addEventListener('change',renderReadiness);
