@@ -1247,9 +1247,9 @@
     const hasProgress=r=>(r.cmiActivities||[]).some(x=>x.actualStartDate||x.actualFinishDate||Number(x.progressPct)>0);
     const blocked=hasProgress(a)||hasProgress(b);
     if(preview)preview.innerHTML=
-      '<div class="swap-line"><b>'+esc(a.cmiNo||'CMI 1')+'</b><span>'+esc(formatDateText(ma?.startDate||''))+' to '+esc(formatDateText(ma?.targetDate||''))+' → '+esc(formatDateText(mb?.startDate||''))+' to '+esc(formatDateText(mb?.targetDate||''))+'</span></div>'+
-      '<div class="swap-line"><b>'+esc(b.cmiNo||'CMI 2')+'</b><span>'+esc(formatDateText(mb?.startDate||''))+' to '+esc(formatDateText(mb?.targetDate||''))+' → '+esc(formatDateText(ma?.startDate||''))+' to '+esc(formatDateText(ma?.targetDate||''))+'</span></div>'+
-      '<div class="tiny muted" style="margin-top:6px">Only planned activity dates will be swapped. Actual dates, progress and resource assignments will remain unchanged.</div>';
+      '<div class="swap-line"><b>'+esc(a.cmiNo||'CMI 1')+'</b><span>'+esc(formatDateText(ma?.startDate||''))+' to '+esc(formatDateText(ma?.targetDate||''))+' → '+esc(formatDateText(mb?.startDate||''))+' to '+esc(formatDateText(mb?.targetDate||''))+' | Off-Site: '+esc(ma?.offsiteResource||'—')+' → '+esc(mb?.offsiteResource||'—')+'</span></div>'+
+      '<div class="swap-line"><b>'+esc(b.cmiNo||'CMI 2')+'</b><span>'+esc(formatDateText(mb?.startDate||''))+' to '+esc(formatDateText(mb?.targetDate||''))+' → '+esc(formatDateText(ma?.startDate||''))+' to '+esc(formatDateText(ma?.targetDate||''))+' | Off-Site: '+esc(mb?.offsiteResource||'—')+' → '+esc(ma?.offsiteResource||'—')+'</span></div>'+
+      '<div class="tiny muted" style="margin-top:6px">Planned activity dates and the Measurement Works & Valuation Off-Site resource will swap together. Actual dates, progress and all On-Site resource assignments will remain unchanged.</div>';
     if(status&&same){status.textContent='Select two different CMIs.';status.classList.add('error')}
     else if(status&&blocked){status.textContent='Swap is blocked because one or both CMIs already contain actual dates or progress.';status.classList.add('error')}
     if(confirm)confirm.disabled=same||blocked;
