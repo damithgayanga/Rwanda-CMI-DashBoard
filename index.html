@@ -2175,15 +2175,17 @@ function deliveryStageMetrics(){
  return {p,assessmentCommenced,measurementCompleted,measurementInProgress,clearanceCompleted,clearancePending,submittedDgj};
 }
 
-function handoverDashboardKpiHtml(){
- const all=documentReadinessItems();
- const dataDate=programmeDataDate||todayISO();
- const relevant=all.filter(x=>x.actualDate||(x.requiredDate&&x.requiredDate<=dataDate));
- const handed=relevant.filter(x=>!!x.actualDate);
- const pending=Math.max(0,relevant.length-handed.length);
- return `<div class="card kpi kpi-stage good"><div class="label">CMIs Handed Over to Off-Site</div><div class="value">${handed.length}<span class="value-context">out of ${relevant.length}</span></div><div class="kpi-group"><div class="kpi-sub initial"><span class="kpi-sub-label">Handed Over</span><span class="kpi-sub-value">${handed.length}</span></div><div class="kpi-sub unallocated"><span class="kpi-sub-label">Pending / Overdue</span><span class="kpi-sub-value">${pending}</span></div></div></div>`;
+function assessmentCommencedFromHandoverKpiHtml(){
+ const readiness=documentReadinessItems();
+ const handedIds=new Set(readiness.filter(x=>!!x.actualDate).map(x=>String(x.cmiRecordId||'')));
+ const commenced=planned().filter(r=>{
+  if(!handedIds.has(String(r.id||'')))return false;
+  const measure=findActivityByIdOrName(r,'act-measure','measurement works');
+  return !!(measure&&(measure.actualStartDate||Number(measure.progressPct)>0));
+ });
+ const handed=readiness.filter(x=>!!x.actualDate);
+ return `<div class="card kpi kpi-stage"><div class="label">CMI Assessment Commenced</div><div class="value">${commenced.length}<span class="value-context">out of ${handed.length}</span></div>${submissionBreakdownHtml(commenced)}</div>`;
 }
-
 function renderKpis(){
  const r=state.records,
   tbs=r.filter(x=>x.status==='To be Submitted - Initial Review compelted'),
@@ -2204,7 +2206,7 @@ function renderKpis(){
  const cards=[
   `<div class="card kpi kpi-stage kpi-submit-card"><div class="label">To be Submitted</div><div class="value">${toSubmit.length}<span class="value-context">out of ${r.length}</span></div>${submissionBreakdownHtml(toSubmit)}${unplannedNote}</div>`,
   weeklyActivityPlanHtml(),
-  `<div class="kpi-standard">${handoverDashboardKpiHtml()}</div>`,
+  `<div class="kpi-standard">${assessmentCommencedFromHandoverKpiHtml()}</div>`,
   `<div class="kpi-standard">${stageKpiHtml('Measurement Completed',measurementCompleted,'',assessmentCommenced.length)}</div>`,
   `<div class="kpi-rfi">${rfiDashboardKpiHtml()}</div>`,
   `<div class="kpi-standard kpi-clearance-pending">${stageKpiHtml('Tech & Com. Clearance Pending',clearancePending,'warn',measurementCompleted.length)}</div>`,
