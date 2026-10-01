@@ -2141,6 +2141,26 @@ function cumulativePlannedActivityCount(activityId,throughDate){
  });
  return seen.size;
 }
+function actualActivityCountForRange(activityId,start,finish){
+ const seen=new Set();
+ state.records.forEach(r=>{
+  if(!isInDeliveryPlanRecord(r))return;
+  const a=findActivityByIdOrName(r,activityId,activityNamePart(activityId));
+  if(!a||!a.actualFinishDate||a.actualFinishDate<start||a.actualFinishDate>finish)return;
+  seen.add(deliveryRecordIdentity(r));
+ });
+ return seen.size;
+}
+function cumulativeActualActivityCount(activityId,throughDate){
+ const seen=new Set();
+ state.records.forEach(r=>{
+  if(!isInDeliveryPlanRecord(r))return;
+  const a=findActivityByIdOrName(r,activityId,activityNamePart(activityId));
+  if(!a||!a.actualFinishDate||a.actualFinishDate>throughDate)return;
+  seen.add(deliveryRecordIdentity(r));
+ });
+ return seen.size;
+}
 function weeklyActivityPlanHtml(){
  const ranges=programmeWeekRanges();
  const rows=[
@@ -2149,14 +2169,19 @@ function weeklyActivityPlanHtml(){
   {id:'act-submit-dgj',label:'Submitted to DGJ'}
  ];
  const dateLabel=r=>`${formatDateText(r.start).slice(0,6)}–${formatDateText(r.finish).slice(0,6)}`;
+ const ratio=(actual,planned)=>`${actual}/${planned}`;
  const body=rows.map(row=>{
-  const last=plannedActivityCountForRange(row.id,ranges.last.start,ranges.last.finish);
-  const current=plannedActivityCountForRange(row.id,ranges.current.start,ranges.current.finish);
-  const next=plannedActivityCountForRange(row.id,ranges.next.start,ranges.next.finish);
-  const cumulative=cumulativePlannedActivityCount(row.id,ranges.current.finish);
-  return `<div class="weekly-plan-row"><div class="weekly-plan-activity">${row.label}</div><div class="weekly-plan-value">${last}</div><div class="weekly-plan-value">${current}</div><div class="weekly-plan-value cumulative">${cumulative}</div><div class="weekly-plan-value">${next}</div></div>`;
+  const lastPlan=plannedActivityCountForRange(row.id,ranges.last.start,ranges.last.finish);
+  const lastActual=actualActivityCountForRange(row.id,ranges.last.start,ranges.last.finish);
+  const currentPlan=plannedActivityCountForRange(row.id,ranges.current.start,ranges.current.finish);
+  const currentActual=actualActivityCountForRange(row.id,ranges.current.start,ranges.current.finish);
+  const cumulativePlan=cumulativePlannedActivityCount(row.id,ranges.current.finish);
+  const cumulativeActual=cumulativeActualActivityCount(row.id,ranges.current.finish);
+  const nextPlan=plannedActivityCountForRange(row.id,ranges.next.start,ranges.next.finish);
+  const nextActual=actualActivityCountForRange(row.id,ranges.next.start,ranges.next.finish);
+  return `<div class="weekly-plan-row"><div class="weekly-plan-activity">${row.label}</div><div class="weekly-plan-value">${ratio(lastActual,lastPlan)}</div><div class="weekly-plan-value">${ratio(currentActual,currentPlan)}</div><div class="weekly-plan-value cumulative">${ratio(cumulativeActual,cumulativePlan)}</div><div class="weekly-plan-value">${ratio(nextActual,nextPlan)}</div></div>`;
  }).join('');
- return `<div class="card kpi weekly-activity-plan"><div class="label">Weekly Activity Plan</div><div class="weekly-plan-head"><span>Activity</span><span>Last Week<br><span class="weekly-plan-dates">${dateLabel(ranges.last)}</span></span><span>This Week<br><span class="weekly-plan-dates">${dateLabel(ranges.current)}</span></span><span>Cumulative<br><span class="weekly-plan-dates">to ${formatDateText(ranges.current.finish)}</span></span><span>Next Week<br><span class="weekly-plan-dates">${dateLabel(ranges.next)}</span></span></div>${body}</div>`;
+ return `<div class="card kpi weekly-activity-plan"><div class="label">Weekly Activity Plan <span class="value-context">Actual / Planned</span></div><div class="weekly-plan-head"><span>Activity</span><span>Last Week<br><span class="weekly-plan-dates">${dateLabel(ranges.last)}</span></span><span>This Week<br><span class="weekly-plan-dates">${dateLabel(ranges.current)}</span></span><span>Cumulative<br><span class="weekly-plan-dates">to ${formatDateText(ranges.current.finish)}</span></span><span>Next Week<br><span class="weekly-plan-dates">${dateLabel(ranges.next)}</span></span></div>${body}</div>`;
 }
 function deliveryStageMetrics(){
  const p=planned();
