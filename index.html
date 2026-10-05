@@ -2178,8 +2178,7 @@ function weeklyActivityPlanHtml(){
   const cumulativePlan=cumulativePlannedActivityCount(row.id,ranges.current.finish);
   const cumulativeActual=cumulativeActualActivityCount(row.id,ranges.current.finish);
   const nextPlan=plannedActivityCountForRange(row.id,ranges.next.start,ranges.next.finish);
-  const nextActual=actualActivityCountForRange(row.id,ranges.next.start,ranges.next.finish);
-  return `<div class="weekly-plan-row"><div class="weekly-plan-activity">${row.label}</div><div class="weekly-plan-value">${ratio(lastActual,lastPlan)}</div><div class="weekly-plan-value">${ratio(currentActual,currentPlan)}</div><div class="weekly-plan-value cumulative">${ratio(cumulativeActual,cumulativePlan)}</div><div class="weekly-plan-value">${ratio(nextActual,nextPlan)}</div></div>`;
+  return `<div class="weekly-plan-row"><div class="weekly-plan-activity">${row.label}</div><div class="weekly-plan-value">${ratio(lastActual,lastPlan)}</div><div class="weekly-plan-value">${ratio(currentActual,currentPlan)}</div><div class="weekly-plan-value cumulative">${ratio(cumulativeActual,cumulativePlan)}</div><div class="weekly-plan-value">${nextPlan}</div></div>`;
  }).join('');
  return `<div class="card kpi weekly-activity-plan"><div class="label">Weekly Activity Plan <span class="value-context">Actual / Planned</span></div><div class="weekly-plan-head"><span>Activity</span><span>Last Week<br><span class="weekly-plan-dates">${dateLabel(ranges.last)}</span></span><span>This Week<br><span class="weekly-plan-dates">${dateLabel(ranges.current)}</span></span><span>Cumulative<br><span class="weekly-plan-dates">to ${formatDateText(ranges.current.finish)}</span></span><span>Next Week<br><span class="weekly-plan-dates">${dateLabel(ranges.next)}</span></span></div>${body}</div>`;
 }
