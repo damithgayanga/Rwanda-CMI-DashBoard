@@ -230,7 +230,7 @@
   let currentDashboardUser=null;
 
   const ROLE_TABS={
-    admin:['dashboard','register','process','organisation','delivery','readiness','rfi','progress','activities','allocation','quality','changes','audit'],
+    admin:['dashboard','register','process','organisation','delivery','readiness','rfi','progress','activities','allocation','quality','changes','changelog','audit'],
     management:['dashboard','register','process','organisation','delivery','readiness','rfi','progress','allocation'],
     progress:['dashboard','register','progress']
   };
@@ -1420,6 +1420,7 @@
   <button class="tabbtn" data-tab="activities">Activity List</button>
   <button class="tabbtn" data-tab="quality">Data Review</button>
   <button class="tabbtn" data-tab="changes" id="changesTabBtn">Changes</button>
+  <button class="tabbtn" data-tab="changelog" id="changeLogTabBtn">Change Log</button>
   <button class="tabbtn" data-tab="audit" id="auditTabBtn">Admin Audit</button>
  </nav>
 </header>
@@ -1758,6 +1759,23 @@
  </div>
 </section>
 
+<section class="tab" id="tab-changelog">
+ <div class="section-title"><h2>User Change Log</h2><span class="note">Read-only history of CMI edits, recorded by Supabase.</span></div>
+ <div class="card">
+  <div class="audit-filters">
+   <input id="clUser" placeholder="User name or email">
+   <input id="clCmi" placeholder="CMI number">
+   <select id="clField"><option value="">All fields</option><option value="progress_pct">Progress</option><option value="actual_start">Actual start</option><option value="actual_finish">Actual finish</option><option value="planned_start">Planned start</option><option value="planned_finish">Planned finish</option><option value="actual_given_date">Handover date</option><option value="offsite_resource">Off-site resource</option><option value="site_resource">On-site resource</option></select>
+   <input type="date" id="clFrom" title="From date">
+   <input type="date" id="clTo" title="To date">
+   <button class="btn" id="clApply" type="button">Apply filters</button>
+   <button class="btn" id="clExport" type="button">Export CSV</button>
+  </div>
+  <div class="small muted" id="clStatus" style="margin:8px 0">Open this tab to load the latest changes.</div>
+  <div class="table-wrap" style="max-height:72vh"><table class="data-table audit-table" style="min-width:1100px"><thead><tr><th>Changed at (NZ)</th><th>User</th><th>CMI</th><th>Activity</th><th>Field changed</th><th>Previous value</th><th>New value</th><th>Action</th></tr></thead><tbody id="clBody"></tbody></table></div>
+  <div style="margin-top:12px"><button class="btn" id="clMore" type="button">Load more</button></div>
+ </div>
+</section>
 <section class="tab" id="tab-audit">
  <div class="section-title"><h2>Admin Audit Trail</h2><span class="note">All recorded database changes by dashboard users.</span></div>
  <div class="card">
@@ -3908,6 +3926,47 @@ const addDashboardUserBtn=document.getElementById('addDashboardUserBtn');if(addD
 const loginBtn=document.getElementById('loginBtn');if(loginBtn)loginBtn.addEventListener('click',signInDashboard);
 const loginPassword=document.getElementById('loginPassword');if(loginPassword)loginPassword.addEventListener('keydown',e=>{if(e.key==='Enter')signInDashboard()});
 const logoutBtn=document.getElementById('logoutBtn');if(logoutBtn)logoutBtn.addEventListener('click',signOutDashboard);
+
+
+const changeLogState={rows:[],offset:0,hasMore:true,busy:false};
+const changeLogNames={progress_pct:'Progress (%)',actual_start:'Actual Start Date',actual_finish:'Actual Finish Date',planned_start:'Planned Start Date',planned_finish:'Planned Finish Date',actual_given_date:'Actual Handover Date',offsite_resource:'Off-Site Resource',site_resource:'On-Site Resource',responsible_resource:'Responsible On-Site',offsite_estimate:'Off-Site Estimate',submitted_value:'Submitted Value',status:'Status'};
+function changeLogText(v){if(v===null||v===undefined||v==='')return 'Not entered';return String(v).slice(0,180)}
+function renderChangeLog(){
+ const body=document.getElementById('clBody');if(!body)return;
+ body.innerHTML=changeLogState.rows.map(x=>'<tr><td>'+esc(new Date(x.changed_at).toLocaleString('en-NZ',{timeZone:'Pacific/Auckland',day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}))+'</td><td>'+esc(x.changed_by||x.username||'Unknown')+'</td><td>'+esc(x.cmi_no||'—')+'</td><td>'+esc(x.activity_name||'—')+'</td><td>'+esc(changeLogNames[x.field_name]||x.field_name)+'</td><td>'+esc(changeLogText(x.old_value))+'</td><td>'+esc(changeLogText(x.new_value))+'</td><td>'+esc(x.action)+'</td></tr>').join('')||'<tr><td colspan="8">No matching changes found.</td></tr>';
+ document.getElementById('clStatus').textContent=changeLogState.rows.length+' field changes loaded (most recent first).';
+ document.getElementById('clMore').style.display=changeLogState.hasMore?'':'none';
+}
+async function loadChangeLog(reset=true){
+ if(!canAdmin()||changeLogState.busy)return;
+ changeLogState.busy=true;
+ if(reset){changeLogState.rows=[];changeLogState.offset=0;changeLogState.hasMore=true}
+ const status=document.getElementById('clStatus');if(status)status.textContent='Loading changes…';
+ try{
+  let q=supabaseClient.from('dashboard_change_log').select('audit_id,changed_at,username,changed_by,table_name,action,cmi_no,activity_name,record_key,field_name,old_value,new_value').in('table_name',['cmi_delivery_activities','cmi_document_readiness','cmis','cmi_activities','rfi_information_holds','cmi_activity_resources']).order('changed_at',{ascending:false}).order('audit_id',{ascending:false});
+  const user=document.getElementById('clUser').value.trim(),cmi=document.getElementById('clCmi').value.trim(),field=document.getElementById('clField').value,from=document.getElementById('clFrom').value,to=document.getElementById('clTo').value;
+  if(user)q=q.or('changed_by.ilike.%'+user.replace(/[,()%]/g,'')+'%,username.ilike.%'+user.replace(/[,()%]/g,'')+'%');
+  if(cmi)q=q.ilike('cmi_no','%'+cmi.replace(/[%]/g,'')+'%');
+  if(field)q=q.eq('field_name',field);
+  if(from)q=q.gte('changed_at',new Date(from+'T00:00:00+13:00').toISOString());
+  if(to)q=q.lte('changed_at',new Date(to+'T23:59:59+13:00').toISOString());
+  const {data,error}=await q.range(changeLogState.offset,changeLogState.offset+199);
+  if(error)throw error;
+  changeLogState.rows.push(...(data||[]));changeLogState.offset+=data?.length||0;changeLogState.hasMore=(data||[]).length===200;
+  renderChangeLog();
+ }catch(e){console.error('Change log fetch failed',e);if(status)status.textContent='Unable to retrieve changes: '+(e.message||'Unknown error')}
+ finally{changeLogState.busy=false}
+}
+function exportChangeLog(){
+ const headers=['Changed At (NZ)','User','CMI','Activity','Field','Previous','New','Action'];
+ const data=changeLogState.rows.map(x=>[new Date(x.changed_at).toLocaleString('en-NZ',{timeZone:'Pacific/Auckland'}),x.changed_by,x.cmi_no,x.activity_name,changeLogNames[x.field_name]||x.field_name,x.old_value,x.new_value,x.action]);
+ const csv=[headers,...data].map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\r\n');
+ const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));const a=document.createElement('a');a.href=url;a.download='rwanda-cmi-change-log.csv';a.click();URL.revokeObjectURL(url);
+}
+document.getElementById('changeLogTabBtn')?.addEventListener('click',()=>loadChangeLog(true));
+document.getElementById('clApply')?.addEventListener('click',()=>loadChangeLog(true));
+document.getElementById('clMore')?.addEventListener('click',()=>loadChangeLog(false));
+document.getElementById('clExport')?.addEventListener('click',exportChangeLog);
 
 (async function bootstrapDashboard(){
  const {data:{session}}=await supabaseClient.auth.getSession();
