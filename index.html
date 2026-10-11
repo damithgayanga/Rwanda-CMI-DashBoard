@@ -231,7 +231,7 @@
 
   const ROLE_TABS={
     admin:['dashboard','register','process','organisation','delivery','readiness','rfi','progress','activities','allocation','quality','changes','changelog','audit'],
-    management:['dashboard','register','process','organisation','delivery','readiness','rfi','progress','allocation'],
+    management:['dashboard','register','process','organisation','delivery','readiness','rfi','progress','allocation','changelog'],
     progress:['dashboard','register','progress']
   };
 
@@ -3938,7 +3938,7 @@ function renderChangeLog(){
  document.getElementById('clMore').style.display=changeLogState.hasMore?'':'none';
 }
 async function loadChangeLog(reset=true){
- if(!canAdmin()||changeLogState.busy)return;
+ if(!['admin','management'].includes(currentRole())||changeLogState.busy)return;
  changeLogState.busy=true;
  if(reset){changeLogState.rows=[];changeLogState.offset=0;changeLogState.hasMore=true}
  const status=document.getElementById('clStatus');if(status)status.textContent='Loading changes…';
