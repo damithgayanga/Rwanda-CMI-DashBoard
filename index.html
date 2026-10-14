@@ -3422,9 +3422,9 @@ function renderClientDashboard(){
   {label:'Approved CMIs Submitted by CMI Team',value:approvedByTeam,color:'#18835d',amount:approvedValue}
  ];
  const items=[
-  ['Total No. of CMIs Received (A)',groups.size,null],
-  ['CMIs Approved Before CMI Team (B)',agreed.size,sums(all.filter(r=>r.status==='Agreed'),'agreedAmount')],
-  ['CMIs Submitted to DGJ (Not Approved) Before CMI Team (C)',submitted.size,sums(all.filter(r=>r.status==='Submitted'),'submittedValue')],
+  ['Total No. of CMIs Received',groups.size,null],
+  ['CMIs Approved Before CMI Team',agreed.size,sums(all.filter(r=>r.status==='Agreed'),'agreedAmount')],
+  ['CMIs Submitted to DGJ (Not Approved) Before CMI Team',submitted.size,sums(all.filter(r=>r.status==='Submitted'),'submittedValue')],
   ['Zero Value CMIs to Be Agreed with DGJ',zero.size,null],
   ['Total CMIs Allocated to CMI Team',eligible.size,null],
   ...teamRows.map(x=>[x.label,x.value,x.amount,x.color])
