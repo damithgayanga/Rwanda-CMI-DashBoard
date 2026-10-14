@@ -207,6 +207,17 @@
 .readiness-swap-status.error{color:#a33b31}
 .readiness-swap-status.success{color:#176b4e}
 @media(max-width:900px){.readiness-overview-grid{grid-template-columns:repeat(2,minmax(130px,1fr))}.readiness-filters{grid-template-columns:1fr}.readiness-swap-grid{grid-template-columns:1fr}}
+
+.client-overview-layout{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(300px,1fr);gap:28px;align-items:start}
+.client-overview-table{overflow-x:auto}
+.client-overview-chart{border-left:1px solid #e1e9ef;padding-left:24px}
+.client-overview-chart h3{margin:8px 0 12px}
+.client-overview-chart .pie-layout{grid-template-columns:1fr}
+.client-overview-chart .pie-legend{gap:12px}
+.client-overview-chart .pie-legend-row{font-size:12px}
+.client-overview-chart .pie-legend-share{font-size:10px}
+.client-overview-swatch{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:8px}
+@media(max-width:760px){.client-overview-layout{grid-template-columns:1fr}.client-overview-chart{border-left:0;border-top:1px solid #e1e9ef;padding:20px 0 0}.client-overview-table table{min-width:570px}}
 </style>
 
 <!-- Supabase -->
@@ -1428,13 +1439,17 @@
 <main class="main">
 <section class="tab active" id="tab-clientdashboard" aria-label="Client Dashboard">
 <div class="section-title"><h2>Overview</h2></div>
-<div class="card" style="overflow-x:auto">
-<table style="width:100%;min-width:700px;border-collapse:collapse">
+<div class="card">
+<div class="client-overview-layout">
+<div class="client-overview-table">
+<table style="width:100%;border-collapse:collapse">
 <thead><tr><th style="text-align:left;padding:10px">Description</th><th style="text-align:right;padding:10px">CMI Count</th><th style="text-align:right;padding:10px">Value</th></tr></thead>
 <tbody id="clientOverviewRows"></tbody></table>
-<div id="clientOverviewValidation" class="badge-note" style="margin-top:12px"></div></div>
-<div class="section-title" style="margin-top:20px"><h2>CMI Team Progress Distribution</h2></div>
-<div class="card pie-card"><div id="clientOverviewPie"></div></div>
+</div>
+<div class="client-overview-chart"><h3>CMI Team Progress Distribution</h3><div id="clientOverviewPie"></div></div>
+</div>
+<div id="clientOverviewValidation" class="badge-note" style="margin-top:16px"></div>
+</div>
 </section>
 <section class="tab" id="tab-dashboard">
  <div class="grid kpis" id="kpiGrid"></div>
@@ -3381,7 +3396,7 @@ function renderClientDashboard(){
  }
  const eligible=new Map();
  for(const [key,rows] of groups){const allocated=rows.filter(r=>isInDeliveryPlanRecord(r));if(allocated.length)eligible.set(key,allocated)}
- let commenced=0,submittedByTeam=0,approvedByTeam=0,submittedValue=0,approvedValue=0,notStarted=0,underProgress=0,pendingApproval=0;
+ let approvedByTeam=0,approvedValue=0,pendingValue=0,notStarted=0,underProgress=0,pendingApproval=0;
  for(const [key,rows] of eligible){
   const denominator=groups.get(key).length;
   for(const r of rows){
@@ -3391,10 +3406,8 @@ function renderClientDashboard(){
    const started=!!(measurement&&(measurement.actualStartDate||measurement.actualFinishDate||Number(measurement.progressPct)>0));
    const finished=!!(submission&&submission.actualFinishDate&&submission.actualFinishDate>='2026-10-01'&&Number(submission.progressPct)>=100);
    const approved=finished&&numeric(r.agreedAmount)!==null;
-   if(started)commenced+=weight;
-   if(finished){submittedByTeam+=weight;submittedValue+=numeric(submission.submittedValue)??numeric(r.submittedValue)??0}
    if(approved){approvedByTeam+=weight;approvedValue+=numeric(r.agreedAmount)||0}
-   if(approved){}else if(finished)pendingApproval+=weight;else if(started)underProgress+=weight;else notStarted+=weight;
+   if(approved){}else if(finished){pendingApproval+=weight;pendingValue+=numeric(submission.submittedValue)??numeric(r.submittedValue)??0}else if(started)underProgress+=weight;else notStarted+=weight;
   }
   notStarted+=Math.max(0,1-rows.length/denominator);
  }
@@ -3402,26 +3415,25 @@ function renderClientDashboard(){
  const expectedSet=new Set(expected);
  const extra=[...eligible.keys()].filter(key=>!expectedSet.has(key));
  const missing=expected.filter(key=>!eligible.has(key));
+ const teamRows=[
+  {label:'CMIs to Be Initiated by CMI Team',value:notStarted,color:'#99aabb',amount:null},
+  {label:'CMIs Under Progress by CMI Team',value:underProgress,color:'#e5aa4d',amount:null},
+  {label:'Submitted to DGJ by CMI Team (Awaiting Approval)',value:pendingApproval,color:'#2974bb',amount:pendingValue},
+  {label:'Approved CMIs Submitted by CMI Team',value:approvedByTeam,color:'#18835d',amount:approvedValue}
+ ];
  const items=[
   ['Total No. of CMIs Received (A)',groups.size,null],
   ['CMIs Approved Before CMI Team (B)',agreed.size,sums(all.filter(r=>r.status==='Agreed'),'agreedAmount')],
   ['CMIs Submitted to DGJ (Not Approved) Before CMI Team (C)',submitted.size,sums(all.filter(r=>r.status==='Submitted'),'submittedValue')],
   ['Zero Value CMIs to Be Agreed with DGJ',zero.size,null],
-  ['CMIs to Be Initiated by CMI Team',eligible.size,null],
-  ['CMIs Under Progress by CMI Team',commenced,null],
-  ['Submitted to DGJ by CMI Team',submittedByTeam,submittedValue],
-  ['Approved CMIs Submitted by CMI Team',approvedByTeam,approvedValue]
+  ['Total CMIs Allocated to CMI Team',eligible.size,null],
+  ...teamRows.map(x=>[x.label,x.value,x.amount,x.color])
  ];
  const fmt=n=>Number(n).toLocaleString('en-US',{maximumFractionDigits:2});
- body.innerHTML=items.map((x,i)=>'<tr style="border-bottom:1px solid #e1e9ef'+(i===4?';font-weight:700':'')+'"><td style="padding:11px 10px">'+esc(x[0])+'</td><td style="text-align:right;padding:11px 10px">'+fmt(x[1])+'</td><td style="text-align:right;padding:11px 10px">'+(x[2]===null?'':money(x[2]))+'</td></tr>').join('');
+ body.innerHTML=items.map((x,i)=>'<tr style="border-bottom:1px solid #e1e9ef'+(i===4?';font-weight:700':'')+'"><td style="padding:11px 10px">'+(x[3]?'<span class="client-overview-swatch" style="background:'+x[3]+'"></span>':'')+esc(x[0])+'</td><td style="text-align:right;padding:11px 10px">'+fmt(x[1])+'</td><td style="text-align:right;padding:11px 10px">'+(x[2]===null?'':money(x[2]))+'</td></tr>').join('');
  const note=document.getElementById('clientOverviewValidation');
  if(note)note.textContent='Secondary check: '+expected.length+' expected unique CMIs after excluding pre-team agreed, pre-team submitted and Included in Other CMIs; '+eligible.size+' allocated. '+(extra.length||missing.length?'Exceptions: '+extra.length+' allocated exclusions, '+missing.length+' expected but not allocated. Source data unchanged.':'Counts reconcile.');
- renderDonut('clientOverviewPie',[
-  {label:'Not Commenced',value:notStarted,color:'#99aabb'},
-  {label:'Assessment Under Progress',value:underProgress,color:'#e5aa4d'},
-  {label:'Submitted to DGJ (Awaiting Approval)',value:pendingApproval,color:'#2974bb'},
-  {label:'Approved by DGJ',value:approvedByTeam,color:'#18835d'}
- ],{centerValue:fmt(eligible.size),centerLabel:'Allocated unique CMIs',note:'Duplicate submissions are weighted proportionately. Approved CMIs are included in cumulative submitted totals but displayed separately here.'});
+ renderDonut('clientOverviewPie',teamRows,{centerValue:fmt(eligible.size),centerLabel:'CMIs Allocated to CMI Team',note:'The four colour-coded table rows form this chart. Each CMI is counted once across these stages; the allocated total is not an additional slice.'});
 }
 function renderDashboard(){renderKpis();renderBars();renderDeliverySnapshot();renderResourcePerformance();renderDashboardOperationalTables()}
 function renderActiveTab(){const active=document.querySelector('.tabbtn.active')?.dataset.tab||'dashboard';if(active==='clientdashboard')renderClientDashboard();else if(active==='dashboard')renderDashboard();else if(active==='register')renderRegister();else if(active==='activities'){renderActivityList();renderDeliveryWbsManager();}else if(active==='allocation')renderAllocation();else if(active==='delivery')renderDelivery();else if(active==='readiness')renderReadiness();else if(active==='rfi')renderRfiTracker();else if(active==='progress')renderProgress();else if(active==='organisation')renderOrganisation();else if(active==='quality')renderQuality();else if(active==='changes')renderChangesLog();else if(active==='audit')renderAuditLog()}
