@@ -218,6 +218,18 @@
 .client-overview-chart .pie-legend-share{font-size:10px}
 .client-overview-swatch{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:8px}
 @media(max-width:760px){.client-overview-layout{grid-template-columns:1fr}.client-overview-chart{border-left:0;border-top:1px solid #e1e9ef;padding:20px 0 0}.client-overview-table table{min-width:570px}}
+
+.client-approved-heading,.client-approved-row,.client-approved-group summary{display:grid;grid-template-columns:minmax(0,1fr) 65px 140px;gap:12px;align-items:center;padding:12px 10px;border-bottom:1px solid #e1e9ef}
+.client-approved-heading{font-weight:700}
+.client-approved-heading span:not(:first-child),.client-approved-row span:not(:first-child),.client-approved-group summary>span:not(:first-child){text-align:right;font-variant-numeric:tabular-nums}
+.client-approved-total{font-weight:800;background:#f2f6fa}
+.client-approved-group summary{cursor:pointer;font-weight:700;list-style:none}
+.client-approved-group summary::-webkit-details-marker{display:none}
+.client-approved-group summary>span:first-child:before{content:'▸';display:inline-block;width:18px}
+.client-approved-group[open] summary>span:first-child:before{content:'▾'}
+.client-approved-detail{padding-left:28px;font-size:12px}
+.client-approved-swatch{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:8px}
+@media(max-width:480px){.client-approved-heading,.client-approved-row,.client-approved-group summary{grid-template-columns:minmax(0,1fr) 45px 100px;gap:6px;padding:10px 5px;font-size:11px}}
 </style>
 
 <!-- Supabase -->
@@ -1449,6 +1461,15 @@
 <div class="client-overview-chart"><h3>CMI Team Progress Distribution</h3><div id="clientOverviewPie"></div></div>
 </div>
 <div id="clientOverviewValidation" class="badge-note" style="margin-top:16px"></div>
+</div>
+
+<div class="section-title" style="margin-top:24px"><h2>Previously Approved CMIs</h2></div>
+<div class="card">
+ <div class="client-overview-layout">
+  <div id="clientApprovedTable" class="client-approved-table"></div>
+  <div class="client-overview-chart"><h3>Previously Approved CMIs — Count Breakdown</h3><div id="clientApprovedPie"></div></div>
+ </div>
+ <div class="badge-note" style="margin-top:16px">Based on existing Agreed register entries. Counts use unique CMI numbers; values sum their agreed amounts in USD. Negative value bands use absolute amounts. The chart shows counts, with the same colours as the detailed table rows.</div>
 </div>
 </section>
 <section class="tab" id="tab-dashboard">
@@ -3381,7 +3402,49 @@ function renderDashboardOperationalTables(){
  ).join('')||'<tr><td colspan="5" class="dashboard-empty">No CMIs are planned to start next week.</td></tr>';
 }
 
+
+function clientPreviouslyApprovedSummary(records){
+ const bands=[
+  {id:'positive-ps',label:'Positive Value — PS',tableLabel:'PS',value:0,amount:0,color:'#18835d'},
+  {id:'positive-high',label:'Positive Value — High',tableLabel:'High Value CMIs (USD 500,000 and above)',value:0,amount:0,color:'#2563a8'},
+  {id:'positive-medium',label:'Positive Value — Medium',tableLabel:'Medium Value CMIs (USD 100,000 to below 500,000)',value:0,amount:0,color:'#23adc8'},
+  {id:'positive-low',label:'Positive Value — Low',tableLabel:'Low Value CMIs (above USD 0 to below 100,000)',value:0,amount:0,color:'#86b8d3'},
+  {id:'negative-high',label:'Negative Value — High',tableLabel:'High Value CMIs (USD 500,000 and above)',value:0,amount:0,color:'#b62d25'},
+  {id:'negative-medium',label:'Negative Value — Medium',tableLabel:'Medium Value CMIs (USD 100,000 to below 500,000)',value:0,amount:0,color:'#e5aa4d'},
+  {id:'negative-low',label:'Negative Value — Low',tableLabel:'Low Value CMIs (above USD 0 to below 100,000)',value:0,amount:0,color:'#bc7410'},
+  {id:'zero',label:'Zero Value CMIs',tableLabel:'Zero Value CMIs',value:0,amount:0,color:'#99aabb'},
+  {id:'missing',label:'Agreed Amount Not Recorded',tableLabel:'Agreed Amount Not Recorded',value:0,amount:0,color:'#6b4cb5'}
+ ];
+ const groups=new Map();
+ for(const r of records||[]){
+  if(r.status!=='Agreed')continue;
+  const key=normCmi(r.cmiKey||r.cmiNo||'');if(!key)continue;
+  if(!groups.has(key))groups.set(key,[]);groups.get(key).push(r);
+ }
+ for(const rows of groups.values()){
+  const missing=rows.some(r=>r.agreedAmount===null||r.agreedAmount===undefined||r.agreedAmount===''||!Number.isFinite(Number(r.agreedAmount)));
+  const amount=rows.reduce((n,r)=>n+(Number(r.agreedAmount)||0),0);
+  const ps=rows.some(r=>/provisional\s+sum|\bPS\b/i.test((r.description||'')+' '+(r.notes||'')));
+  const magnitude=Math.abs(amount),level=magnitude>=500000?'high':magnitude>=100000?'medium':'low';
+  const id=missing?'missing':amount===0?'zero':amount>0?(ps?'positive-ps':'positive-'+level):'negative-'+level;
+  const band=bands.find(x=>x.id===id);band.value++;band.amount+=amount;
+ }
+ return {bands,total:groups.size,amount:bands.reduce((n,x)=>n+x.amount,0)};
+}
+function renderPreviouslyApprovedCmis(){
+ const table=document.getElementById('clientApprovedTable');if(!table)return;
+ const savedOpen=[...table.querySelectorAll('details[open]')].map(x=>x.dataset.group);
+ const summary=clientPreviouslyApprovedSummary(state.records);
+ const fmt=n=>Number(n).toLocaleString('en-US');
+ const row=(label,count,amount,color,cls='')=>'<div class="client-approved-row '+cls+'"><span>'+(color?'<i class="client-approved-swatch" style="background:'+color+'"></i>':'')+esc(label)+'</span><span>'+fmt(count)+'</span><span>'+money(amount)+'</span></div>';
+ const group=(id,label)=>{const bands=summary.bands.filter(x=>x.id.startsWith(id+'-'));return '<details class="client-approved-group" data-group="'+id+'"'+(savedOpen.includes(id)?' open':'')+'><summary><span>'+esc(label)+'</span><span>'+fmt(bands.reduce((n,x)=>n+x.value,0))+'</span><span>'+money(bands.reduce((n,x)=>n+x.amount,0))+'</span></summary>'+bands.map(x=>row(x.tableLabel,x.value,x.amount,x.color,'client-approved-detail')).join('')+'</details>'};
+ const zero=summary.bands.find(x=>x.id==='zero'),missing=summary.bands.find(x=>x.id==='missing');
+ table.innerHTML='<div class="client-approved-heading"><span>Description</span><span>Count</span><span>Value (USD)</span></div>'+row('Approved CMIs (Total)',summary.total,summary.amount,null,'client-approved-total')+group('positive','Positive Value CMIs')+group('negative','Negative Value CMIs')+row(zero.tableLabel,zero.value,zero.amount,zero.color)+(missing.value?row(missing.tableLabel,missing.value,missing.amount,missing.color):'');
+ renderDonut('clientApprovedPie',summary.bands.filter(x=>x.id!=='missing'||x.value>0),{centerValue:fmt(summary.total),centerLabel:'Previously Approved CMIs'});
+}
+
 function renderClientDashboard(){
+ renderPreviouslyApprovedCmis();
  const body=document.getElementById('clientOverviewRows');if(!body)return;
  const all=state.records||[],groups=new Map();
  for(const r of all){const key=normCmi(r.cmiKey||r.cmiNo||'');if(!key)continue;if(!groups.has(key))groups.set(key,[]);groups.get(key).push(r)}
