@@ -1638,7 +1638,7 @@
 
 <section class="tab" id="tab-register">
  <div class="section-title"><h2>CMI Register</h2><div class="toolbar"><button class="btn primary" id="addCmiBtn">+ Add CMI</button><button class="btn" id="exportCsvBtn">Export filtered CSV</button><button class="btn" id="exportJsonBtn">Backup JSON</button><button class="btn danger" id="resetBtn">Reset local changes</button></div></div>
- <div class="card"><div class="filters"><input id="fSearch" placeholder="Search CMI / reference / description / location"><select id="fStatus" aria-label="Register Category"><option value="">All register categories</option></select><select id="fMainCategory" aria-label="Submission Classification"><option value="">All submission classifications</option><option value="__blank__">Blank submission classification</option></select><select id="fPriority"><option value="">All priorities</option><option>High</option><option>Medium</option><option>Low</option><option>Unvalued</option></select><select id="fAsset"><option value="">All assets</option></select><select id="fPlan"><option value="">All plan status</option><option value="planned">In Delivery Plan</option><option value="notplanned">Not Planned</option></select><select id="fResource"><option value="">All resources</option></select></div>
+ <div class="card"><div class="filters"><input id="fSearch" placeholder="Search CMI / reference / description / location"><select id="fStatus" aria-label="Register Category"><option value="">All register categories</option></select><select id="fMainCategory" aria-label="Submission Classification"><option value="">All submission classifications</option></select><select id="fPriority"><option value="">All priorities</option><option>High</option><option>Medium</option><option>Low</option><option>Unvalued</option></select><select id="fAsset"><option value="">All assets</option></select><select id="fPlan"><option value="">All plan status</option><option value="planned">In Delivery Plan</option><option value="notplanned">Not Planned</option></select><select id="fResource"><option value="">All resources</option></select></div>
  <div class="small muted" id="registerCount" style="margin-bottom:10px"></div>
  <div class="table-wrap"><table class="data-table"><thead><tr><th>CMI</th><th>Reference</th><th>Description</th><th>CMI Date</th><th>Asset</th><th>Location</th><th>Initial Estimate</th><th>Off-Site Estimate</th><th>Submitted Value</th><th>Agreed Amount</th><th>Register Category</th><th>Submission Classification</th><th>Priority</th><th>Site Resource</th><th>Off-site Resource</th><th>Delivery Status</th><th>Action</th></tr></thead><tbody id="registerBody"></tbody></table></div></div>
 </section>
@@ -2508,9 +2508,8 @@ function populateFilters(){
  for(const id of ['fMainCategory','eMainCategory']){
   const el=document.getElementById(id);if(!el)continue;const previous=el.value;
   el.replaceChildren(new Option(id==='fMainCategory'?'All submission classifications':'Not set',''));
-  if(id==='fMainCategory')el.add(new Option('Blank submission classification','__blank__'));
   updatedStatuses.forEach(value=>el.add(new Option(value,value)));
-  el.value=updatedStatuses.includes(previous)||(id==='fMainCategory'&&previous==='__blank__')?previous:'';
+  el.value=updatedStatuses.includes(previous)?previous:'';
  }
  populateStatusSelect('aStatus','All actionable statuses',s=>ACTIONABLE.has(s));
  let el=document.getElementById('fAsset');if(el){let v=el.value;el.innerHTML='<option value="">All assets</option>'+assets.map(x=>`<option>${esc(x)}</option>`).join('');el.value=v}
