@@ -230,6 +230,50 @@
 .client-approved-detail{padding-left:28px;font-size:12px}
 .client-approved-swatch{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:8px}
 @media(max-width:480px){.client-approved-heading,.client-approved-row,.client-approved-group summary{grid-template-columns:minmax(0,1fr) 45px 100px;gap:6px;padding:10px 5px;font-size:11px}}
+
+/* Executive presentation styling, limited to the client Dashboard. */
+#tab-clientdashboard{--executive-ink:#17324a;--executive-muted:#647587}
+#tab-clientdashboard .section-title{margin-bottom:12px;align-items:baseline;gap:16px}
+#tab-clientdashboard .section-title h2{font-size:18px;letter-spacing:-.25px;font-weight:750;color:var(--executive-ink)}
+#tab-clientdashboard .card{border:1px solid #dfe6ec;border-radius:14px;padding:24px;box-shadow:0 4px 18px rgba(23,50,74,.045)}
+#tab-clientdashboard .client-overview-layout{grid-template-columns:minmax(0,1.2fr) minmax(430px,1fr);gap:32px}
+#tab-clientdashboard .client-overview-chart{padding-left:30px;border-left:1px solid #e5ebf0}
+#tab-clientdashboard .client-overview-chart h3{font-size:12px;text-transform:uppercase;letter-spacing:.07em;font-weight:700;color:var(--executive-muted);margin:2px 0 20px}
+#tab-clientdashboard .pie-layout{grid-template-columns:190px minmax(0,1fr);gap:24px}
+#tab-clientdashboard .donut{width:190px;height:190px;box-shadow:0 0 0 6px #f7f9fb}
+#tab-clientdashboard .donut:after{inset:20%;box-shadow:none}
+#tab-clientdashboard .donut-center{inset:23%}
+#tab-clientdashboard .donut-center b{font-size:28px;font-weight:750;letter-spacing:-.8px}
+#tab-clientdashboard .donut-center span{font-size:10px;line-height:1.4;max-width:88px}
+#tab-clientdashboard .pie-legend{gap:11px}
+#tab-clientdashboard .pie-legend-row{font-size:11px;gap:9px;grid-template-columns:9px minmax(0,1fr) auto}
+#tab-clientdashboard .pie-swatch{border-radius:2px;margin-top:3px}
+#tab-clientdashboard .pie-legend-share{font-size:9px;font-weight:400;margin-top:2px;color:#738496}
+#tab-clientdashboard .pie-legend-value{font-size:12px;font-weight:700}
+#tab-clientdashboard .client-approved-heading{color:#607487;text-transform:uppercase;font-size:10px;letter-spacing:.045em;background:#f6f8fa}
+#tab-clientdashboard .client-approved-total{color:#17324a;background:#edf3f7}
+#tab-clientdashboard .client-approved-row,#tab-clientdashboard .client-approved-group summary{min-height:48px;font-size:12px}
+#tab-clientdashboard .client-approved-detail{font-size:11px;background:#fafbfd;line-height:1.45}
+#tab-clientdashboard .client-approved-row span:last-child,#tab-clientdashboard .client-approved-group summary>span:last-child{white-space:nowrap}
+#tab-clientdashboard .badge-note{color:#788a9b;line-height:1.6}
+#tab-clientdashboard .clientOverview-table{font-size:12px}
+.client-stage-caption{font-size:11px;color:#647587}
+.client-process-table{width:100%;border-collapse:collapse}
+.client-process-table th{font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:#647587;text-align:left;padding:8px 14px 14px;border-bottom:1px solid #dde6ed}
+.client-process-table th:last-child{text-align:right}
+.client-process-table td{padding:17px 14px;border-bottom:1px solid #e6ecf1;font-size:14px;color:#17324a}
+.client-process-table td:first-child{display:flex;align-items:center;gap:16px}
+.client-process-table td:last-child{text-align:right;font-size:24px;font-weight:700;font-variant-numeric:tabular-nums;width:150px}
+.client-process-table tr:last-child td{border-bottom:0}
+.client-stage-number{width:32px;height:32px;display:inline-flex;justify-content:center;align-items:center;border-radius:8px;background:#edf3f7;color:#55758e;font-size:11px;font-weight:700}
+.client-data-note{margin-top:18px;padding-top:12px;border-top:1px solid #e6ecf1;font-size:10px;color:#738496}
+.client-data-note summary{cursor:pointer;list-style:none}
+.client-data-note summary:before{content:'▸ ';color:#55758e}
+.client-data-note[open] summary:before{content:'▾ '}
+.client-data-note p{max-width:1100px;line-height:1.65;margin:10px 0 0}
+@media(max-width:1250px){#tab-clientdashboard .client-overview-layout{grid-template-columns:minmax(0,1.2fr) minmax(330px,1fr);gap:22px}#tab-clientdashboard .pie-layout{grid-template-columns:1fr}#tab-clientdashboard .client-overview-chart{padding-left:22px}}
+@media(max-width:900px){#tab-clientdashboard .client-overview-layout{grid-template-columns:1fr}#tab-clientdashboard .client-overview-chart{border-left:0;border-top:1px solid #e5ebf0;padding:22px 0 0}#tab-clientdashboard .pie-layout{grid-template-columns:190px minmax(0,1fr)}}
+@media(max-width:540px){#tab-clientdashboard .card{padding:16px}#tab-clientdashboard .pie-layout{grid-template-columns:1fr}#tab-clientdashboard .client-approved-row,#tab-clientdashboard .client-approved-group summary{font-size:11px}.client-stage-caption{display:none}.client-process-table td{font-size:12px}.client-process-table td:last-child{font-size:22px;width:70px}}
 </style>
 
 <!-- Supabase -->
@@ -1485,6 +1529,15 @@
   <div class="client-overview-chart"><h3>Previously Submitted to DG Jones — Count Breakdown</h3><div id="clientSubmittedPie"></div></div>
  </div>
  <div class="badge-note" style="margin-top:16px">Based on entries marked Submitted in Register Status - Original. Counts use unique CMI numbers; values sum their submitted values in USD. Negative value bands use absolute amounts. The chart shows counts, with the same colours as the detailed table rows.</div>
+</div>
+
+<div class="section-title" style="margin-top:24px"><h2>CMIs Under Process (Stages)</h2><span class="client-stage-caption">Cumulative stage milestones</span></div>
+<div class="card client-process-card">
+ <table class="client-process-table">
+  <thead><tr><th>Stage</th><th>Count</th></tr></thead>
+  <tbody id="clientProcessStages"></tbody>
+ </table>
+ <details class="client-data-note"><summary>Basis of stage counts</summary><p>Unique CMI numbers in the Delivery Plan. Sent to Measurement Team: actual document handover recorded. Received from Measurement Team: Measurement &amp; Valuation at 100% with an actual finish date. Submitted to CM: Technical &amp; Commercial Clearance started. Received from CM: Technical &amp; Commercial Clearance at 100% with an actual finish date. These cumulative milestones can include the same CMI at more than one stage.</p></details>
 </div>
 </section>
 <section class="tab" id="tab-dashboard">
@@ -3428,15 +3481,15 @@ function renderDashboardOperationalTables(){
 
 function clientPreviouslyApprovedSummary(records){
  const bands=[
-  {id:'positive-ps',label:'Positive Value — PS',tableLabel:'PS',value:0,amount:0,color:'#18835d'},
-  {id:'positive-high',label:'Positive Value — High',tableLabel:'High Value CMIs (USD 500,000 and above)',value:0,amount:0,color:'#2563a8'},
-  {id:'positive-medium',label:'Positive Value — Medium',tableLabel:'Medium Value CMIs (USD 100,000 to below 500,000)',value:0,amount:0,color:'#23adc8'},
-  {id:'positive-low',label:'Positive Value — Low',tableLabel:'Low Value CMIs (above USD 0 to below 100,000)',value:0,amount:0,color:'#86b8d3'},
-  {id:'negative-high',label:'Negative Value — High',tableLabel:'High Value CMIs (USD 500,000 and above)',value:0,amount:0,color:'#b62d25'},
-  {id:'negative-medium',label:'Negative Value — Medium',tableLabel:'Medium Value CMIs (USD 100,000 to below 500,000)',value:0,amount:0,color:'#e5aa4d'},
-  {id:'negative-low',label:'Negative Value — Low',tableLabel:'Low Value CMIs (above USD 0 to below 100,000)',value:0,amount:0,color:'#bc7410'},
-  {id:'zero',label:'Zero Value CMIs',tableLabel:'Zero Value CMIs',value:0,amount:0,color:'#99aabb'},
-  {id:'missing',label:'Agreed Amount Not Recorded',tableLabel:'Agreed Amount Not Recorded',value:0,amount:0,color:'#6b4cb5'}
+  {id:'positive-ps',label:'Positive Value — PS',tableLabel:'PS',value:0,amount:0,color:'#2f6f68'},
+  {id:'positive-high',label:'Positive Value — High',tableLabel:'High Value CMIs (USD 500,000 and above)',value:0,amount:0,color:'#234c72'},
+  {id:'positive-medium',label:'Positive Value — Medium',tableLabel:'Medium Value CMIs (USD 100,000 to below 500,000)',value:0,amount:0,color:'#557f94'},
+  {id:'positive-low',label:'Positive Value — Low',tableLabel:'Low Value CMIs (above USD 0 to below 100,000)',value:0,amount:0,color:'#8da9bb'},
+  {id:'negative-high',label:'Negative Value — High',tableLabel:'High Value CMIs (USD 500,000 and above)',value:0,amount:0,color:'#8a5660'},
+  {id:'negative-medium',label:'Negative Value — Medium',tableLabel:'Medium Value CMIs (USD 100,000 to below 500,000)',value:0,amount:0,color:'#aa8a59'},
+  {id:'negative-low',label:'Negative Value — Low',tableLabel:'Low Value CMIs (above USD 0 to below 100,000)',value:0,amount:0,color:'#85715e'},
+  {id:'zero',label:'Zero Value CMIs',tableLabel:'Zero Value CMIs',value:0,amount:0,color:'#a5b2bd'},
+  {id:'missing',label:'Agreed Amount Not Recorded',tableLabel:'Agreed Amount Not Recorded',value:0,amount:0,color:'#68768a'}
  ];
  const groups=new Map();
  for(const r of records||[]){
@@ -3468,15 +3521,15 @@ function renderPreviouslyApprovedCmis(){
 
 function clientPreviouslySubmittedSummary(records){
  const bands=[
-  {id:'positive-ps',label:'Positive Value — PS',tableLabel:'PS',value:0,amount:0,color:'#18835d'},
-  {id:'positive-high',label:'Positive Value — High',tableLabel:'High Value CMIs (USD 500,000 and above)',value:0,amount:0,color:'#2563a8'},
-  {id:'positive-medium',label:'Positive Value — Medium',tableLabel:'Medium Value CMIs (USD 100,000 to below 500,000)',value:0,amount:0,color:'#23adc8'},
-  {id:'positive-low',label:'Positive Value — Low',tableLabel:'Low Value CMIs (above USD 0 to below 100,000)',value:0,amount:0,color:'#86b8d3'},
-  {id:'negative-high',label:'Negative Value — High',tableLabel:'High Value CMIs (USD 500,000 and above)',value:0,amount:0,color:'#b62d25'},
-  {id:'negative-medium',label:'Negative Value — Medium',tableLabel:'Medium Value CMIs (USD 100,000 to below 500,000)',value:0,amount:0,color:'#e5aa4d'},
-  {id:'negative-low',label:'Negative Value — Low',tableLabel:'Low Value CMIs (above USD 0 to below 100,000)',value:0,amount:0,color:'#bc7410'},
-  {id:'zero',label:'Zero Value CMIs',tableLabel:'Zero Value CMIs',value:0,amount:0,color:'#99aabb'},
-  {id:'missing',label:'Submitted Value Not Recorded',tableLabel:'Submitted Value Not Recorded',value:0,amount:0,color:'#6b4cb5'}
+  {id:'positive-ps',label:'Positive Value — PS',tableLabel:'PS',value:0,amount:0,color:'#2f6f68'},
+  {id:'positive-high',label:'Positive Value — High',tableLabel:'High Value CMIs (USD 500,000 and above)',value:0,amount:0,color:'#234c72'},
+  {id:'positive-medium',label:'Positive Value — Medium',tableLabel:'Medium Value CMIs (USD 100,000 to below 500,000)',value:0,amount:0,color:'#557f94'},
+  {id:'positive-low',label:'Positive Value — Low',tableLabel:'Low Value CMIs (above USD 0 to below 100,000)',value:0,amount:0,color:'#8da9bb'},
+  {id:'negative-high',label:'Negative Value — High',tableLabel:'High Value CMIs (USD 500,000 and above)',value:0,amount:0,color:'#8a5660'},
+  {id:'negative-medium',label:'Negative Value — Medium',tableLabel:'Medium Value CMIs (USD 100,000 to below 500,000)',value:0,amount:0,color:'#aa8a59'},
+  {id:'negative-low',label:'Negative Value — Low',tableLabel:'Low Value CMIs (above USD 0 to below 100,000)',value:0,amount:0,color:'#85715e'},
+  {id:'zero',label:'Zero Value CMIs',tableLabel:'Zero Value CMIs',value:0,amount:0,color:'#a5b2bd'},
+  {id:'missing',label:'Submitted Value Not Recorded',tableLabel:'Submitted Value Not Recorded',value:0,amount:0,color:'#68768a'}
  ];
  const groups=new Map();
  for(const r of records||[]){
@@ -3507,9 +3560,31 @@ function renderPreviouslySubmittedCmis(){
 }
 
 
+
+function clientProcessStageCounts(records,readiness){
+ const sets=[new Set(),new Set(),new Set(),new Set()];
+ for(const r of records||[]){
+  if(!isInDeliveryPlanRecord(r))continue;
+  const key=normCmi(r.cmiKey||r.cmiNo||'');if(!key)continue;
+  const a=dashboardCmiActivities(r),handover=readiness.get(String(r.id||''));
+  if(handover&&handover.actual_given_date)sets[0].add(key);
+  if(activityProgressAt100(a.measure)&&a.measure.actualFinishDate)sets[1].add(key);
+  if(activityStarted(a.clearance))sets[2].add(key);
+  if(activityProgressAt100(a.clearance)&&a.clearance.actualFinishDate)sets[3].add(key);
+ }
+ return sets.map(x=>x.size);
+}
+function renderClientProcessStages(){
+ const el=document.getElementById('clientProcessStages');if(!el)return;
+ const counts=clientProcessStageCounts(state.records,documentReadinessMap());
+ const labels=['Sent to Measurement Team','Received from Measurement Team','Submitted to CM','Received from CM'];
+ el.innerHTML=labels.map((label,i)=>'<tr><td><span class="client-stage-number">'+String(i+1).padStart(2,'0')+'</span><span>'+esc(label)+'</span></td><td>'+Number(counts[i]).toLocaleString('en-US')+'</td></tr>').join('');
+}
+
 function renderClientDashboard(){
  renderPreviouslyApprovedCmis();
  renderPreviouslySubmittedCmis();
+ renderClientProcessStages();
  const body=document.getElementById('clientOverviewRows');if(!body)return;
  const all=state.records||[],groups=new Map();
  for(const r of all){const key=normCmi(r.cmiKey||r.cmiNo||'');if(!key)continue;if(!groups.has(key))groups.set(key,[]);groups.get(key).push(r)}
@@ -3544,10 +3619,10 @@ function renderClientDashboard(){
  const extra=[...eligible.keys()].filter(key=>!expectedSet.has(key));
  const missing=expected.filter(key=>!eligible.has(key));
  const teamRows=[
-  {label:'CMIs to Be Initiated by CMI Team',value:notStarted,color:'#99aabb',amount:null},
-  {label:'CMIs Under Progress by CMI Team',value:underProgress,color:'#e5aa4d',amount:null},
-  {label:'Submitted to DGJ by CMI Team',value:pendingApproval,color:'#2974bb',amount:pendingValue},
-  {label:'Approved CMIs Submitted by CMI Team',value:approvedByTeam,color:'#18835d',amount:approvedValue}
+  {label:'CMIs to Be Initiated by CMI Team',value:notStarted,color:'#a5b2bd',amount:null},
+  {label:'CMIs Under Progress by CMI Team',value:underProgress,color:'#aa8a59',amount:null},
+  {label:'Submitted to DGJ by CMI Team',value:pendingApproval,color:'#234c72',amount:pendingValue},
+  {label:'Approved CMIs Submitted by CMI Team',value:approvedByTeam,color:'#2f6f68',amount:approvedValue}
  ];
  const items=[
   ['Total No. of CMIs Received',groups.size,null],
