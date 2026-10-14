@@ -1550,8 +1550,8 @@
  <div class="grid kpis" id="kpiGrid"></div>
  <div class="section-title"><h2>Commercial Portfolio Overview</h2></div>
  <div class="grid dashboard-pie-grid">
-  <div class="card pie-card"><h3>CMI Status Split</h3><div id="statusPie"></div></div>
-  <div class="card pie-card"><h3>To be Submitted — Category and Priority Split</h3><div id="priorityPie"></div></div>
+  <div class="card pie-card"><h3>Submission Classification</h3><div id="statusPie"></div></div>
+  <div class="card pie-card"><h3>CMI Team Workload — Priority Split</h3><div id="priorityPie"></div></div>
   <div class="card pie-card"><h3>Agreed CMIs — Submitted vs Agreed Value</h3><div id="agreedComparisonPie"></div></div>
   <div class="card pie-card"><h3>Total Portfolio Value Split</h3><div id="portfolioValuePie"></div>
    <div class="assumption-box">
@@ -1677,10 +1677,10 @@
 
  <div class="subsection-title"><h3>Detailed CMI Activity Allocation</h3><span class="note">Add the relevant activity or activities to each CMI, then allocate site/off-site resources and dates to every activity.</span></div>
  <div class="card">
-  <div class="filters"><input id="aSearch" placeholder="Search CMI / description / location"><select id="aStatus"><option value="">All actionable statuses</option></select><select id="aPriority"><option value="">All priorities</option><option>High</option><option>Medium</option><option>Low</option><option>Unvalued</option></select><select id="aPlan"><option value="notplanned">Not yet in Delivery Plan</option><option value="planned">Already planned</option><option value="">All</option></select><select id="aSite"><option value="">All site resources</option></select><select id="aOffsite"><option value="">All off-site resources</option></select></div>
+  <div class="filters"><input id="aSearch" placeholder="Search CMI / description / location"><select id="aStatus"><option value="">All actionable statuses</option></select><select id="aPriority"><option value="">All priorities</option><option>High</option><option>Medium</option><option>Low</option><option>Unvalued</option></select><select id="aPlan"><option value="notplanned">Awaiting off-site allocation</option><option value="planned">Off-site allocated</option><option value="">All</option></select><select id="aSite"><option value="">All site resources</option></select><select id="aOffsite"><option value="">All off-site resources</option></select></div>
   <div class="callout"><b>CMI activity workflow:</b> choose an activity and click <b>Add</b>, then assign the relevant site and/or off-site resource and planned start/target dates. As soon as an activity has a resource and valid dates, it is synchronised automatically to the Delivery Plan. <b>Save CMI Activity Plan</b> remains as a validation check that every selected activity is complete.</div>
   <div class="small muted" id="allocationCount" style="margin:10px 0"></div>
-  <div class="table-wrap" style="max-height:72vh"><table class="data-table allocation-table-v2"><thead><tr><th>CMI No.</th><th>Description</th><th>Register Status</th><th>Priority</th><th>Initial Estimate</th><th>Add Activity</th><th>Activity Plan</th><th>Delivery Plan</th></tr></thead><tbody id="allocationBody"></tbody></table></div>
+  <div class="table-wrap" style="max-height:72vh"><table class="data-table allocation-table-v2"><thead><tr><th>CMI No.</th><th>Description</th><th>Register Category</th><th>Priority</th><th>Initial Estimate</th><th>Add Activity</th><th>Activity Plan</th><th>Delivery Plan</th></tr></thead><tbody id="allocationBody"></tbody></table></div>
  </div>
 
  <div class="subsection-title"><h3>High-Level Activity Resource Allocation</h3><div class="toolbar"><button class="btn good" id="saveHighLevelPlanBtn" type="button">Save High-Level Activity Plan</button></div></div>
@@ -2122,7 +2122,9 @@ function setHeader(){
  if(sourceFileFoot)sourceFileFoot.textContent=state.meta.sourceFile||'';
 }
 function hasActivityProgress(r){return (r.cmiActivities||[]).some(a=>!!(a.actualStartDate||a.actualFinishDate||Number(a.progressPct)>0))}
-function deliveryPlanApplicable(r){return !!(r&&derivedDeliveryStatus(r)!=='Not Applicable')}
+function isCmiTeamSubmission(r){return !!r&&String(r.mainCategory||'').trim()==='TBS by CMI Team'}
+function deliveryPlanApplicable(r){return isCmiTeamSubmission(r)}
+function deliveryWorkBucket(r){if(/provisional sum/i.test(registerCategoryValue(r)))return 'Investigated';return calcPriority(r)==='Unvalued'?'Unvalued':calcPriority(r)}
 function hasOffsiteDeliveryAllocation(r){
  if(!r)return false;
  const activeOffsite=new Set(currentOffsiteResources());
@@ -2131,7 +2133,7 @@ function hasOffsiteDeliveryAllocation(r){
   return activityReadyForDelivery(a)||activityStarted(a);
  });
 }
-function isInDeliveryPlanRecord(r){return !!(r&&deliveryPlanApplicable(r)&&hasOffsiteDeliveryAllocation(r))}
+function isInDeliveryPlanRecord(r){return isCmiTeamSubmission(r)}
 function activityProgressAt100(a){return !!(a&&Number(a.progressPct)>=100)}
 
 const CMI_ACTIVITY_WEIGHTS=Object.freeze({
@@ -2178,9 +2180,8 @@ function weightedDeliverySummaryProgress(){
 function derivedDeliveryStatus(r){
  if(!r)return 'To be Started';
 
- // Register status overrides the activity workflow.
- if(r.status==='Included in Other CMIs')return 'Not Applicable';
- if(r.status==='Submitted'||r.status==='Agreed')return 'Submitted';
+ // Submission Classification defines team scope; activity progress defines delivery stage.
+ if(!isCmiTeamSubmission(r))return ['Agreed','Submitted'].includes(r.mainCategory)?'Submitted':'Not Applicable';
 
  const measure=findActivityByIdOrName(r,'act-measure','measurement works');
  const clearance=findActivityByIdOrName(r,'act-clearance','technical and commercial clearance');
@@ -2201,7 +2202,7 @@ function derivedDeliveryStatus(r){
  // Measurement has not started, including where it has only planned dates.
  return 'To be Started';
 }
-function planned(){return state.records.filter(r=>deliveryPlanApplicable(r)&&ACTIONABLE.has(r.status)&&isInDeliveryPlanRecord(r))}
+function planned(){return state.records.filter(isCmiTeamSubmission)}
 function resourceLocation(name){
  const row=(supabaseResources||[]).find(r=>(r.resource_name||'')===name&&!r.is_deleted);
  if(row)return unpackResourceRole(row.role).location;
@@ -2268,8 +2269,8 @@ function operationalStage(r){
  if(!activityComplete(submission)&&(clearance||measure))return 'Technical and Commercial Clearance';
  return '';
 }
-function submissionBreakdown(items){return {initial:items.filter(x=>x.status==='To be Submitted - Initial Review compelted').length,unallocated:items.filter(x=>x.status==='To be Submitted and Unallocated').length,provisional:items.filter(x=>x.status==='Provisional Sum CMI').length}}
-function submissionBreakdownHtml(items){const c=submissionBreakdown(items);return `<div class="kpi-group"><div class="kpi-sub initial"><span class="kpi-sub-label">Initial Review Completed</span><span class="kpi-sub-value">${c.initial}</span></div><div class="kpi-sub unallocated"><span class="kpi-sub-label">Unallocated</span><span class="kpi-sub-value">${c.unallocated}</span></div><div class="kpi-sub provisional"><span class="kpi-sub-label">Provisional Sums</span><span class="kpi-sub-value">${c.provisional}</span></div></div>`}
+function submissionBreakdown(items){return {initial:items.filter(x=>deliveryWorkBucket(x)!=='Investigated'&&hasOffsiteDeliveryAllocation(x)).length,unallocated:items.filter(x=>deliveryWorkBucket(x)!=='Investigated'&&!hasOffsiteDeliveryAllocation(x)).length,provisional:items.filter(x=>deliveryWorkBucket(x)==='Investigated').length}}
+function submissionBreakdownHtml(items){const c=submissionBreakdown(items);return `<div class="kpi-group"><div class="kpi-sub initial"><span class="kpi-sub-label">Allocated</span><span class="kpi-sub-value">${c.initial}</span></div><div class="kpi-sub unallocated"><span class="kpi-sub-label">Unallocated</span><span class="kpi-sub-value">${c.unallocated}</span></div><div class="kpi-sub provisional"><span class="kpi-sub-label">Provisional Sums</span><span class="kpi-sub-value">${c.provisional}</span></div></div>`}
 function stageKpiHtml(label,items,style='',total=null){const context=total===null||total===undefined?'':`<span class="value-context">out of ${total}</span>`;return `<div class="card kpi kpi-stage ${style}"><div class="label">${label}</div><div class="value">${items.length}${context}</div>${submissionBreakdownHtml(items)}</div>`}
 function programmeWeekRanges(){
  const base=new Date((programmeDataDate||todayISO())+'T00:00:00');
@@ -2293,7 +2294,7 @@ function plannedActivityCountForRange(activityId,start,finish){
  const seen=new Set();
  state.records.forEach(r=>{
   // Weekly Activity Plan must be a direct view of the current Delivery Plan only.
-  if(!deliveryPlanApplicable(r)||!ACTIONABLE.has(r.status)||!isInDeliveryPlanRecord(r))return;
+  if(!deliveryPlanApplicable(r)||!isInDeliveryPlanRecord(r))return;
   const a=findActivityByIdOrName(r,activityId,activityNamePart(activityId));
   if(!a||!a.targetDate||a.targetDate<start||a.targetDate>finish)return;
   seen.add(deliveryRecordIdentity(r));
@@ -2304,7 +2305,7 @@ function cumulativePlannedActivityCount(activityId,throughDate){
  const seen=new Set();
  state.records.forEach(r=>{
   // Cumulative plan uses the same Delivery Plan population as the KPI card.
-  if(!deliveryPlanApplicable(r)||!ACTIONABLE.has(r.status)||!isInDeliveryPlanRecord(r))return;
+  if(!deliveryPlanApplicable(r)||!isInDeliveryPlanRecord(r))return;
   const a=findActivityByIdOrName(r,activityId,activityNamePart(activityId));
   if(!a||!a.targetDate||a.targetDate>throughDate)return;
   seen.add(deliveryRecordIdentity(r));
@@ -2382,10 +2383,7 @@ function assessmentCommencedFromHandoverKpiHtml(){
 }
 function renderKpis(){
  const r=state.records,
-  tbs=r.filter(x=>x.status==='To be Submitted - Initial Review compelted'),
-  unallocated=r.filter(x=>x.status==='To be Submitted and Unallocated'),
-  provisional=r.filter(x=>x.status==='Provisional Sum CMI'),
-  toSubmit=tbs.concat(unallocated,provisional),
+  toSubmit=r.filter(isCmiTeamSubmission),
   stages=deliveryStageMetrics(),
   p=stages.p,
   assessmentCommenced=stages.assessmentCommenced,
@@ -2393,12 +2391,12 @@ function renderKpis(){
   clearancePending=stages.clearancePending,
   clearanceCompleted=stages.clearanceCompleted,
   submittedDgj=stages.submittedDgj;
- const unplannedToSubmit=toSubmit.filter(x=>!isInDeliveryPlanRecord(x));
+ const unplannedToSubmit=toSubmit.filter(x=>!hasOffsiteDeliveryAllocation(x));
  const unplannedNote=unplannedToSubmit.length
-  ? '<div class="kpi-note warn">Not yet in Delivery Plan: '+unplannedToSubmit.slice(0,4).map(x=>esc(x.cmiKey||normCmi(x.cmiNo||''))).join(', ')+(unplannedToSubmit.length>4?' +'+(unplannedToSubmit.length-4)+' more':'')+'</div>'
+  ? '<div class="kpi-note warn">Awaiting off-site allocation: '+unplannedToSubmit.slice(0,4).map(x=>esc(x.cmiKey||normCmi(x.cmiNo||''))).join(', ')+(unplannedToSubmit.length>4?' +'+(unplannedToSubmit.length-4)+' more':'')+'</div>'
   : '';
  const cards=[
-  `<div class="card kpi kpi-stage kpi-submit-card"><div class="label">To be Submitted</div><div class="value">${toSubmit.length}<span class="value-context">out of ${r.length}</span></div>${submissionBreakdownHtml(toSubmit)}${unplannedNote}</div>`,
+  `<div class="card kpi kpi-stage kpi-submit-card"><div class="label">TBS by CMI Team — Delivery Workload</div><div class="value">${toSubmit.length}<span class="value-context">out of ${r.length}</span></div>${submissionBreakdownHtml(toSubmit)}${unplannedNote}</div>`,
   weeklyActivityPlanHtml(),
   `<div class="kpi-standard">${assessmentCommencedFromHandoverKpiHtml()}</div>`,
   `<div class="kpi-standard">${stageKpiHtml('Measurement Completed',measurementCompleted,'',assessmentCommenced.length)}</div>`,
@@ -2423,37 +2421,36 @@ function renderDonut(id,slices,opt={}){
  el.innerHTML=`<div class="pie-layout"><div class="donut-wrap"><div class="donut" style="background:conic-gradient(${parts.join(',')})"><div class="donut-center"><b>${esc(centerValue)}</b><span>${esc(centerLabel)}</span></div></div></div><div class="pie-legend">${legend}</div></div>${opt.note?`<div class="badge-note" style="margin-top:10px">${opt.note}</div>`:''}`;
 }
 function renderBars(){
- const counts={};state.records.forEach(r=>counts[r.status]=(counts[r.status]||0)+1);
+ const counts={};state.records.forEach(r=>counts[r.mainCategory||'Unspecified']=(counts[r.mainCategory||'Unspecified']||0)+1);
  const statusOrder=STATUS_ORDER.filter(x=>counts[x]).concat(Object.keys(counts).filter(x=>!STATUS_ORDER.includes(x)));
  const statusColorMap={'Agreed':'#18835d','Submitted':'#2563a8','To be Submitted - Initial Review compelted':'#bc7410','To be Submitted and Unallocated':'#6b4cb5','Provisional Sum CMI':'#b62d25','Included in Other CMIs':'#75899b','Unspecified':'#23adc8'};
- renderDonut('statusPie',statusOrder.map(x=>({label:x,value:counts[x],color:statusColorMap[x]})),{centerValue:String(state.records.length),centerLabel:'CMI work items'});
+ renderDonut('statusPie',statusOrder.map(x=>({label:x,value:counts[x],color:x==='TBS by CMI Team'?'#aa8a59':statusColorMap[x]})),{centerValue:String(state.records.length),centerLabel:'CMI work items'});
 
- const tbs=state.records.filter(r=>r.status==='To be Submitted - Initial Review compelted'),unallocatedCmis=state.records.filter(r=>r.status==='To be Submitted and Unallocated'),provisionalCmis=state.records.filter(r=>r.status==='Provisional Sum CMI'),pc={High:0,Medium:0,Low:0,Unvalued:0};
- tbs.forEach(r=>{const p=calcPriority(r);pc[p]++});
+
+ const team=planned(),pc=highLevelCounts();
  renderDonut('priorityPie',[
-  {group:'Initial Review Completed',label:'High',value:pc.High,color:'#b62d25'},
-  {group:'Initial Review Completed',label:'Medium',value:pc.Medium,color:'#bc7410'},
-  {group:'Initial Review Completed',label:'Low',value:pc.Low,color:'#18835d'},
-  {group:'Initial Review Completed',label:'No Initial Estimate',value:pc.Unvalued,color:'#75899b'},
-  {group:'Unallocated',label:'To be Submitted and Unallocated',value:unallocatedCmis.length,color:'#6b4cb5'},
-  {group:'Provisional Sums',label:'Provisional Sum CMIs',value:provisionalCmis.length,color:'#23adc8'}
- ],{centerValue:String(tbs.length+unallocatedCmis.length+provisionalCmis.length),centerLabel:'CMIs requiring submission to DGJ'});
+  {label:'High Priority',value:pc.High,color:'#234c72'},
+  {label:'Medium Priority',value:pc.Medium,color:'#557f94'},
+  {label:'Low Priority',value:pc.Low,color:'#8da9bb'},
+  {label:'No Initial Estimate',value:pc.Unvalued,color:'#a5b2bd'},
+  {label:'Provisional Sums',value:pc.Investigated,color:'#aa8a59'}
+ ],{centerValue:String(team.length),centerLabel:'TBS by CMI Team work items'});
 
- const agreed=state.records.filter(r=>r.status==='Agreed'),agreedSubmitted=sum(agreed.map(r=>r.submittedValue)),agreedAmount=sum(agreed.map(r=>r.agreedAmount));
+ const agreed=state.records.filter(r=>r.mainCategory==='Agreed'),agreedSubmitted=sum(agreed.map(r=>r.submittedValue)),agreedAmount=sum(agreed.map(r=>r.agreedAmount));
  renderDonut('agreedComparisonPie',[
   {label:'Submitted Value',value:agreedSubmitted,color:'#2563a8'},
   {label:'Agreed Amount',value:agreedAmount,color:'#18835d'}
  ],{valueType:'money',useMagnitude:true,centerValue:String(agreed.length),centerLabel:'Agreed CMIs'});
 
- const agreedPortfolio=sum(state.records.filter(r=>r.status==='Agreed').map(r=>r.agreedAmount));
- const submittedPortfolio=sum(state.records.filter(r=>r.status==='Submitted').map(r=>r.submittedValue));
- const tbsPortfolio=sum(state.records.filter(r=>r.status==='To be Submitted - Initial Review compelted').map(r=>r.initialEstimate));
+ const agreedPortfolio=sum(state.records.filter(r=>r.mainCategory==='Agreed').map(r=>r.agreedAmount));
+ const submittedPortfolio=sum(state.records.filter(r=>r.mainCategory==='Submitted').map(r=>r.submittedValue));
+ const tbsPortfolio=sum(state.records.filter(r=>isCmiTeamSubmission(r)&&deliveryWorkBucket(r)!=='Investigated').map(r=>r.initialEstimate));
  const unallocatedAllowance=Number(state.meta.unallocatedPortfolioAllowance)||0,provisionalAllowance=Number(state.meta.provisionalPortfolioAllowance)||0;
  const portfolioSlices=[
   {label:'Agreed CMIs — Agreed Amount',value:agreedPortfolio,color:'#18835d'},
   {label:'Submitted CMIs — Submitted Value',value:submittedPortfolio,color:'#2563a8'},
-  {label:'To be Submitted - Initial Review compelted — Initial Estimate',value:tbsPortfolio,color:'#bc7410'},
-  {label:'To be Submitted and Unallocated — Allowance',value:unallocatedAllowance,color:'#6b4cb5'},
+  {label:'TBS by CMI Team — Known Initial Estimates (excluding PS)',value:tbsPortfolio,color:'#bc7410'},
+  {label:'CMI Team Unvalued Items — Allowance',value:unallocatedAllowance,color:'#6b4cb5'},
   {label:'Provisional Sum CMI — Allowance',value:provisionalAllowance,color:'#b62d25'}
  ];
  const netTotal=sum(portfolioSlices.map(x=>x.value));
@@ -2517,7 +2514,7 @@ function populateFilters(){
   updatedStatuses.forEach(value=>el.add(new Option(value,value)));
   el.value=updatedStatuses.includes(previous)?previous:'';
  }
- populateStatusSelect('aStatus','All actionable statuses',s=>ACTIONABLE.has(s));
+ {const e=document.getElementById('aStatus'),v=e.value;e.innerHTML='<option value="">All register categories</option>'+uniq(planned().map(registerCategoryValue)).map(x=>`<option>${esc(x)}</option>`).join('');e.value=v;}
  let el=document.getElementById('fAsset');if(el){let v=el.value;el.innerHTML='<option value="">All assets</option>'+assets.map(x=>`<option>${esc(x)}</option>`).join('');el.value=v}
  const historicalAll=state.records.flatMap(r=>[r.siteResource,r.offsiteResource,...(r.cmiActivities||[]).flatMap(a=>[a.siteResource,a.offsiteResource])]).flatMap(x=>String(x||'').split(' / ')).filter(Boolean);
  const allResources=uniq(currentAllResources().concat(historicalAll));
@@ -2539,13 +2536,12 @@ function registerActionButtons(r){
 }
 function renderRegister(){filteredRegister=registerFilters();document.getElementById('registerCount').textContent=`Showing ${filteredRegister.length} of ${state.records.length} work items`;document.getElementById('registerBody').innerHTML=filteredRegister.map(r=>`<tr><td class="nowrap"><b>${esc(r.cmiNo)}</b></td><td>${esc(r.reference)}</td><td class="desc">${esc(r.description)}</td><td>${fmtDate(r.cmiDate)}</td><td>${esc(r.assetCode)}</td><td>${esc(r.location)}</td><td class="money">${money(r.initialEstimate)}</td><td class="money">${money(r.offsiteEstimate)}</td><td class="money">${money(r.submittedValue)}</td><td class="money">${money(r.agreedAmount)}</td><td>${statusPill(registerCategoryValue(r))}</td><td>${r.mainCategory?statusPill(r.mainCategory):'<span class="empty">—</span>'}</td><td>${priorityPill(calcPriority(r))}</td><td>${r.siteResource?esc(r.siteResource):'<span class="empty">—</span>'}</td><td>${r.offsiteResource?esc(r.offsiteResource):'<span class="empty">—</span>'}</td><td>${deliveryPill(derivedDeliveryStatus(r))}</td><td>${registerActionButtons(r)}</td></tr>`).join('')}
 
-function allocationFilters(){const q=document.getElementById('aSearch').value.trim().toLowerCase(),st=document.getElementById('aStatus').value,p=document.getElementById('aPriority').value,pl=document.getElementById('aPlan').value,sr=document.getElementById('aSite').value,or=document.getElementById('aOffsite').value;return state.records.filter(r=>ACTIONABLE.has(r.status)).filter(r=>{const hay=[r.cmiNo,r.description,r.location,r.assetCode].join(' ').toLowerCase(),acts=r.cmiActivities||[];const sm=!sr||acts.some(a=>a.siteResource===sr)||r.siteResource===sr,om=!or||acts.some(a=>a.offsiteResource===or)||r.offsiteResource===or;return(!q||hay.includes(q))&&(!st||r.status===st)&&(!p||calcPriority(r)===p)&&(!pl||(pl==='planned'?isInDeliveryPlanRecord(r):!isInDeliveryPlanRecord(r)))&&sm&&om})}
+function allocationFilters(){const q=document.getElementById('aSearch').value.trim().toLowerCase(),st=document.getElementById('aStatus').value,p=document.getElementById('aPriority').value,pl=document.getElementById('aPlan').value,sr=document.getElementById('aSite').value,or=document.getElementById('aOffsite').value;return state.records.filter(isCmiTeamSubmission).filter(r=>{const hay=[r.cmiNo,r.description,r.location,r.assetCode].join(' ').toLowerCase(),acts=r.cmiActivities||[];const sm=!sr||acts.some(a=>a.siteResource===sr)||r.siteResource===sr,om=!or||acts.some(a=>a.offsiteResource===or)||r.offsiteResource===or;return(!q||hay.includes(q))&&(!st||registerCategoryValue(r)===st)&&(!p||calcPriority(r)===p)&&(!pl||(pl==='planned'?hasOffsiteDeliveryAllocation(r):!hasOffsiteDeliveryAllocation(r)))&&sm&&om})}
 
 function highLevelCounts(){
- const tbs=state.records.filter(r=>r.status==='To be Submitted - Initial Review compelted');
- const unallocated=state.records.filter(r=>r.status==='To be Submitted and Unallocated');
- const otherCount=tbs.filter(r=>calcPriority(r)==='Unvalued').length+unallocated.length;
- return {High:tbs.filter(r=>calcPriority(r)==='High').length,Medium:tbs.filter(r=>calcPriority(r)==='Medium').length,Low:tbs.filter(r=>calcPriority(r)==='Low').length,Unvalued:otherCount,Unallocated:unallocated.length,Investigated:state.records.filter(r=>r.status==='Provisional Sum CMI').length,Included:state.records.filter(r=>r.status==='Included in Other CMIs').length};
+ const rows=planned(),counts={High:0,Medium:0,Low:0,Unvalued:0,Unallocated:0,Investigated:0,Included:0};
+ rows.forEach(r=>{counts[deliveryWorkBucket(r)]++;if(!hasOffsiteDeliveryAllocation(r))counts.Unallocated++;if(/included in other/i.test(registerCategoryValue(r)))counts.Included++});
+ return counts;
 }
 function highLevelLabel(a){const c=highLevelCounts();let suffix='';if(['High','Medium','Low','Unvalued'].includes(a.countSource))suffix=` (${c[a.countSource]} CMIs)`;else if(a.countSource==='Unallocated')suffix=` (${c.Unallocated} CMIs)`;else if(a.countSource==='Investigated')suffix=` (${c.Investigated} CMIs)`;else if(a.countSource==='Included')suffix=` (${c.Included} CMIs)`;return `${a.group}${suffix}`}
 function toggleDeliverySection(id,btn){const panel=document.getElementById(id);if(!panel)return;const collapsed=panel.style.display!=='none';panel.style.display=collapsed?'none':'';panel.classList.toggle('hidden',collapsed);if(btn){btn.innerHTML=collapsed?'&#9662;':'&#9652;';btn.setAttribute('aria-expanded',collapsed?'false':'true');btn.title=collapsed?'Expand section':'Minimise section'}}
@@ -2600,7 +2596,7 @@ function highLevelResourcePicker(a){const names=highLevelResourcesForActivity(a)
 
 function renderHighLevelAllocation(){
  const body=document.getElementById('highLevelAllocationBody');if(!body)return;const c=highLevelCounts();
- body.innerHTML=state.meta.highLevelPlan.map(a=>{const s=highLevelActivitySchedule(a);return `<tr data-hla="${a.id}"><td><div class="hl-group-tag">${esc(highLevelLabel(a))}</div>${a.countSource==='Unallocated'&&c.Unvalued?`<div class="badge-note">Also ${c.Unvalued} current To be Submitted - Initial Review compelted items are unvalued and will enter High/Medium/Low once an initial estimate is established.</div>`:''}</td><td><div class="hl-activity-name">${esc(a.activity)}</div></td><td>${s.startDate?fmtDate(s.startDate):'<span class="muted">From CMI allocation</span>'}</td><td>${s.targetDate?fmtDate(s.targetDate):'<span class="muted">From CMI allocation</span>'}</td><td>${highLevelResourcePicker(a)}</td><td><select class="inline-select" data-hl-field="status">${ACTIVITY_STATUSES.map(x=>`<option ${x===a.status?'selected':''}>${x}</option>`).join('')}</select></td><td><input class="inline-input" type="number" min="0" max="100" step="1" data-hl-field="progressPct" value="${Number(a.progressPct)||0}"></td></tr>`}).join('');
+ body.innerHTML=state.meta.highLevelPlan.map(a=>{const s=highLevelActivitySchedule(a);return `<tr data-hla="${a.id}"><td><div class="hl-group-tag">${esc(highLevelLabel(a))}</div>${a.countSource==='Unallocated'&&c.Unvalued?`<div class="badge-note">${c.Unvalued} team work items have no initial estimate and will enter High/Medium/Low once an estimate is established.</div>`:''}</td><td><div class="hl-activity-name">${esc(a.activity)}</div></td><td>${s.startDate?fmtDate(s.startDate):'<span class="muted">From CMI allocation</span>'}</td><td>${s.targetDate?fmtDate(s.targetDate):'<span class="muted">From CMI allocation</span>'}</td><td>${highLevelResourcePicker(a)}</td><td><select class="inline-select" data-hl-field="status">${ACTIVITY_STATUSES.map(x=>`<option ${x===a.status?'selected':''}>${x}</option>`).join('')}</select></td><td><input class="inline-input" type="number" min="0" max="100" step="1" data-hl-field="progressPct" value="${Number(a.progressPct)||0}"></td></tr>`}).join('');
 }
 function captureHighLevelAllocationFromDom(){
  document.querySelectorAll('[data-hla]').forEach(tr=>{
@@ -2639,7 +2635,7 @@ function renderCmiActivityPanel(r){
  const acts=r.cmiActivities||[];if(!expandedCmiActivities.has(r.id))return '';
  const siteNames=currentSiteResources(),offsiteNames=currentOffsiteResources();
  const rows=acts.map(a=>`<tr data-cmia="${a.id}"><td><select class="activity-name-select" data-cmia-field="activityId">${activityOptions(a.activityId,a.activityName)}</select></td><td><select class="resource-select" data-cmia-field="siteResource">${resourceOptions(siteNames,a.siteResource,'No site resource')}</select></td><td><select class="resource-select" data-cmia-field="offsiteResource">${resourceOptions(offsiteNames,a.offsiteResource,'No off-site resource')}</select></td><td><input class="date-input" type="date" data-cmia-field="startDate" value="${a.startDate||''}"></td><td><input class="date-input" type="date" data-cmia-field="targetDate" value="${a.targetDate||''}"></td><td><button class="btn danger" type="button" onclick="removeCmiActivity('${r.id}','${a.id}')">Remove</button></td></tr>`).join('');
- return `<tr class="cmi-plan-row"><td colspan="8"><div class="activity-plan-panel" data-cmi-plan="${esc(r.id)}"><div class="activity-plan-head"><div><b>${esc(r.cmiNo)} — Activity Allocation</b><div class="activity-help">Each activity requires at least one resource (site or off-site) and planned dates. Complete activity rows are synchronised automatically to the Delivery Plan.</div></div><div class="activity-toolbar"><button class="btn good" type="button" onclick="saveCmiActivityPlan('${r.id}')">Save CMI Activity Plan</button>${r.inDeliveryPlan?`<button class="btn" type="button" onclick="removeFromPlan('${r.id}')">Remove from Delivery Plan</button>`:''}</div></div><div style="overflow:auto"><table class="activity-assignment-table"><thead><tr><th>Activity</th><th>Site Resource</th><th>Off-site Resource</th><th>Start Date</th><th>Target Date</th><th>Action</th></tr></thead><tbody>${rows||'<tr><td colspan="6" class="muted">No activities selected yet. Use the activity dropdown in the CMI row above.</td></tr>'}</tbody></table></div></div></td></tr>`;
+ return `<tr class="cmi-plan-row"><td colspan="8"><div class="activity-plan-panel" data-cmi-plan="${esc(r.id)}"><div class="activity-plan-head"><div><b>${esc(r.cmiNo)} — Activity Allocation</b><div class="activity-help">All TBS by CMI Team items belong to the Delivery Plan. Assign resources and planned dates here to schedule their activities.</div></div><div class="activity-toolbar"><button class="btn good" type="button" onclick="saveCmiActivityPlan('${r.id}')">Save CMI Activity Plan</button></div></div><div style="overflow:auto"><table class="activity-assignment-table"><thead><tr><th>Activity</th><th>Site Resource</th><th>Off-site Resource</th><th>Start Date</th><th>Target Date</th><th>Action</th></tr></thead><tbody>${rows||'<tr><td colspan="6" class="muted">No activities selected yet. Use the activity dropdown in the CMI row above.</td></tr>'}</tbody></table></div></div></td></tr>`;
 }
 function persistStateOnly(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(state))}catch(e){}queueSharedStateSync()}
 function activityReadyForDelivery(a){return !!(a&&a.activityId&&(a.siteResource||a.offsiteResource)&&a.startDate&&a.targetDate&&a.targetDate>=a.startDate)}
@@ -2666,7 +2662,7 @@ function rollupCmiActivityPlan(r){
 }
 function allocationPlanStateHtml(r){
  const total=(r.cmiActivities||[]).length,scheduled=(r.cmiActivities||[]).filter(activityReadyForDelivery).length;
- if(isInDeliveryPlanRecord(r))return `<span class="pill agreed">Auto-synced to Delivery Plan</span><div class="tiny muted" style="margin-top:4px">${scheduled}/${total} activit${total===1?'y':'ies'} scheduled</div>`;
+ if(isInDeliveryPlanRecord(r))return `<span class="pill agreed">In Delivery Plan</span><div class="tiny muted" style="margin-top:4px">${scheduled}/${total} activit${total===1?'y':'ies'} scheduled${hasOffsiteDeliveryAllocation(r)?'':' · Awaiting off-site allocation'}</div>`;
  if(total)return '<span class="pill draft-pill">Draft activity plan</span>';
  return '<span class="pill other">Not planned</span>';
 }
@@ -2735,10 +2731,10 @@ function renderAllocation(){
  document.getElementById('allocationCount').textContent=`Showing ${rows.length} CMI work items available for resource allocation`;
  body.innerHTML=rows.map(r=>{
   const acts=r.cmiActivities||[],labels=acts.slice(0,4).map(a=>`<span class="pill other">${esc(activityLabel(a))}</span>`).join(' ')+(acts.length>4?` <span class="pill other">+${acts.length-4} more</span>`:'');
-  return `<tr><td class="nowrap"><b>${esc(r.cmiKey||normCmi(r.cmiNo))}</b></td><td class="desc">${esc(r.description)}</td><td>${statusPill(r.status)}</td><td>${priorityPill(calcPriority(r))}</td><td class="money">${money(r.initialEstimate)}</td><td><div class="activity-add-box"><select id="activity-add-${r.id}">${activityOptions()}</select><button class="btn primary" type="button" onclick="addCmiActivity('${r.id}')">Add</button></div></td><td><div class="activity-plan-summary">${labels||'<span class="empty">No activities selected</span>'}</div><div class="activity-count">${acts.length} activit${acts.length===1?'y':'ies'} · <button class="iconbtn" type="button" onclick="toggleCmiActivities('${r.id}')">${expandedCmiActivities.has(r.id)?'Hide':'Manage'} activity plan</button></div></td><td data-allocation-plan-state="${r.id}">${allocationPlanStateHtml(r)}</td></tr>${renderCmiActivityPanel(r)}`;
+  return `<tr><td class="nowrap"><b>${esc(r.cmiKey||normCmi(r.cmiNo))}</b></td><td class="desc">${esc(r.description)}</td><td>${statusPill(registerCategoryValue(r))}</td><td>${priorityPill(calcPriority(r))}</td><td class="money">${money(r.initialEstimate)}</td><td><div class="activity-add-box"><select id="activity-add-${r.id}">${activityOptions()}</select><button class="btn primary" type="button" onclick="addCmiActivity('${r.id}')">Add</button></div></td><td><div class="activity-plan-summary">${labels||'<span class="empty">No activities selected</span>'}</div><div class="activity-count">${acts.length} activit${acts.length===1?'y':'ies'} · <button class="iconbtn" type="button" onclick="toggleCmiActivities('${r.id}')">${expandedCmiActivities.has(r.id)?'Hide':'Manage'} activity plan</button></div></td><td data-allocation-plan-state="${r.id}">${allocationPlanStateHtml(r)}</td></tr>${renderCmiActivityPanel(r)}`;
  }).join('')||'<tr><td colspan="8" class="muted">No CMIs match the current filters.</td></tr>';
 }
-function capacityMetrics(){const backlog=state.records.filter(r=>r.status==='To be Submitted - Initial Review compelted'&&!isInDeliveryPlanRecord(r)).length+planned().filter(r=>!completedDelivery(r)&&r.status==='To be Submitted - Initial Review compelted').length,target=state.meta.defaultDeliveryTarget,start=state.meta.fullOffsiteTeamStart,cap=Number(state.meta.weeklyCapacity)||12,bd=businessDays(start,target),weeks=bd/5,required=weeks>0?backlog/weeks:Infinity,gap=Math.max(0,required-cap),finish=addBusinessOutputDate(start,backlog,cap);return{backlog,target,start,cap,bd,weeks,required,gap,finish}}
+function capacityMetrics(){const backlog=planned().filter(r=>!completedDelivery(r)).length,target=state.meta.defaultDeliveryTarget,start=state.meta.fullOffsiteTeamStart,cap=Number(state.meta.weeklyCapacity)||12,bd=businessDays(start,target),weeks=bd/5,required=weeks>0?backlog/weeks:Infinity,gap=Math.max(0,required-cap),finish=addBusinessOutputDate(start,backlog,cap);return{backlog,target,start,cap,bd,weeks,required,gap,finish}}
 function applyDataDate(){
  const input=document.getElementById('dataDateInput'),status=document.getElementById('dataDateStatus');if(!input)return;
  const iso=String(input.value||'').trim();
@@ -2754,8 +2750,8 @@ function resetDataDate(){
  renderDeliveryHighLevelSummary();renderHighLevelGantt();renderGantt();
 }
 function renderDelivery(){const dataDateInput=document.getElementById('dataDateInput'),dataDateStatus=document.getElementById('dataDateStatus');if(dataDateInput)dataDateInput.value=programmeDataDate||todayISO();if(dataDateStatus){dataDateStatus.textContent='Data Date: '+formatDateText(programmeDataDate||todayISO())+((programmeDataDate||todayISO())===todayISO()?' (Today)':'');dataDateStatus.style.color='var(--muted)'}document.getElementById('targetDateInput').value=state.meta.defaultDeliveryTarget;document.getElementById('capacityInput').value=state.meta.weeklyCapacity;document.getElementById('preCompletedInput').value=state.meta.preTrackerCompleted;document.getElementById('fullTeamInput').value=state.meta.fullOffsiteTeamStart;const m=capacityMetrics(),p=planned();document.getElementById('deliveryCapacity').innerHTML=`<div class="capacity"><div><div class="capacity-big">${p.length} CMIs planned</div><div class="capacity-sub">${p.filter(completedDelivery).length} complete/submitted · ${p.filter(r=>['Measurement in Progress','Pending Technical and Commercial Clearance','Under Finalisation for DGJ Submission'].includes(derivedDeliveryStatus(r))).length} in progress · ${p.filter(r=>derivedDeliveryStatus(r)==='To be Started').length} to be started.</div><div class="gauge"><div style="width:${p.length?Math.min(100,p.filter(completedDelivery).length/p.length*100):0}%"></div></div><div class="small muted">Current production assumption: ${m.cap} CMIs/week · open To-be-Submitted demand ${m.backlog}</div></div><div><div class="metric-line"><span>Target date</span><b>${fmtDate(m.target)}</b></div><div class="metric-line"><span>Required average</span><b>${Number.isFinite(m.required)?m.required.toFixed(1):'—'}/week</b></div><div class="metric-line"><span>Capacity gap</span><b>${Number.isFinite(m.gap)?m.gap.toFixed(1):'—'}/week</b></div></div></div>`;renderDeliveryWbsManager();renderDeliveryHighLevelSummary();renderHighLevelGantt();renderGantt();renderDeliveryTable()}
-function renderDeliveryTable(){const rows=planned().sort((a,b)=>(a.startDate||'9999').localeCompare(b.startDate||'9999')||({High:0,Medium:1,Low:2,Unvalued:3}[calcPriority(a)]-({High:0,Medium:1,Low:2,Unvalued:3}[calcPriority(b)])));document.getElementById('deliveryBody').innerHTML=rows.map(r=>`<tr><td><b>${esc(r.cmiNo)}</b></td><td class="desc">${esc(r.description)}</td><td>${priorityPill(calcPriority(r))}</td><td class="money">${money(r.initialEstimate)}</td><td>${esc(r.siteResource)}</td><td>${esc(r.offsiteResource)}</td><td>${fmtDate(r.startDate)}</td><td>${fmtDate(r.targetDate)}</td><td>${fmtDate(r.finishDate)}</td><td>${deliveryPill(derivedDeliveryStatus(r))}</td><td class="money">${money(r.deliveryValue)}</td><td><div class="row-actions"><button class="iconbtn" onclick="goProgress('${r.id}')">Progress</button><button class="iconbtn" onclick="removeFromPlan('${r.id}')">Remove</button></div></td></tr>`).join('')||'<tr><td colspan="12" class="muted">No CMIs have been added to the Delivery Plan yet. Use Resource Allocation first.</td></tr>'}
-function removeFromPlan(id){const r=state.records.find(x=>x.id===id);if(!r)return;if(confirm('Remove this CMI from the Delivery Plan? Resource assignments will be retained.')){r.inDeliveryPlan=false;saveState()}}
+function renderDeliveryTable(){const rows=planned().sort((a,b)=>(a.startDate||'9999').localeCompare(b.startDate||'9999')||({High:0,Medium:1,Low:2,Unvalued:3}[calcPriority(a)]-({High:0,Medium:1,Low:2,Unvalued:3}[calcPriority(b)])));document.getElementById('deliveryBody').innerHTML=rows.map(r=>`<tr><td><b>${esc(r.cmiNo)}</b></td><td class="desc">${esc(r.description)}</td><td>${priorityPill(calcPriority(r))}</td><td class="money">${money(r.initialEstimate)}</td><td>${esc(r.siteResource)}</td><td>${esc(r.offsiteResource)}</td><td>${fmtDate(r.startDate)}</td><td>${fmtDate(r.targetDate)}</td><td>${fmtDate(r.finishDate)}</td><td>${deliveryPill(derivedDeliveryStatus(r))}</td><td class="money">${money(r.deliveryValue)}</td><td><div class="row-actions"><button class="iconbtn" onclick="goProgress('${r.id}')">Progress</button></div></td></tr>`).join('')||'<tr><td colspan="12" class="muted">No CMIs are classified as TBS by CMI Team.</td></tr>'}
+function removeFromPlan(id){const r=state.records.find(x=>x.id===id);if(!r)return;alert('Delivery Plan membership follows Submission Classification. Change the classification in CMI Master to remove this item from team scope.');}
 function toggleDeliveryCmi(id){expandedDeliveryCmis.has(id)?expandedDeliveryCmis.delete(id):expandedDeliveryCmis.add(id);renderGantt()}
 function toggleDeliveryActivity(recordId,activityId){const key=`${recordId}|${activityId}`;expandedDeliveryActivities.has(key)?expandedDeliveryActivities.delete(key):expandedDeliveryActivities.add(key);renderGantt()}
 function detailedDeliveryBarClass(status){if(status==='Submitted')return 'submitted';if(status==='To be Started'||status==='Not Applicable')return 'pending';return ''}
@@ -3085,7 +3081,7 @@ function progressSearchRecords(){
  if(!raw)return [];
  const key=normCmi(raw),q=raw.toLowerCase();
  return state.records
-  .filter(r=>ACTIONABLE.has(r.status)&&isInDeliveryPlanRecord(r))
+  .filter(r=>isInDeliveryPlanRecord(r))
   .filter(r=>{
    const rk=String(r.cmiKey||normCmi(r.cmiNo));
    return rk===key||String(r.cmiNo||'').toLowerCase()===q||String(r.cmiNo||'').toLowerCase().includes(q);
@@ -3327,7 +3323,7 @@ function goProgress(id){
  const r=state.records.find(x=>x.id===id),input=document.getElementById('progressCmiSearch');if(input)input.value=r?(r.cmiKey||normCmi(r.cmiNo)):'';
  renderProgress();
 }
-function renderQuality(){const recs=state.records,groups={};recs.forEach(r=>(groups[r.cmiKey]??=[]).push(r));const multi=Object.values(groups).filter(g=>g.length>1),tbs=recs.filter(r=>r.status==='To be Submitted - Initial Review compelted'),unv=tbs.filter(r=>calcPriority(r)==='Unvalued').length,unalloc=recs.filter(r=>ACTIONABLE.has(r.status)&&!isInDeliveryPlanRecord(r)).length;document.getElementById('qualityMetrics').innerHTML=`<div class="metric-line"><span>Populated log rows</span><b>${recs.length}</b></div><div class="metric-line"><span>Unique CMI references</span><b>${Object.keys(groups).length}</b></div><div class="metric-line"><span>Multi-line CMI references</span><b>${multi.length}</b></div><div class="metric-line"><span>To be Submitted - Initial Review compelted — unvalued</span><b>${unv}</b></div><div class="metric-line"><span>Actionable items not yet planned</span><b>${unalloc}</b></div>`;document.getElementById('duplicateBody').innerHTML=multi.sort((a,b)=>b.length-a.length).map(g=>{const sts=uniq(g.map(x=>x.status)),known=sum(g.filter(x=>x.initialEstimate!==null).map(x=>x.initialEstimate));return `<tr><td><b>CMI ${esc(g[0].cmiKey)}</b></td><td>${g.length}</td><td>${sts.map(statusPill).join(' ')}</td><td class="money">${money(known)}</td><td>${sts.length>1?'<span class="pill investigate">Mixed statuses — track by work item</span>':'Multiple source rows'}</td></tr>`}).join('')}
+function renderQuality(){const recs=state.records,groups={};recs.forEach(r=>(groups[r.cmiKey]??=[]).push(r));const multi=Object.values(groups).filter(g=>g.length>1),tbs=recs.filter(isCmiTeamSubmission),unv=tbs.filter(r=>calcPriority(r)==='Unvalued').length,unalloc=recs.filter(r=>isCmiTeamSubmission(r)&&!hasOffsiteDeliveryAllocation(r)).length;document.getElementById('qualityMetrics').innerHTML=`<div class="metric-line"><span>Populated log rows</span><b>${recs.length}</b></div><div class="metric-line"><span>Unique CMI references</span><b>${Object.keys(groups).length}</b></div><div class="metric-line"><span>Multi-line CMI references</span><b>${multi.length}</b></div><div class="metric-line"><span>TBS by CMI Team — unvalued</span><b>${unv}</b></div><div class="metric-line"><span>CMI Team items awaiting off-site allocation</span><b>${unalloc}</b></div>`;document.getElementById('duplicateBody').innerHTML=multi.sort((a,b)=>b.length-a.length).map(g=>{const sts=uniq(g.map(x=>x.status)),known=sum(g.filter(x=>x.initialEstimate!==null).map(x=>x.initialEstimate));return `<tr><td><b>CMI ${esc(g[0].cmiKey)}</b></td><td>${g.length}</td><td>${sts.map(statusPill).join(' ')}</td><td class="money">${money(known)}</td><td>${sts.length>1?'<span class="pill investigate">Mixed statuses — track by work item</span>':'Multiple source rows'}</td></tr>`}).join('')}
 
 
 function dashboardCmiActivities(r){
@@ -3502,7 +3498,7 @@ function clientPreviouslyApprovedSummary(records){
  ];
  const groups=new Map();
  for(const r of records||[]){
-  if(r.status!=='Agreed')continue;
+  if(r.mainCategory!=='Agreed')continue;
   const key=normCmi(r.cmiKey||r.cmiNo||'');if(!key)continue;
   if(!groups.has(key))groups.set(key,[]);groups.get(key).push(r);
  }
@@ -3542,7 +3538,7 @@ function clientPreviouslySubmittedSummary(records){
  ];
  const groups=new Map();
  for(const r of records||[]){
-  if(r.status!=='Submitted')continue;
+  if(r.mainCategory!=='Submitted')continue;
   const key=normCmi(r.cmiKey||r.cmiNo||'');if(!key)continue;
   if(!groups.has(key))groups.set(key,[]);groups.get(key).push(r);
  }
@@ -3599,18 +3595,17 @@ function renderClientDashboard(){
  for(const r of all){const key=normCmi(r.cmiKey||r.cmiNo||'');if(!key)continue;if(!groups.has(key))groups.set(key,[]);groups.get(key).push(r)}
  const numeric=v=>v===null||v===undefined||v===''?null:(Number.isFinite(Number(v))?Number(v):null);
  const sums=(rows,key)=>rows.reduce((n,r)=>n+(numeric(r[key])||0),0);
- const agreed=new Set(),submitted=new Set(),other=new Set(),zero=new Set();
+ const agreed=new Set(),submitted=new Set(),zero=new Set();
  for(const [key,rows] of groups){
-  if(rows.some(r=>r.status==='Agreed'))agreed.add(key);
-  if(rows.some(r=>r.status==='Submitted'))submitted.add(key);
-  if(rows.some(r=>r.status==='Included in Other CMIs'))other.add(key);
-  if(rows.some(r=>r.status==='Submitted'&&numeric(r.submittedValue)===0))zero.add(key);
+  if(rows.some(r=>r.mainCategory==='Agreed'))agreed.add(key);
+  if(rows.some(r=>r.mainCategory==='Submitted'))submitted.add(key);
+  if(rows.some(r=>r.mainCategory==='Submitted'&&numeric(r.submittedValue)===0))zero.add(key);
  }
  const eligible=new Map();
  for(const [key,rows] of groups){const allocated=rows.filter(r=>isInDeliveryPlanRecord(r));if(allocated.length)eligible.set(key,allocated)}
  let approvedByTeam=0,approvedValue=0,pendingValue=0,notStarted=0,underProgress=0,pendingApproval=0;
  for(const [key,rows] of eligible){
-  const denominator=groups.get(key).length;
+  const denominator=rows.length;
   for(const r of rows){
    const weight=1/denominator;
    const measurement=findActivityByIdOrName(r,'act-measure','measurement works');
@@ -3621,12 +3616,8 @@ function renderClientDashboard(){
    if(approved){approvedByTeam+=weight;approvedValue+=numeric(r.agreedAmount)||0}
    if(approved){}else if(finished){pendingApproval+=weight;pendingValue+=numeric(submission.submittedValue)??numeric(r.submittedValue)??0}else if(started)underProgress+=weight;else notStarted+=weight;
   }
-  notStarted+=Math.max(0,1-rows.length/denominator);
+
  }
- const expected=[...groups.keys()].filter(key=>!agreed.has(key)&&!submitted.has(key)&&!other.has(key));
- const expectedSet=new Set(expected);
- const extra=[...eligible.keys()].filter(key=>!expectedSet.has(key));
- const missing=expected.filter(key=>!eligible.has(key));
  const teamRows=[
   {label:'CMIs to Be Initiated by CMI Team',value:notStarted,color:'#a5b2bd',amount:null},
   {label:'CMIs Under Progress by CMI Team',value:underProgress,color:'#aa8a59',amount:null},
@@ -3635,17 +3626,17 @@ function renderClientDashboard(){
  ];
  const items=[
   ['Total No. of CMIs Received',groups.size,null],
-  ['CMIs Approved Before Mobilising CMI Team',agreed.size,sums(all.filter(r=>r.status==='Agreed'),'agreedAmount')],
-  ['CMIs Submitted to DGJ (Not Approved) Before CMI Team',submitted.size,sums(all.filter(r=>r.status==='Submitted'),'submittedValue')],
+  ['CMIs Approved Before Mobilising CMI Team',agreed.size,sums(all.filter(r=>r.mainCategory==='Agreed'),'agreedAmount')],
+  ['CMIs Submitted to DGJ (Not Approved) Before CMI Team',submitted.size,sums(all.filter(r=>r.mainCategory==='Submitted'),'submittedValue')],
   ['Zero Value CMIs to Be Agreed with DGJ',zero.size,null],
-  ['Total CMIs Allocated to CMI Team',eligible.size,null],
+  ['Total CMIs Required for Submission by CMI Team',eligible.size,null],
   ...teamRows.map(x=>[x.label,x.value,x.amount,x.color])
  ];
  const fmt=n=>Number(n).toLocaleString('en-US',{maximumFractionDigits:2});
  body.innerHTML=items.map((x,i)=>'<tr style="border-bottom:1px solid #e1e9ef'+(i===4?';font-weight:700':'')+'"><td style="padding:11px 10px">'+(x[3]?'<span class="client-overview-swatch" style="background:'+x[3]+'"></span>':'')+esc(x[0])+'</td><td style="text-align:right;padding:11px 10px">'+fmt(x[1])+'</td><td style="text-align:right;padding:11px 10px">'+(x[2]===null?'':money(x[2]))+'</td></tr>').join('');
  const note=document.getElementById('clientOverviewValidation');
- if(note)note.textContent='Secondary check: '+expected.length+' expected unique CMIs after excluding pre-team agreed, pre-team submitted and Included in Other CMIs; '+eligible.size+' allocated. '+(extra.length||missing.length?'Exceptions: '+extra.length+' allocated exclusions, '+missing.length+' expected but not allocated. Source data unchanged.':'Counts reconcile.');
- renderDonut('clientOverviewPie',teamRows,{centerValue:fmt(eligible.size),centerLabel:'CMIs Allocated to CMI Team',note:'The four colour-coded table rows form this chart. Each CMI is counted once across these stages; the allocated total is not an additional slice.'});
+ if(note)note.textContent='Scope: Submission Classification = TBS by CMI Team. '+planned().length+' work items across '+eligible.size+' unique CMIs, including '+planned().filter(r=>!hasOffsiteDeliveryAllocation(r)).length+' work items awaiting off-site allocation. Multiple scopes under the same CMI number are counted once in this overview.';
+ renderDonut('clientOverviewPie',teamRows,{centerValue:fmt(eligible.size),centerLabel:'CMI Team Submission Scope',note:'The four colour-coded table rows form this chart. Each CMI is counted once across these stages; the team scope total is not an additional slice.'});
 }
 function renderDashboard(){renderKpis();renderBars();renderDeliverySnapshot();renderResourcePerformance();renderDashboardOperationalTables()}
 function renderActiveTab(){const active=document.querySelector('.tabbtn.active')?.dataset.tab||'dashboard';if(active==='clientdashboard')renderClientDashboard();else if(active==='dashboard')renderDashboard();else if(active==='register')renderRegister();else if(active==='activities'){renderActivityList();renderDeliveryWbsManager();}else if(active==='allocation')renderAllocation();else if(active==='delivery')renderDelivery();else if(active==='readiness')renderReadiness();else if(active==='rfi')renderRfiTracker();else if(active==='progress')renderProgress();else if(active==='organisation')renderOrganisation();else if(active==='quality')renderQuality();else if(active==='changes')renderChangesLog();else if(active==='audit')renderAuditLog()}
@@ -3702,6 +3693,7 @@ async function reopenCmi(id){
  r.reopenReason=reason;
  r.reopenRestartActivityId=restart.id;
  r.status='To be Submitted - Initial Review compelted';
+ r.mainCategory='TBS by CMI Team';r.mainCategoryUpdatedAt=new Date().toISOString();
 
  if(!Array.isArray(r.cmiActivities))r.cmiActivities=[];
  for(let i=restartIndex;i<REOPEN_WORKFLOW.length;i++){
@@ -3761,19 +3753,12 @@ function toggleDeliveryRoot(){deliveryRootCollapsed=!deliveryRootCollapsed;rende
 function highLevelGroupKey(a){return a.groupId||`${a.group}|${a.countSource}`}
 function toggleHighLevelGroup(key){collapsedHighLevelGroups.has(key)?collapsedHighLevelGroups.delete(key):collapsedHighLevelGroups.add(key);renderHighLevelGantt()}
 function highLevelRecordMatches(a,r){
- if(!r||!deliveryPlanApplicable(r))return false;
- const isOtherGroup=a.groupId==='wbs-unallocated'||String(a.id||'').startsWith('unallocated-');
- if(isOtherGroup){
-  return r.status==='To be Submitted and Unallocated'
-   ||(r.status==='To be Submitted - Initial Review compelted'&&calcPriority(r)==='Unvalued');
- }
- if(['High','Medium','Low','Unvalued'].includes(a.countSource)){
-  if(['To be Submitted and Unallocated','Provisional Sum CMI','Included in Other CMIs'].includes(r.status))return false;
-  return calcPriority(r)===a.countSource;
- }
- if(a.countSource==='Unallocated')return r.status==='To be Submitted and Unallocated';
- if(a.countSource==='Investigated')return r.status==='Provisional Sum CMI';
- if(a.countSource==='Included')return r.status==='Included in Other CMIs';
+ if(!isCmiTeamSubmission(r))return false;
+ const bucket=deliveryWorkBucket(r);
+ if(a.groupId==='wbs-unallocated'||String(a.id||'').startsWith('unallocated-'))return bucket==='Unvalued';
+ if(['High','Medium','Low','Unvalued','Investigated'].includes(a.countSource))return bucket===a.countSource;
+ if(a.countSource==='Unallocated')return !hasOffsiteDeliveryAllocation(r);
+ if(a.countSource==='Included')return /included in other/i.test(registerCategoryValue(r));
  return true;
 }
 function highLevelActivityMatches(a,ca,groupMode=false){
@@ -3891,7 +3876,7 @@ function deliverySummaryCategoryDefs(){
   {groupId:'wbs-high',countSource:'High',label:`High Priority CMIs (${c.High} CMIs)`},
   {groupId:'wbs-medium',countSource:'Medium',label:`Medium Priority CMIs (${c.Medium} CMIs)`},
   {groupId:'wbs-low',countSource:'Low',label:`Low Priority CMIs (${c.Low} CMIs)`},
-  {groupId:'wbs-unallocated',countSource:'Unvalued',label:`Other CMIs (No Initial Estimate and Unallocated) (${c.Unvalued} CMIs)`},
+  {groupId:'wbs-unallocated',countSource:'Unvalued',label:`Other CMIs (No Initial Estimate) (${c.Unvalued} CMIs)`},
   {groupId:'wbs-provisional',countSource:'Investigated',label:`Provisional Sum CMIs (${c.Investigated} CMIs)`}
  ];
 }
