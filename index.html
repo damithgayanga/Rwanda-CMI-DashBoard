@@ -3423,7 +3423,7 @@ function renderClientDashboard(){
  ];
  const items=[
   ['Total No. of CMIs Received',groups.size,null],
-  ['CMIs Approved Before CMI Team',agreed.size,sums(all.filter(r=>r.status==='Agreed'),'agreedAmount')],
+  ['CMIs Approved Before Mobilising CMI Team',agreed.size,sums(all.filter(r=>r.status==='Agreed'),'agreedAmount')],
   ['CMIs Submitted to DGJ (Not Approved) Before CMI Team',submitted.size,sums(all.filter(r=>r.status==='Submitted'),'submittedValue')],
   ['Zero Value CMIs to Be Agreed with DGJ',zero.size,null],
   ['Total CMIs Allocated to CMI Team',eligible.size,null],
