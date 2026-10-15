@@ -490,6 +490,39 @@
 #tab-clientdashboard #clientOverviewPie .pie-legend-row{text-align:left}
 #tab-clientdashboard .client-overview-chart:has(#clientOverviewPie) h3{text-align:center}
 #tab-clientdashboard #clientOverviewValidation{display:none!important}
+
+/* Executive legends: counts directly beside labels, not at far right. */
+#tab-clientdashboard #clientApprovedPie .pie-legend,
+#tab-clientdashboard #clientSubmittedPie .pie-legend{
+  display:grid;
+  grid-template-columns:1fr;
+  justify-items:start;
+  align-content:center;
+  width:100%;
+}
+#tab-clientdashboard #clientApprovedPie .pie-legend-row,
+#tab-clientdashboard #clientSubmittedPie .pie-legend-row{
+  display:grid;
+  grid-template-columns:9px minmax(0,135px) 42px;
+  gap:9px;
+  align-items:center;
+  width:215px;
+  max-width:100%;
+}
+#tab-clientdashboard #clientApprovedPie .pie-legend-value,
+#tab-clientdashboard #clientSubmittedPie .pie-legend-value{
+  text-align:right;
+}
+/* Keep all six stage cards in one desktop row. */
+@media(min-width:1101px){
+  #tab-clientdashboard #clientProcessStages{
+    grid-template-columns:repeat(6,minmax(0,1fr))!important;
+  }
+  #tab-clientdashboard #clientProcessStages tr{
+    min-width:0;
+    padding:6px 12px!important;
+  }
+}
 </style>
 
 <!-- Supabase -->
