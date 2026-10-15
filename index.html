@@ -3881,7 +3881,7 @@ function clientPreviouslyApprovedSummary(records){
  }
  return {bands,total:groups.size,amount:bands.reduce((n,x)=>n+x.amount,0)};
 }
-function clientValueGroupSlices(bands){return [{id:'positive',label:'Positive Value',color:'#008f8c'},{id:'negative',label:'Negative Value',color:'#d6a23e'},{id:'zero',label:'Zero Value',color:'#56a7b8'}].map(c=>({label:c.label,color:c.color,value:bands.filter(b=>b.id===c.id||b.id.startsWith(c.id+'-')).reduce((n,b)=>n+b.value,0)}))}
+function clientValueGroupSlices(bands){return [{id:'positive',label:'Positive Value',color:'#189D79'},{id:'negative',label:'Negative Value',color:'#FFA324'},{id:'zero',label:'Zero Value',color:'#40AFE0'}].map(c=>({label:c.label,color:c.color,value:bands.filter(b=>b.id===c.id||b.id.startsWith(c.id+'-')).reduce((n,b)=>n+b.value,0)}))}
 function renderPreviouslyApprovedCmis(){
  const table=document.getElementById('clientApprovedTable');if(!table)return;
  const savedOpen=[...table.querySelectorAll('details[open]')].map(x=>x.dataset.group);
@@ -3975,15 +3975,15 @@ function clientOverviewSummary(records){
   if(!groups.has(key))groups.set(key,[]);groups.get(key).push(r);
  }
  const bands=[
-  {id:'agreed',label:'CMIs - Agreed with DGJ Before Mobilising CMI Team',value:0,color:'#65ab80',amount:0},
-  {id:'submitted',label:'CMIs - Submitted to DGJ (Yet to be Agreed) Before CMI Team',value:0,color:'#008f8c',amount:0},
-  {id:'team',label:'CMIs - Required to be Actioned by CMI Team',value:0,color:'#315fa8',amount:null}
+  {id:'agreed',label:'CMIs - Agreed with DGJ Before Mobilising CMI Team',value:0,color:'#42B74B',amount:0},
+  {id:'submitted',label:'CMIs - Submitted to DGJ (Yet to be Agreed) Before CMI Team',value:0,color:'#1684FF',amount:0},
+  {id:'team',label:'CMIs - Required to be Actioned by CMI Team',value:0,color:'#095198',amount:null}
  ];
  const stages=[
-  {id:'progress',label:'CMI Team - In Progress',value:0,color:'#d6a23e',amount:null},
-  {id:'submitted',label:'CMI Team - Submitted to DGJ',value:0,color:'#4fa3d1',amount:0},
-  {id:'agreed',label:'CMI Team - Agreed with DGJ',value:0,color:'#7955a5',amount:0},
-  {id:'balance',label:'Balance CMIs to be Actioned',value:0,color:'#315fa8',amount:null}
+  {id:'progress',label:'CMI Team - In Progress',value:0,color:'#FF941A',amount:null},
+  {id:'submitted',label:'CMI Team - Submitted to DGJ',value:0,color:'#9AA4AF',amount:0},
+  {id:'agreed',label:'CMI Team - Agreed with DGJ',value:0,color:'#853FD5',amount:0},
+  {id:'balance',label:'Balance CMIs to be Actioned',value:0,color:'#095198',amount:null}
  ];
  let zeroBalance=0,otherBalance=0;
  for(const rows of groups.values()){
@@ -4034,11 +4034,11 @@ function renderClientDashboard(){
  const overviewSlices=[
   ...summary.bands.filter(x=>x.id!=='team'),
   ...summary.stages.filter(x=>x.id!=='balance'),
-  {label:'CMI Team - Zero Value CMIs / CMIs Included in Other CMIs',value:summary.zeroBalance,color:'#b883ae'},
-  {label:'CMI Team - Other CMIs',value:summary.otherBalance,color:'#315fa8'}
+  {label:'CMI Team - Zero Value CMIs / CMIs Included in Other CMIs',value:summary.zeroBalance,color:'#EA0BAF'},
+  {label:'CMI Team - Other CMIs',value:summary.otherBalance,color:'#095198'}
  ];
  renderDonut('clientOverviewPie',overviewSlices,{centerValue:fmt(summary.total),centerLabel:'Total CMIs'});
- body.innerHTML+=summary.stages.map(x=>'<tr class="client-team-detail'+(x.id==='balance'?' client-team-balance':'')+'"'+(!teamExpanded?' hidden':'')+'><td>'+(x.id==='balance'?'<button type="button" class="client-overview-toggle" data-toggle="balance" aria-expanded="'+balanceExpanded+'" aria-label="'+(balanceExpanded?'Collapse':'Expand')+' balance CMIs"><span class="client-overview-chevron" aria-hidden="true">▸</span></button>':'')+'<span class="client-overview-swatch" style="background:'+x.color+'"></span>'+esc(x.label)+'</td><td style="text-align:right">'+fmt(x.value)+'</td><td style="text-align:right">'+(x.amount===null?'':money(x.amount))+'</td></tr>'+(x.id==='balance'?'<tr class="client-team-subrow"'+(!(teamExpanded&&balanceExpanded)?' hidden':'')+'><td><span class="client-overview-swatch" style="background:#b883ae"></span>CMI Team - Zero Value CMIs / CMIs Included in Other CMIs</td><td style="text-align:right">'+fmt(summary.zeroBalance)+'</td><td></td></tr><tr class="client-team-subrow"'+(!(teamExpanded&&balanceExpanded)?' hidden':'')+'><td><span class="client-overview-swatch" style="background:#315fa8"></span>CMI Team - Other CMIs</td><td style="text-align:right">'+fmt(summary.otherBalance)+'</td><td></td></tr>':'')).join('');
+ body.innerHTML+=summary.stages.map(x=>'<tr class="client-team-detail'+(x.id==='balance'?' client-team-balance':'')+'"'+(!teamExpanded?' hidden':'')+'><td>'+(x.id==='balance'?'<button type="button" class="client-overview-toggle" data-toggle="balance" aria-expanded="'+balanceExpanded+'" aria-label="'+(balanceExpanded?'Collapse':'Expand')+' balance CMIs"><span class="client-overview-chevron" aria-hidden="true">▸</span></button>':'')+'<span class="client-overview-swatch" style="background:'+x.color+'"></span>'+esc(x.label)+'</td><td style="text-align:right">'+fmt(x.value)+'</td><td style="text-align:right">'+(x.amount===null?'':money(x.amount))+'</td></tr>'+(x.id==='balance'?'<tr class="client-team-subrow"'+(!(teamExpanded&&balanceExpanded)?' hidden':'')+'><td><span class="client-overview-swatch" style="background:#EA0BAF"></span>CMI Team - Zero Value CMIs / CMIs Included in Other CMIs</td><td style="text-align:right">'+fmt(summary.zeroBalance)+'</td><td></td></tr><tr class="client-team-subrow"'+(!(teamExpanded&&balanceExpanded)?' hidden':'')+'><td><span class="client-overview-swatch" style="background:#095198"></span>CMI Team - Other CMIs</td><td style="text-align:right">'+fmt(summary.otherBalance)+'</td><td></td></tr>':'')).join('');
  body.querySelectorAll('[data-toggle]').forEach(button=>button.addEventListener('click',()=>{
   const name=button.dataset.toggle;
   body.dataset[name==='team'?'teamExpanded':'balanceExpanded']=String(!(name==='team'?body.dataset.teamExpanded!=='false':body.dataset.balanceExpanded!=='false'));
