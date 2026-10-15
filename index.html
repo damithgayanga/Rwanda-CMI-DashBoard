@@ -1550,7 +1550,7 @@
  <div class="grid kpis" id="kpiGrid"></div>
  <div class="section-title"><h2>Commercial Portfolio Overview</h2></div>
  <div class="grid dashboard-pie-grid">
-  <div class="card pie-card"><h3>Submission Classification</h3><div id="statusPie"></div></div>
+  <div class="card pie-card"><h3>CMI Status Split</h3><div id="statusPie"></div></div>
   <div class="card pie-card"><h3>TBS by CMI Team — Priority Split</h3><div id="priorityPie"></div></div>
   <div class="card pie-card"><h3>Agreed CMIs — Submitted vs Agreed Value</h3><div id="agreedComparisonPie"></div></div>
   <div class="card pie-card"><h3>Total Portfolio Value Split</h3><div id="portfolioValuePie"></div>
@@ -2429,39 +2429,52 @@ function renderDonut(id,slices,opt={}){
  let lastGroup='';const legend=clean.map((x,i)=>{const share=totalWeight?weights[i]/totalWeight*100:0;const val=opt.valueType==='money'?portfolioMoney(x.value):Number(x.value).toLocaleString('en-US');const group=x.group&&x.group!==lastGroup?`<div class="pie-legend-group">${esc(x.group)}</div>`:'';if(x.group)lastGroup=x.group;return `${group}<div class="pie-legend-row"><span class="pie-swatch" style="background:${x.color}"></span><div class="pie-legend-label">${esc(x.label)}<div class="pie-legend-share">${share.toFixed(1)}% of ${opt.useMagnitude?'chart magnitude':'total'}</div></div><div class="pie-legend-value">${val}</div></div>`}).join('');
  el.innerHTML=`<div class="pie-layout"><div class="donut-wrap"><div class="donut" style="background:conic-gradient(${parts.join(',')})"><div class="donut-center"><b>${esc(centerValue)}</b><span>${esc(centerLabel)}</span></div></div></div><div class="pie-legend">${legend}</div></div>${opt.note?`<div class="badge-note" style="margin-top:10px">${opt.note}</div>`:''}`;
 }
+function internalStatusSplit(records){
+ const normalise=v=>String(v||'').trim().replace(/\s+/g,' ').toLowerCase();
+ const agreed=records.filter(r=>normalise(r.mainCategory)==='agreed'),submitted=records.filter(r=>normalise(r.mainCategory)==='submitted'),team=records.filter(r=>normalise(r.mainCategory)==='tbs by cmi team');
+ const defs=[
+  {label:'Initial review completed',category:'to be submitted',color:'#bc7410'},
+  {label:'Provisional Sums',category:'provisional sum - to be submitted',color:'#b62d25'},
+  {label:'Included in other CMIs',category:'included in other cmis - to be submitted',color:'#75899b'},
+  {label:'Others',category:'under review - to be submitted',color:'#6b4cb5'}
+ ];
+ const group='To be Submitted — '+team.length.toLocaleString('en-US');
+ const slices=[{label:'Agreed',value:agreed.length,color:'#18835d'},{label:'Submitted - to be Agreed',value:submitted.length,color:'#2563a8'},...defs.map(d=>({group,label:d.label,value:team.filter(r=>normalise(registerCategoryValue(r))===d.category).length,color:d.color}))];
+ const unmatched=team.filter(r=>!defs.some(d=>normalise(registerCategoryValue(r))===d.category));
+ if(unmatched.length)slices.push({group,label:'Unmapped Register Category',value:unmatched.length,color:'#23adc8'});
+ const unknown=records.filter(r=>!['agreed','submitted','tbs by cmi team'].includes(normalise(r.mainCategory)));
+ if(unknown.length)slices.push({label:'Unmapped Submission Classification',value:unknown.length,color:'#a5b2bd'});
+ return {slices,teamTotal:team.length,unmatched:unmatched.length+unknown.length};
+}
 function renderBars(){
  const all=state.records,team=all.filter(isCmiTeamSubmission),agreed=all.filter(r=>r.mainCategory==='Agreed'),submitted=all.filter(r=>r.mainCategory==='Submitted');
- renderDonut('statusPie',[
-  {label:'Agreed',value:agreed.length,color:'#2f6f68'},
-  {label:'Submitted',value:submitted.length,color:'#234c72'},
-  {label:'TBS by CMI Team',value:team.length,color:'#aa8a59'},
-  ...uniq(all.map(r=>r.mainCategory||'Unspecified')).filter(x=>!['Agreed','Submitted','TBS by CMI Team'].includes(x)).map(label=>({label,value:all.filter(r=>(r.mainCategory||'Unspecified')===label).length,color:'#a5b2bd'}))
- ],{centerValue:String(all.length),centerLabel:'CMI work items',note:'Based on Submission Classification. Counts are work items; separate scopes under the same CMI number remain separate.'});
+ const statusSplit=internalStatusSplit(all);
+ renderDonut('statusPie',statusSplit.slices,{centerValue:String(all.length),centerLabel:'CMI work items',note:'Agreed and Submitted follow Submission Classification. To be Submitted includes TBS by CMI Team only, split by Register Category. In this chart, Initial review completed means Register Category = To be Submitted. The four sub-items form the To be Submitted total; that total is not an additional slice.'+(statusSplit.unmatched?' '+statusSplit.unmatched+' work items require category review.':'')});
  const buckets={High:0,Medium:0,Low:0,Unvalued:0,Investigated:0};
  team.forEach(r=>buckets[deliveryWorkBucket(r)]++);
  renderDonut('priorityPie',[
-  {group:'Initial Review Completed',label:'High Priority',value:buckets.High,color:'#234c72'},
-  {group:'Initial Review Completed',label:'Medium Priority',value:buckets.Medium,color:'#557f94'},
-  {group:'Initial Review Completed',label:'Low Priority',value:buckets.Low,color:'#8da9bb'},
-  {group:'Provisional Sum CMIs',label:'Provisional Sum CMIs',value:buckets.Investigated,color:'#aa8a59'},
-  {group:'Other CMIs',label:'Other CMIs (No Initial Estimate)',value:buckets.Unvalued,color:'#a5b2bd'}
+  {group:'Initial Review Completed',label:'High Priority',value:buckets.High,color:'#b62d25'},
+  {group:'Initial Review Completed',label:'Medium Priority',value:buckets.Medium,color:'#bc7410'},
+  {group:'Initial Review Completed',label:'Low Priority',value:buckets.Low,color:'#18835d'},
+  {group:'Provisional Sum CMIs',label:'Provisional Sum CMIs',value:buckets.Investigated,color:'#23adc8'},
+  {group:'Other CMIs',label:'Other CMIs (No Initial Estimate)',value:buckets.Unvalued,color:'#6b4cb5'}
  ],{centerValue:String(team.length),centerLabel:'TBS by CMI Team work items',note:'Includes every TBS by CMI Team work item. Initial Review Completed means an initial estimate is recorded, excluding Provisional Sum items. Provisional Sum CMIs are identified by Register Category; Other CMIs are the balance.'});
  const known=v=>v!==null&&v!==undefined&&v!==''&&Number.isFinite(Number(v));
  const agreedSubmitted=sum(agreed.map(r=>r.submittedValue)),agreedAmount=sum(agreed.map(r=>r.agreedAmount));
  renderDonut('agreedComparisonPie',[
-  {label:'Submitted Value',value:agreedSubmitted,color:'#234c72'},
-  {label:'Agreed Amount',value:agreedAmount,color:'#2f6f68'}
+  {label:'Submitted Value',value:agreedSubmitted,color:'#2563a8'},
+  {label:'Agreed Amount',value:agreedAmount,color:'#18835d'}
  ],{valueType:'money',useMagnitude:true,centerValue:String(agreed.length),centerLabel:'Agreed work items',note:'Submission Classification = Agreed. Recorded values only; '+agreed.filter(r=>!known(r.submittedValue)).length+' submitted values and '+agreed.filter(r=>!known(r.agreedAmount)).length+' agreed amounts are missing. Percentages compare absolute value magnitudes.'});
  const estimated=team.filter(r=>deliveryWorkBucket(r)!=='Investigated'&&known(r.initialEstimate));
  const unvalued=team.filter(r=>deliveryWorkBucket(r)!=='Investigated'&&!known(r.initialEstimate));
  const provisional=team.filter(r=>deliveryWorkBucket(r)==='Investigated');
  const unallocatedAllowance=Number(state.meta.unallocatedPortfolioAllowance)||0,provisionalAllowance=Number(state.meta.provisionalPortfolioAllowance)||0;
  const portfolioSlices=[
-  {label:'Agreed — Recorded Agreed Amount',value:agreedAmount,color:'#2f6f68'},
-  {label:'Submitted — Recorded Submitted Value',value:sum(submitted.map(r=>r.submittedValue)),color:'#234c72'},
-  {label:'TBS by CMI Team — Known Initial Estimates (excluding PS)',value:sum(estimated.map(r=>r.initialEstimate)),color:'#557f94'},
-  {label:'TBS by CMI Team — No Estimate Allowance',value:unvalued.length?unallocatedAllowance:0,color:'#a5b2bd'},
-  {label:'TBS by CMI Team — Provisional Sum Allowance',value:provisional.length?provisionalAllowance:0,color:'#aa8a59'}
+  {label:'Agreed — Recorded Agreed Amount',value:agreedAmount,color:'#18835d'},
+  {label:'Submitted — Recorded Submitted Value',value:sum(submitted.map(r=>r.submittedValue)),color:'#2563a8'},
+  {label:'TBS by CMI Team — Known Initial Estimates (excluding PS)',value:sum(estimated.map(r=>r.initialEstimate)),color:'#bc7410'},
+  {label:'TBS by CMI Team — No Estimate Allowance',value:unvalued.length?unallocatedAllowance:0,color:'#6b4cb5'},
+  {label:'TBS by CMI Team — Provisional Sum Allowance',value:provisional.length?provisionalAllowance:0,color:'#b62d25'}
  ];
  const netTotal=sum(portfolioSlices.map(x=>x.value));
  renderDonut('portfolioValuePie',portfolioSlices,{valueType:'money',useMagnitude:true,centerValue:portfolioMoney(netTotal),centerLabel:'Net portfolio total',note:estimated.length+' team work items have recorded non-PS estimates; '+unvalued.length+' have no non-PS estimate; '+provisional.length+' are covered by the total PS allowance. Saved allowances are assumptions, not recorded CMI values. Percentages use absolute magnitudes.'});
