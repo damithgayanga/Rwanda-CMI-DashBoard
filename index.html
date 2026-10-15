@@ -610,6 +610,17 @@
 @media(max-width:600px){
   #tab-clientdashboard #clientProcessStages{grid-template-columns:repeat(2,minmax(0,1fr))!important}
 }
+/* Keep section spacing equal in expanded, collapsed and stacked layouts. */
+#tab-clientdashboard{--executive-section-gap:24px}
+#tab-clientdashboard > article.exec-panel{margin-bottom:var(--executive-section-gap)}
+#tab-clientdashboard > .exec-commercial-grid{
+  margin-bottom:var(--executive-section-gap);
+  row-gap:var(--executive-section-gap);
+}
+#tab-clientdashboard > .exec-commercial-grid > article.exec-panel{
+  height:auto;
+  margin-bottom:0;
+}
 /* Executive panels collapse independently while headings stay visible. */
 #tab-clientdashboard article.exec-panel.exec-section-collapsed > .card{display:none!important}
 #tab-clientdashboard .exec-section-toggle{
