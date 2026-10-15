@@ -282,6 +282,14 @@
 #tab-clientdashboard #clientOverviewRows .client-team-subrow td:first-child{padding-left:50px!important;font-size:11px}
 #tab-clientdashboard #clientOverviewRows .client-team-balance td,#tab-clientdashboard #clientOverviewRows .client-team-total td{font-weight:650;color:#183b56;background:#f3f7fa}
 
+
+#tab-clientdashboard .client-overview-process{margin-top:24px;padding-top:20px;border-top:1px solid #dce7ee}
+#tab-clientdashboard .client-overview-process>h3{margin:0 0 16px;font-size:13px;color:#183b56}
+#tab-clientdashboard .client-overview-process #clientProcessStages{grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:12px}
+#tab-clientdashboard .client-overview-process #clientProcessStages tr{padding:0 10px!important;gap:14px;border-bottom:0}
+#tab-clientdashboard .client-overview-process #clientProcessStages td:first-child{align-items:flex-start;min-height:72px;font-size:11px;gap:6px}
+#tab-clientdashboard .client-overview-process #clientProcessStages td:last-child{font-size:28px}
+#tab-clientdashboard .client-overview-process .client-stage-number{width:21px;height:21px;flex-basis:21px;font-size:9px}
 </style>
 <style id="executive-presentation-v2">
 /* Executive presentation: scoped to the management report only. */
@@ -1668,7 +1676,11 @@
      <thead><tr><th style="text-align:left;padding:10px">Description</th><th style="text-align:right;padding:10px">CMI Count</th><th style="text-align:right;padding:10px">Value</th></tr></thead>
      <tbody id="clientOverviewRows"></tbody>
     </table></div>
-    <div class="client-overview-chart"><h3>Total CMIs — Submission Breakdown</h3><div id="clientOverviewPie"></div></div>
+    <div class="client-overview-chart"><h3>Total CMIs — Submission Breakdown</h3><div id="clientOverviewPie"></div>
+    <section class="client-overview-process" aria-label="CMI process stages"><h3>CMIs Under Process (Stages)</h3>
+   <table class="client-process-table"><thead><tr><th>Stage</th><th>Count</th></tr></thead><tbody id="clientProcessStages"></tbody></table>
+   <details class="client-data-note"><summary>Basis of stage counts</summary><p>Each CMI number is counted once within each stage, including CMIs subsequently agreed by the CMI Team. Sent to Measurement Team: actual document handover recorded. Commenced by Measurement Team: Measurement &amp; Valuation has an actual start date, an actual finish date or progress above zero. Received from Measurement Team: Measurement &amp; Valuation at 100% with an actual finish date. Submitted to CM: Technical &amp; Commercial Clearance started. Received from CM: Technical &amp; Commercial Clearance at 100% with an actual finish date. These cumulative milestones can include the same CMI at more than one stage.</p></details>
+    </section></div>
    </div>
    <div id="clientOverviewValidation" class="badge-note" style="margin-top:16px"></div>
 
@@ -1696,13 +1708,7 @@
    </div>
   </article>
  </div>
- <article class="exec-panel exec-process-panel">
-  <header class="exec-panel-heading"><span class="exec-section-number" aria-hidden="true">04</span><h2>CMIs Under Process (Stages)</h2><span class="client-stage-caption">Cumulative stage milestones</span></header>
-  <div class="card client-process-card">
-   <table class="client-process-table"><thead><tr><th>Stage</th><th>Count</th></tr></thead><tbody id="clientProcessStages"></tbody></table>
-   <details class="client-data-note"><summary>Basis of stage counts</summary><p>Unique CMI numbers in the Delivery Plan. Sent to Measurement Team: actual document handover recorded. Received from Measurement Team: Measurement &amp; Valuation at 100% with an actual finish date. Submitted to CM: Technical &amp; Commercial Clearance started. Received from CM: Technical &amp; Commercial Clearance at 100% with an actual finish date. These cumulative milestones can include the same CMI at more than one stage.</p></details>
-  </div>
- </article>
+
 </section>
 <section class="tab" id="tab-dashboard">
  <div class="grid kpis" id="kpiGrid"></div>
@@ -3780,22 +3786,23 @@ function renderPreviouslySubmittedCmis(){
 
 
 function clientProcessStageCounts(records,readiness){
- const sets=[new Set(),new Set(),new Set(),new Set()];
+ const sets=Array.from({length:5},()=>new Set());
  for(const r of records||[]){
-  if(!isInDeliveryPlanRecord(r))continue;
+  if(!cmiTeamScopeRecord(r))continue;
   const key=normCmi(r.cmiKey||r.cmiNo||'');if(!key)continue;
   const a=dashboardCmiActivities(r),handover=readiness.get(String(r.id||''));
   if(handover&&handover.actual_given_date)sets[0].add(key);
-  if(activityProgressAt100(a.measure)&&a.measure.actualFinishDate)sets[1].add(key);
-  if(activityStarted(a.clearance))sets[2].add(key);
-  if(activityProgressAt100(a.clearance)&&a.clearance.actualFinishDate)sets[3].add(key);
+  if(activityStarted(a.measure))sets[1].add(key);
+  if(activityProgressAt100(a.measure)&&a.measure.actualFinishDate)sets[2].add(key);
+  if(activityStarted(a.clearance))sets[3].add(key);
+  if(activityProgressAt100(a.clearance)&&a.clearance.actualFinishDate)sets[4].add(key);
  }
  return sets.map(x=>x.size);
 }
 function renderClientProcessStages(){
  const el=document.getElementById('clientProcessStages');if(!el)return;
  const counts=clientProcessStageCounts(state.records,documentReadinessMap());
- const labels=['Sent to Measurement Team','Received from Measurement Team','Submitted to CM','Received from CM'];
+ const labels=['CMIs Sent to Measurement Team','CMIs Commenced by Measurement Team','CMIs Received from Measurement Team','CMIs Submitted to CM','CMIs Received from CM'];
  el.innerHTML=labels.map((label,i)=>'<tr><td><span class="client-stage-number">'+String(i+1).padStart(2,'0')+'</span><span>'+esc(label)+'</span></td><td>'+Number(counts[i]).toLocaleString('en-US')+'</td></tr>').join('');
 }
 
