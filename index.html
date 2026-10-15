@@ -443,6 +443,15 @@
  #tab-clientdashboard #clientOverviewPie .donut{width:200px;height:200px}
  #tab-clientdashboard #clientOverviewPie .pie-legend-label{text-align:right}
 }
+
+/* Executive CMI Team hierarchy: plain rows, nested balance aligned with activities. */
+#tab-clientdashboard #clientOverviewRows .client-overview-team-total,
+#tab-clientdashboard #clientOverviewRows .client-team-balance,
+#tab-clientdashboard #clientOverviewRows .client-team-balance td,
+#tab-clientdashboard #clientOverviewRows .client-team-total td{background:transparent!important}
+#tab-clientdashboard #clientOverviewRows .client-team-balance td:first-child{position:relative}
+#tab-clientdashboard #clientOverviewRows .client-team-balance .client-overview-toggle{position:absolute;left:12px;top:50%;transform:translateY(-50%);margin:0;padding:3px}
+#tab-clientdashboard #clientOverviewRows .client-team-balance .client-overview-swatch{margin-left:0}
 </style>
 
 <!-- Supabase -->
