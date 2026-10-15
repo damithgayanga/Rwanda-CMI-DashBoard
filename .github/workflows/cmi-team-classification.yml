@@ -1,0 +1,36 @@
+name: CMI Team submission classifications and totals
+on:
+  push:
+    paths: ['.github/workflows/cmi-team-classification.yml']
+permissions:
+  contents: write
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply classification and dashboard rules
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          def change(before,after,n=1):
+              global s
+              assert s.count(before)==n,(before[:80],s.count(before))
+              s=s.replace(before,after)
+          change("['Agreed','Submitted','TBS by CMI Team','Agreed - CMI Team']","['Agreed','Submitted','TBS by CMI Team','Submitted - CMI Team','Agreed - CMI Team']")
+          change("['TBS by CMI Team','Agreed - CMI Team'].includes(category)","['TBS by CMI Team','Submitted - CMI Team','Agreed - CMI Team'].includes(category)")
+          change("['Agreed','Submitted','Agreed - CMI Team'].includes(r.mainCategory)","['Agreed','Submitted','Submitted - CMI Team','Agreed - CMI Team'].includes(r.mainCategory)")
+          change("const stages=[\n  {id:'progress',label:'CMI Team - In Progress',value:0,color:'#d6a23e'},\n  {id:'submitted',label:'CMI Team - Submitted to DGJ',value:0,color:'#4fa3d1'},\n  {id:'agreed',label:'CMI Team - Agreed with DGJ',value:0,color:'#7955a5'},\n  {id:'balance',label:'Balance CMIs to be Actioned',value:0,color:'#315fa8'}\n ];","const stages=[\n  {id:'progress',label:'CMI Team - In Progress',value:0,color:'#d6a23e',amount:null},\n  {id:'submitted',label:'CMI Team - Submitted to DGJ',value:0,color:'#4fa3d1',amount:0},\n  {id:'agreed',label:'CMI Team - Agreed with DGJ',value:0,color:'#7955a5',amount:0},\n  {id:'balance',label:'Balance CMIs to be Actioned',value:0,color:'#315fa8',amount:null}\n ];")
+          change("const submitted=scoped.some(r=>{const a=findActivityByIdOrName(r,'act-submit-dgj','submission to dgj');return activityProgressAt100(a)&&!!a.actualFinishDate;});","const teamAgreed=scoped.filter(r=>String(r.mainCategory||'').trim()==='Agreed - CMI Team');\n  const teamSubmitted=scoped.filter(r=>String(r.mainCategory||'').trim()==='Submitted - CMI Team');")
+          change("const stage=scoped.some(cmiTeamAgreedRecord)?'agreed':submitted?'submitted':started?'progress':'balance';\n  stages.find(x=>x.id===stage).value++;","const stage=teamAgreed.length?'agreed':teamSubmitted.length?'submitted':started?'progress':'balance';\n  const stageRow=stages.find(x=>x.id===stage);\n  stageRow.value++;\n  if(stage==='agreed')stageRow.amount+=teamAgreed.reduce((sum,r)=>sum+(Number(r.agreedAmount)||0),0);\n  if(stage==='submitted')stageRow.amount+=teamSubmitted.reduce((sum,r)=>sum+(Number(r.submittedValue)||0),0);")
+          change("'<td style=\"text-align:right\">'+fmt(x.value)+'</td><td></td></tr>'+(x.id==='balance'?","'<td style=\"text-align:right\">'+fmt(x.value)+'</td><td style=\"text-align:right\">'+(x.amount===null?'':money(x.amount))+'</td></tr>'+(x.id==='balance'?")
+          p.write_text(s,encoding='utf-8')
+          PY
+      - name: Commit implementation
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git diff --cached --quiet || (git commit -m "Add Submitted CMI Team classification and status-driven executive amounts" && git push)
