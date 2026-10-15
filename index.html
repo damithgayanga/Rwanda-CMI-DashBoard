@@ -1662,21 +1662,21 @@
  </article>
  <div class="exec-commercial-grid">
   <article class="exec-panel">
-   <header class="exec-panel-heading"><span class="exec-section-number" aria-hidden="true">02</span><h2>Previously Approved CMIs</h2></header>
+   <header class="exec-panel-heading"><span class="exec-section-number" aria-hidden="true">02</span><h2>CMIs Agreed with DGJ before CMI Team's mobilisation</h2></header>
    <div class="card">
     <div class="client-overview-layout">
      <div id="clientApprovedTable" class="client-approved-table"></div>
-     <div class="client-overview-chart"><h3>Previously Approved CMIs — Count Breakdown</h3><div id="clientApprovedPie"></div></div>
+     <div class="client-overview-chart"><h3>CMIs Agreed with DGJ before CMI Team's mobilisation — Count Breakdown</h3><div id="clientApprovedPie"></div></div>
     </div>
     <div class="badge-note" style="margin-top:16px">Based on existing Agreed register entries. Counts use unique CMI numbers; values sum their agreed amounts in USD. Negative value bands use absolute amounts. The chart shows counts, with the same colours as the detailed table rows.</div>
    </div>
   </article>
   <article class="exec-panel">
-   <header class="exec-panel-heading"><span class="exec-section-number" aria-hidden="true">03</span><h2>CMIs Previously Submitted to DG Jones</h2></header>
+   <header class="exec-panel-heading"><span class="exec-section-number" aria-hidden="true">03</span><h2>CMIs Submitted (Not Agreed) before CMI Team's Mobilisation</h2></header>
    <div class="card">
     <div class="client-overview-layout">
      <div id="clientSubmittedTable" class="client-approved-table"></div>
-     <div class="client-overview-chart"><h3>Previously Submitted to DG Jones — Count Breakdown</h3><div id="clientSubmittedPie"></div></div>
+     <div class="client-overview-chart"><h3>CMIs Submitted (Not Agreed) before CMI Team's Mobilisation — Count Breakdown</h3><div id="clientSubmittedPie"></div></div>
     </div>
     <div class="badge-note" style="margin-top:16px">Based on entries marked Submitted in Register Category. Counts use unique CMI numbers; values sum their submitted values in USD. Negative value bands use absolute amounts. The chart shows counts, with the same colours as the detailed table rows.</div>
    </div>
@@ -3719,8 +3719,8 @@ function renderPreviouslyApprovedCmis(){
  const row=(label,count,amount,color,cls='')=>'<div class="client-approved-row '+cls+'"><span>'+(color?'<i class="client-approved-swatch" style="background:'+color+'"></i>':'')+esc(label)+'</span><span>'+fmt(count)+'</span><span>'+money(amount)+'</span></div>';
  const group=(id,label)=>{const bands=summary.bands.filter(x=>x.id.startsWith(id+'-'));return '<details class="client-approved-group" data-group="'+id+'"'+(savedOpen.includes(id)?' open':'')+'><summary><span>'+esc(label)+'</span><span>'+fmt(bands.reduce((n,x)=>n+x.value,0))+'</span><span>'+money(bands.reduce((n,x)=>n+x.amount,0))+'</span></summary>'+bands.map(x=>row(x.tableLabel,x.value,x.amount,x.color,'client-approved-detail')).join('')+'</details>'};
  const zero=summary.bands.find(x=>x.id==='zero'),missing=summary.bands.find(x=>x.id==='missing');
- table.innerHTML='<div class="client-approved-heading"><span>Description</span><span>Count</span><span>Value (USD)</span></div>'+row('Approved CMIs (Total)',summary.total,summary.amount,null,'client-approved-total')+group('positive','Positive Value CMIs')+group('negative','Negative Value CMIs')+row(zero.tableLabel,zero.value,zero.amount,zero.color)+(missing.value?row(missing.tableLabel,missing.value,missing.amount,missing.color):'');
- renderDonut('clientApprovedPie',summary.bands.filter(x=>x.id!=='missing'||x.value>0),{centerValue:fmt(summary.total),centerLabel:'Previously Approved CMIs'});
+ table.innerHTML='<div class="client-approved-heading"><span>Description</span><span>Count</span><span>Value (USD)</span></div>'+row('Agreed CMIs (Total)',summary.total,summary.amount,null,'client-approved-total')+group('positive','Positive Value CMIs')+group('negative','Negative Value CMIs')+row(zero.tableLabel,zero.value,zero.amount,zero.color)+(missing.value?row(missing.tableLabel,missing.value,missing.amount,missing.color):'');
+ renderDonut('clientApprovedPie',summary.bands.filter(x=>x.id!=='missing'||x.value>0),{centerValue:fmt(summary.total),centerLabel:"CMIs Agreed with DGJ before CMI Team's mobilisation"});
 }
 
 function clientPreviouslySubmittedSummary(records){
@@ -3825,7 +3825,7 @@ function renderClientDashboard(){
  ];
  const items=[
   ['Total No. of CMIs Received',groups.size,null],
-  ['CMIs Approved Before Mobilising CMI Team',agreed.size,sums(all.filter(r=>r.mainCategory==='Agreed'),'agreedAmount')],
+  ['CMIs Agreed with DGJ Before Mobilising CMI Team',agreed.size,sums(all.filter(r=>r.mainCategory==='Agreed'),'agreedAmount')],
   ['CMIs Submitted to DGJ (Not Approved) Before CMI Team',submitted.size,sums(all.filter(r=>r.mainCategory==='Submitted'),'submittedValue')],
   ['Zero Value CMIs to Be Agreed with DGJ',zero.size,null],
   ['Total CMIs Required for Submission by CMI Team',eligible.size,null],
