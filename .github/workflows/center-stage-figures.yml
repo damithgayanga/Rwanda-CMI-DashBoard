@@ -1,0 +1,39 @@
+name: Center executive stage figures
+on:
+  push:
+    paths: ['.github/workflows/center-stage-figures.yml']
+permissions:
+  contents: write
+jobs:
+  change:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Center figures
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          css="""
+          /* Centre the six CMI milestone counts within their own columns. */
+          #tab-clientdashboard #clientProcessStages td:last-child{
+            width:100%!important;
+            display:flex!important;
+            justify-content:center!important;
+            text-align:center!important;
+            align-items:center!important;
+          }
+          """
+          if 'Centre the six CMI milestone counts' not in s:
+              pos=s.rfind('</style>')
+              assert pos>=0
+              s=s[:pos]+css+s[pos:]
+              p.write_text(s,encoding='utf-8')
+          PY
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git diff --cached --quiet || (git commit -m "Center six executive stage counts" && git push)
