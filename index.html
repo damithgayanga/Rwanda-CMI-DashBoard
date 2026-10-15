@@ -4024,8 +4024,8 @@ function renderClientDashboard(){
  renderClientProcessStages();
  const body=document.getElementById('clientOverviewRows');if(!body)return;
  const summary=clientOverviewSummary(state.records);
- const teamExpanded=body.dataset.teamExpanded==='true';
- const balanceExpanded=body.dataset.balanceExpanded==='true';
+ const teamExpanded=body.dataset.teamExpanded!=='false';
+ const balanceExpanded=body.dataset.balanceExpanded!=='false';
  const items=[['Total CMIs',summary.total,null],...summary.bands.map(x=>[x.label,x.value,x.amount,x.color])];
  const fmt=n=>Number(n).toLocaleString('en-US',{maximumFractionDigits:0});
  body.innerHTML=items.map((x,i)=>'<tr'+(i===3?' class="client-overview-team-total"':'')+'><td>'+(i===3?'<button type="button" class="client-overview-toggle" data-toggle="team" aria-expanded="'+teamExpanded+'" aria-label="'+(teamExpanded?'Collapse':'Expand')+' CMIs required to be actioned"><span class="client-overview-chevron" aria-hidden="true">▸</span></button>':'')+(x[3]?'<span class="client-overview-swatch" style="background:'+x[3]+'"></span>':'')+esc(x[0])+'</td><td style="text-align:right">'+fmt(x[1])+'</td><td style="text-align:right">'+(x[2]===null?'':money(x[2]))+'</td></tr>').join('');
@@ -4041,7 +4041,7 @@ function renderClientDashboard(){
  body.innerHTML+=summary.stages.map(x=>'<tr class="client-team-detail'+(x.id==='balance'?' client-team-balance':'')+'"'+(!teamExpanded?' hidden':'')+'><td>'+(x.id==='balance'?'<button type="button" class="client-overview-toggle" data-toggle="balance" aria-expanded="'+balanceExpanded+'" aria-label="'+(balanceExpanded?'Collapse':'Expand')+' balance CMIs"><span class="client-overview-chevron" aria-hidden="true">▸</span></button>':'')+'<span class="client-overview-swatch" style="background:'+x.color+'"></span>'+esc(x.label)+'</td><td style="text-align:right">'+fmt(x.value)+'</td><td style="text-align:right">'+(x.amount===null?'':money(x.amount))+'</td></tr>'+(x.id==='balance'?'<tr class="client-team-subrow"'+(!(teamExpanded&&balanceExpanded)?' hidden':'')+'><td><span class="client-overview-swatch" style="background:#b883ae"></span>CMI Team - Zero Value CMIs / CMIs Included in Other CMIs</td><td style="text-align:right">'+fmt(summary.zeroBalance)+'</td><td></td></tr><tr class="client-team-subrow"'+(!(teamExpanded&&balanceExpanded)?' hidden':'')+'><td><span class="client-overview-swatch" style="background:#315fa8"></span>CMI Team - Other CMIs</td><td style="text-align:right">'+fmt(summary.otherBalance)+'</td><td></td></tr>':'')).join('');
  body.querySelectorAll('[data-toggle]').forEach(button=>button.addEventListener('click',()=>{
   const name=button.dataset.toggle;
-  body.dataset[name==='team'?'teamExpanded':'balanceExpanded']=String(!(name==='team'?body.dataset.teamExpanded==='true':body.dataset.balanceExpanded==='true'));
+  body.dataset[name==='team'?'teamExpanded':'balanceExpanded']=String(!(name==='team'?body.dataset.teamExpanded!=='false':body.dataset.balanceExpanded!=='false'));
   renderClientDashboard();
  }));
 }
