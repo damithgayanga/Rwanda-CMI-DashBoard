@@ -1,0 +1,46 @@
+name: Executive wording and bullet alignment
+on:
+  push:
+    paths: ['.github/workflows/executive-wording-align.yml']
+permissions:
+  contents: write
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Update executive presentation
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          old="(Not Agreed) before CMI Team's Mobilisation"
+          assert s.count(old)==2
+          s=s.replace(old,"(Yet to be Agreed) before CMI Team's Mobilisation")
+          old2="Total Submitted CMIs (Not Agreed)"
+          assert s.count(old2)==1
+          s=s.replace(old2,"Total Submitted CMIs (Yet to be Agreed)")
+          old3="CMIs - Submitted to DGJ (Not Agreed) Before CMI Team"
+          assert s.count(old3)==1
+          s=s.replace(old3,"CMIs - Submitted to DGJ (Yet to be Agreed) Before CMI Team")
+          css="""
+          /* Main breakdown bullets share the same x-coordinate. */
+          #tab-clientdashboard #clientOverviewRows .client-overview-team-total td:first-child{position:relative}
+          #tab-clientdashboard #clientOverviewRows .client-overview-team-total .client-overview-toggle{
+            position:absolute;left:4px;top:50%;transform:translateY(-50%);margin:0;padding:3px;
+          }
+          #tab-clientdashboard #clientOverviewRows .client-overview-team-total .client-overview-swatch{margin-left:0}
+          """
+          if 'Main breakdown bullets share the same x-coordinate' not in s:
+              pos=s.rfind('</style>')
+              assert pos>=0
+              s=s[:pos]+css+s[pos:]
+          p.write_text(s,encoding='utf-8')
+          PY
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git diff --cached --quiet || (git commit -m "Use Yet to be Agreed labels and align classification bullets" && git push)
