@@ -2124,7 +2124,7 @@ function setHeader(){
 function hasActivityProgress(r){return (r.cmiActivities||[]).some(a=>!!(a.actualStartDate||a.actualFinishDate||Number(a.progressPct)>0))}
 function isCmiTeamSubmission(r){return !!r&&String(r.mainCategory||'').trim()==='TBS by CMI Team'}
 function deliveryPlanApplicable(r){return isCmiTeamSubmission(r)}
-function deliveryWorkBucket(r){if(/provisional sum/i.test(registerCategoryValue(r)))return 'Investigated';return calcPriority(r)==='Unvalued'?'Unvalued':calcPriority(r)}
+function deliveryWorkBucket(r){if(String(registerCategoryValue(r)||'').trim()==='Provisional Sum - To be Submitted')return 'Investigated';return calcPriority(r)==='Unvalued'?'Unvalued':calcPriority(r)}
 function hasOffsiteDeliveryAllocation(r){
  if(!r)return false;
  const activeOffsite=new Set(currentOffsiteResources());
@@ -2269,8 +2269,8 @@ function operationalStage(r){
  if(!activityComplete(submission)&&(clearance||measure))return 'Technical and Commercial Clearance';
  return '';
 }
-function submissionBreakdown(items){return {initial:items.filter(x=>deliveryWorkBucket(x)!=='Investigated'&&hasOffsiteDeliveryAllocation(x)).length,unallocated:items.filter(x=>deliveryWorkBucket(x)!=='Investigated'&&!hasOffsiteDeliveryAllocation(x)).length,provisional:items.filter(x=>deliveryWorkBucket(x)==='Investigated').length}}
-function submissionBreakdownHtml(items){const c=submissionBreakdown(items);return `<div class="kpi-group"><div class="kpi-sub initial"><span class="kpi-sub-label">Allocated</span><span class="kpi-sub-value">${c.initial}</span></div><div class="kpi-sub unallocated"><span class="kpi-sub-label">Unallocated</span><span class="kpi-sub-value">${c.unallocated}</span></div><div class="kpi-sub provisional"><span class="kpi-sub-label">Provisional Sums</span><span class="kpi-sub-value">${c.provisional}</span></div></div>`}
+function submissionBreakdown(items){const rows=internalTeamCategoryBreakdown(items);return {initial:rows[0].value,provisional:rows[1].value,unallocated:rows[2].value}}
+function submissionBreakdownHtml(items){return internalTeamCategoryBreakdownHtml(items)}
 function stageKpiHtml(label,items,style='',total=null){const context=total===null||total===undefined?'':`<span class="value-context">out of ${total}</span>`;return `<div class="card kpi kpi-stage ${style}"><div class="label">${label}</div><div class="value">${items.length}${context}</div>${submissionBreakdownHtml(items)}</div>`}
 function programmeWeekRanges(){
  const base=new Date((programmeDataDate||todayISO())+'T00:00:00');
@@ -2382,10 +2382,10 @@ function assessmentCommencedFromHandoverKpiHtml(){
  return `<div class="card kpi kpi-stage"><div class="label">CMI Assessment Commenced</div><div class="value">${commenced.length}<span class="value-context">out of ${handed.length}</span></div>${submissionBreakdownHtml(commenced)}</div>`;
 }
 function internalTeamCategoryBreakdown(items){
- const counts=new Map();
- items.filter(isCmiTeamSubmission).forEach(r=>{const label=String(registerCategoryValue(r)||'Unspecified').trim();counts.set(label,(counts.get(label)||0)+1)});
- const order=['To be submitted','Under Review - To be submitted','Included in other CMIs - To be Submitted','Provisional Sum - To be Submitted'];
- return [...counts].sort((a,b)=>{const ai=order.indexOf(a[0]),bi=order.indexOf(b[0]);return (ai<0?99:ai)-(bi<0?99:bi)||a[0].localeCompare(b[0])}).map(([label,value])=>({label,value}));
+ const team=items.filter(isCmiTeamSubmission),ps=team.filter(r=>String(registerCategoryValue(r)||'').trim()==='Provisional Sum - To be Submitted');
+ const isPs=r=>String(registerCategoryValue(r)||'').trim()==='Provisional Sum - To be Submitted';
+ const initial=team.filter(r=>!isPs(r)&&r.initialEstimate!==null&&r.initialEstimate!==undefined&&r.initialEstimate!==''&&Number.isFinite(Number(r.initialEstimate)));
+ return [{label:'Initial Review Completed',value:initial.length},{label:'Provisional Sum CMIs',value:ps.length},{label:'Other CMIs',value:team.length-initial.length-ps.length}];
 }
 function internalTeamCategoryBreakdownHtml(items){
  return '<div class="kpi-group">'+internalTeamCategoryBreakdown(items).map(x=>'<div class="kpi-sub"><span class="kpi-sub-label">'+esc(x.label)+'</span><span class="kpi-sub-value" style="color:#234c72">'+x.value+'</span></div>').join('')+'</div>';
@@ -2440,12 +2440,12 @@ function renderBars(){
  const buckets={High:0,Medium:0,Low:0,Unvalued:0,Investigated:0};
  team.forEach(r=>buckets[deliveryWorkBucket(r)]++);
  renderDonut('priorityPie',[
-  {label:'High Priority',value:buckets.High,color:'#234c72'},
-  {label:'Medium Priority',value:buckets.Medium,color:'#557f94'},
-  {label:'Low Priority',value:buckets.Low,color:'#8da9bb'},
-  {label:'No Initial Estimate',value:buckets.Unvalued,color:'#a5b2bd'},
-  {label:'Provisional Sums',value:buckets.Investigated,color:'#aa8a59'}
- ],{centerValue:String(team.length),centerLabel:'TBS by CMI Team work items',note:'Includes every TBS by CMI Team work item, including items recorded as Included in other CMIs. Provisional Sums form a separate slice; other items are grouped by initial estimate.'});
+  {group:'Initial Review Completed',label:'High Priority',value:buckets.High,color:'#234c72'},
+  {group:'Initial Review Completed',label:'Medium Priority',value:buckets.Medium,color:'#557f94'},
+  {group:'Initial Review Completed',label:'Low Priority',value:buckets.Low,color:'#8da9bb'},
+  {group:'Provisional Sum CMIs',label:'Provisional Sum CMIs',value:buckets.Investigated,color:'#aa8a59'},
+  {group:'Other CMIs',label:'Other CMIs (No Initial Estimate)',value:buckets.Unvalued,color:'#a5b2bd'}
+ ],{centerValue:String(team.length),centerLabel:'TBS by CMI Team work items',note:'Includes every TBS by CMI Team work item. Initial Review Completed means an initial estimate is recorded, excluding Provisional Sum items. Provisional Sum CMIs are identified by Register Category; Other CMIs are the balance.'});
  const known=v=>v!==null&&v!==undefined&&v!==''&&Number.isFinite(Number(v));
  const agreedSubmitted=sum(agreed.map(r=>r.submittedValue)),agreedAmount=sum(agreed.map(r=>r.agreedAmount));
  renderDonut('agreedComparisonPie',[
