@@ -427,6 +427,22 @@
  #tab-clientdashboard .exec-commercial-grid .pie-legend{grid-template-columns:1fr}
  #tab-clientdashboard .exec-commercial-grid .client-approved-heading,#tab-clientdashboard .exec-commercial-grid .client-approved-row,#tab-clientdashboard .exec-commercial-grid .client-approved-group summary{grid-template-columns:minmax(0,1fr) 34px 98px;font-size:10px;gap:6px;padding:10px 6px}
 }
+
+/* Executive overview: larger submission doughnut and compact right-aligned legend. */
+@media(min-width:1101px){
+ #tab-clientdashboard #clientOverviewPie .pie-layout{grid-template-columns:250px minmax(0,1fr);gap:26px;align-items:center}
+ #tab-clientdashboard #clientOverviewPie .donut{width:240px;height:240px}
+ #tab-clientdashboard #clientOverviewPie .donut-center b{font-size:34px}
+ #tab-clientdashboard #clientOverviewPie .donut-center span{font-size:11px}
+ #tab-clientdashboard #clientOverviewPie .pie-legend-row{grid-template-columns:8px minmax(0,1fr) 42px;column-gap:8px}
+ #tab-clientdashboard #clientOverviewPie .pie-legend-label{text-align:right}
+ #tab-clientdashboard #clientOverviewPie .pie-legend-value{text-align:right}
+}
+@media(min-width:761px) and (max-width:1100px){
+ #tab-clientdashboard #clientOverviewPie .pie-layout{grid-template-columns:210px minmax(0,1fr);gap:20px}
+ #tab-clientdashboard #clientOverviewPie .donut{width:200px;height:200px}
+ #tab-clientdashboard #clientOverviewPie .pie-legend-label{text-align:right}
+}
 </style>
 
 <!-- Supabase -->
