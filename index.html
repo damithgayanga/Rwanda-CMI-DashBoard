@@ -1551,7 +1551,7 @@
  <div class="section-title"><h2>Commercial Portfolio Overview</h2></div>
  <div class="grid dashboard-pie-grid">
   <div class="card pie-card"><h3>CMI Status Split</h3><div id="statusPie"></div></div>
-  <div class="card pie-card"><h3>TBS by CMI Team — Priority Split</h3><div id="priorityPie"></div></div>
+  <div class="card pie-card"><h3>To be Submitted — Category and Priority Split</h3><div id="priorityPie"></div></div>
   <div class="card pie-card"><h3>Agreed CMIs — Submitted vs Agreed Value</h3><div id="agreedComparisonPie"></div></div>
   <div class="card pie-card"><h3>Total Portfolio Value Split</h3><div id="portfolioValuePie"></div>
    <div class="assumption-box">
@@ -2446,19 +2446,29 @@ function internalStatusSplit(records){
  if(unknown.length)slices.push({label:'Unmapped Submission Classification',value:unknown.length,color:'#a5b2bd'});
  return {slices,teamTotal:team.length,unmatched:unmatched.length+unknown.length};
 }
+function internalSubmissionPrioritySplit(records){
+ const normalise=v=>String(v||'').trim().replace(/\s+/g,' ').toLowerCase();
+ const team=records.filter(isCmiTeamSubmission),initial=team.filter(r=>normalise(registerCategoryValue(r))==='to be submitted');
+ const priority={High:0,Medium:0,Low:0,Unvalued:0};initial.forEach(r=>priority[calcPriority(r)]++);
+ const slices=[
+  {group:'Initial Review Completed — '+initial.length,label:'High',value:priority.High,color:'#b62d25'},
+  {group:'Initial Review Completed — '+initial.length,label:'Medium',value:priority.Medium,color:'#bc7410'},
+  {group:'Initial Review Completed — '+initial.length,label:'Low',value:priority.Low,color:'#18835d'},
+  {group:'Initial Review Completed — '+initial.length,label:'No Initial Estimate',value:priority.Unvalued,color:'#75899b'},
+  {group:'Provisional Sums',label:'Provisional Sum CMIs',value:team.filter(r=>normalise(registerCategoryValue(r))==='provisional sum - to be submitted').length,color:'#23adc8'},
+  {group:'Included in other CMIs',label:'Included in other CMIs',value:team.filter(r=>normalise(registerCategoryValue(r))==='included in other cmis - to be submitted').length,color:'#147e8b'},
+  {group:'Others',label:'Under Review - To be Submitted',value:team.filter(r=>normalise(registerCategoryValue(r))==='under review - to be submitted').length,color:'#6b4cb5'}
+ ];
+ const unmatched=team.length-slices.reduce((n,x)=>n+x.value,0);
+ if(unmatched)slices.push({group:'Category Review',label:'Unmapped Register Category',value:unmatched,color:'#a5b2bd'});
+ return {slices,total:team.length};
+}
 function renderBars(){
  const all=state.records,team=all.filter(isCmiTeamSubmission),agreed=all.filter(r=>r.mainCategory==='Agreed'),submitted=all.filter(r=>r.mainCategory==='Submitted');
  const statusSplit=internalStatusSplit(all);
  renderDonut('statusPie',statusSplit.slices,{centerValue:String(all.length),centerLabel:'CMI work items',note:'Agreed and Submitted follow Submission Classification. To be Submitted includes TBS by CMI Team only, split by Register Category. In this chart, Initial review completed means Register Category = To be Submitted. The four sub-items form the To be Submitted total; that total is not an additional slice.'+(statusSplit.unmatched?' '+statusSplit.unmatched+' work items require category review.':'')});
- const buckets={High:0,Medium:0,Low:0,Unvalued:0,Investigated:0};
- team.forEach(r=>buckets[deliveryWorkBucket(r)]++);
- renderDonut('priorityPie',[
-  {group:'Initial Review Completed',label:'High Priority',value:buckets.High,color:'#b62d25'},
-  {group:'Initial Review Completed',label:'Medium Priority',value:buckets.Medium,color:'#bc7410'},
-  {group:'Initial Review Completed',label:'Low Priority',value:buckets.Low,color:'#18835d'},
-  {group:'Provisional Sum CMIs',label:'Provisional Sum CMIs',value:buckets.Investigated,color:'#23adc8'},
-  {group:'Other CMIs',label:'Other CMIs (No Initial Estimate)',value:buckets.Unvalued,color:'#6b4cb5'}
- ],{centerValue:String(team.length),centerLabel:'TBS by CMI Team work items',note:'Includes every TBS by CMI Team work item. Initial Review Completed means an initial estimate is recorded, excluding Provisional Sum items. Provisional Sum CMIs are identified by Register Category; Other CMIs are the balance.'});
+ const prioritySplit=internalSubmissionPrioritySplit(all);
+ renderDonut('priorityPie',prioritySplit.slices,{centerValue:String(prioritySplit.total),centerLabel:'CMIs requiring submission to DGJ',note:'Submission Classification = TBS by CMI Team. The four main categories follow Register Category. Only Initial Review Completed is split by initial estimate: High ≥ USD 30,000; Medium USD 5,000 to below 30,000; Low below USD 5,000; No Initial Estimate where missing.'});
  const known=v=>v!==null&&v!==undefined&&v!==''&&Number.isFinite(Number(v));
  const agreedSubmitted=sum(agreed.map(r=>r.submittedValue)),agreedAmount=sum(agreed.map(r=>r.agreedAmount));
  renderDonut('agreedComparisonPie',[
