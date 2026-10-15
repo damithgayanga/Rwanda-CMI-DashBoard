@@ -4094,7 +4094,12 @@ function clientOverviewSummary(records){
    if(zeroOrIncluded)zeroBalance++;else otherBalance++;
   }
  }
- return {total:groups.size,bands,stages,zeroBalance,otherBalance};
+ // Report realised team values only: submitted plus agreed, without estimates.
+ bands.find(x=>x.id==='team').amount=stages
+  .filter(x=>x.id==='submitted'||x.id==='agreed')
+  .reduce((total,x)=>total+x.amount,0);
+ const totalAmount=bands.reduce((total,x)=>total+x.amount,0);
+ return {total:groups.size,totalAmount,bands,stages,zeroBalance,otherBalance};
 }
 function renderClientDashboard(){
  renderPreviouslyApprovedCmis();
@@ -4104,7 +4109,7 @@ function renderClientDashboard(){
  const summary=clientOverviewSummary(state.records);
  const teamExpanded=body.dataset.teamExpanded!=='false';
  const balanceExpanded=body.dataset.balanceExpanded!=='false';
- const items=[['Total CMIs',summary.total,null],...summary.bands.map(x=>[x.label,x.value,x.amount,x.color])];
+ const items=[['Total CMIs',summary.total,summary.totalAmount],...summary.bands.map(x=>[x.label,x.value,x.amount,x.color])];
  const fmt=n=>Number(n).toLocaleString('en-US',{maximumFractionDigits:0});
  body.innerHTML=items.map((x,i)=>'<tr'+(i===3?' class="client-overview-team-total"':'')+'><td>'+(i===3?'<button type="button" class="client-overview-toggle" data-toggle="team" aria-expanded="'+teamExpanded+'" aria-label="'+(teamExpanded?'Collapse':'Expand')+' CMIs required to be actioned"><span class="client-overview-chevron" aria-hidden="true">▸</span></button>':'')+(x[3]?'<span class="client-overview-swatch" style="background:'+x[3]+'"></span>':'')+esc(x[0])+'</td><td style="text-align:right">'+fmt(x[1])+'</td><td style="text-align:right">'+(x[2]===null?'':money(x[2]))+'</td></tr>').join('');
  const note=document.getElementById('clientOverviewValidation');
