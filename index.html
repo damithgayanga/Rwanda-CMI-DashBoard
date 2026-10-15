@@ -1604,6 +1604,32 @@
 
 </script>
 
+<style id="internal-dashboard-palette">
+/* Match the Executive Dashboard palette without changing internal layout. */
+#tab-dashboard{--navy:#183b56;--navy2:#244b65;--blue:#55788e;--cyan:#82939e;--teal:#2c726c;--green:#2c726c;--amber:#b39a65;--red:#8a6268;--purple:#748896;--ink:#243e50;--muted:#6c7f8e;--line:#d7e1e7;--soft:#edf3f7}
+#tab-dashboard .card{border-color:#d7e1e7;background-color:#fff}
+#tab-dashboard .section-title h2,#tab-dashboard .card h3,#tab-dashboard .kpi .value,#tab-dashboard .pie-legend-value,#tab-dashboard .donut-center{color:#183b56}
+#tab-dashboard .kpi .label,#tab-dashboard .kpi-sub-label,#tab-dashboard .pie-legend-label{color:#60798b}
+#tab-dashboard .kpi-sub.initial .kpi-sub-value{color:#55788e}
+#tab-dashboard .kpi-sub.provisional .kpi-sub-value{color:#b39a65}
+#tab-dashboard .kpi-sub.unallocated .kpi-sub-value{color:#748896}
+#tab-dashboard .weekly-plan-value.cumulative,#tab-dashboard .dashboard-date-actual{color:#2c726c}
+#tab-dashboard .pie-legend-share{color:#8b9aa6}
+#tab-dashboard .pie-legend-group{color:#60798b;border-color:#e5ecf0}
+#tab-dashboard .assumption-box{background-color:#f5f8fa;border-color:#e5ecf0}
+#tab-dashboard .btn.primary{background:#183b56;border-color:#183b56;color:#fff}
+#tab-dashboard .dashboard-status.measure,#tab-dashboard .dashboard-status.review{background:#edf3f7;color:#3d647c}
+#tab-dashboard .dashboard-status.clearance{background:#f6f2e9;color:#877244}
+#tab-dashboard .dashboard-status.finalreview{background:#eef2f5;color:#5b7385}
+#tab-dashboard .dashboard-status.ready,#tab-dashboard .dashboard-status.submitted{background:#edf5f3;color:#2c726c}
+#tab-dashboard .dashboard-status.hold{background:#f5edef;color:#80545d}
+#tab-dashboard .readiness-status.given{background:#edf5f3;color:#2c726c;border-color:#d8e7e3}
+#tab-dashboard .readiness-status.overdue{background:#f5edef;color:#80545d;border-color:#eadce0}
+#tab-dashboard .readiness-status.pending{background:#f6f2e9;color:#877244;border-color:#e8e0cf}
+#tab-dashboard .data-table th,#tab-dashboard .resource-performance-metric{background-color:#edf3f7;color:#476073}
+#tab-dashboard .resource-performance-row,#tab-dashboard .resource-group-card{border-color:#e2eaf0}
+#tab-dashboard .resource-performance-metric b,#tab-dashboard .resource-performance-name b{color:#183b56}
+</style>
 </head>
 <body>
 <div class="auth-screen" id="authScreen">
@@ -2588,17 +2614,17 @@ function internalStatusSplit(records){
  const normalise=v=>String(v||'').trim().replace(/\s+/g,' ').toLowerCase();
  const agreed=records.filter(r=>normalise(r.mainCategory)==='agreed'),submitted=records.filter(r=>normalise(r.mainCategory)==='submitted'),team=records.filter(r=>normalise(r.mainCategory)==='tbs by cmi team');
  const defs=[
-  {label:'Initial review completed',category:'to be submitted',color:'#bc7410'},
-  {label:'Provisional Sums',category:'provisional sum - to be submitted',color:'#b62d25'},
-  {label:'Included in other CMIs',category:'included in other cmis - to be submitted',color:'#75899b'},
-  {label:'Others',category:'under review - to be submitted',color:'#6b4cb5'}
+  {label:'Initial review completed',category:'to be submitted',color:'#55788e'},
+  {label:'Provisional Sums',category:'provisional sum - to be submitted',color:'#b39a65'},
+  {label:'Included in other CMIs',category:'included in other cmis - to be submitted',color:'#82939e'},
+  {label:'Others',category:'under review - to be submitted',color:'#b7c2ca'}
  ];
  const group='To be Submitted — '+team.length.toLocaleString('en-US');
- const slices=[{label:'Agreed',value:agreed.length,color:'#18835d'},{label:'Submitted - to be Agreed',value:submitted.length,color:'#2563a8'},...defs.map(d=>({group,label:d.label,value:team.filter(r=>normalise(registerCategoryValue(r))===d.category).length,color:d.color}))];
+ const slices=[{label:'Agreed',value:agreed.length,color:'#2c726c'},{label:'Submitted - to be Agreed',value:submitted.length,color:'#183b56'},...defs.map(d=>({group,label:d.label,value:team.filter(r=>normalise(registerCategoryValue(r))===d.category).length,color:d.color}))];
  const unmatched=team.filter(r=>!defs.some(d=>normalise(registerCategoryValue(r))===d.category));
- if(unmatched.length)slices.push({group,label:'Unmapped Register Category',value:unmatched.length,color:'#23adc8'});
+ if(unmatched.length)slices.push({group,label:'Unmapped Register Category',value:unmatched.length,color:'#748896'});
  const unknown=records.filter(r=>!['agreed','submitted','tbs by cmi team'].includes(normalise(r.mainCategory)));
- if(unknown.length)slices.push({label:'Unmapped Submission Classification',value:unknown.length,color:'#a5b2bd'});
+ if(unknown.length)slices.push({label:'Unmapped Submission Classification',value:unknown.length,color:'#d3dbe1'});
  return {slices,teamTotal:team.length,unmatched:unmatched.length+unknown.length};
 }
 function internalSubmissionPrioritySplit(records){
@@ -2606,16 +2632,16 @@ function internalSubmissionPrioritySplit(records){
  const team=records.filter(isCmiTeamSubmission),initial=team.filter(r=>normalise(registerCategoryValue(r))==='to be submitted');
  const priority={High:0,Medium:0,Low:0,Unvalued:0};initial.forEach(r=>priority[calcPriority(r)]++);
  const slices=[
-  {group:'Initial Review Completed — '+initial.length,label:'High',value:priority.High,color:'#b62d25'},
-  {group:'Initial Review Completed — '+initial.length,label:'Medium',value:priority.Medium,color:'#bc7410'},
-  {group:'Initial Review Completed — '+initial.length,label:'Low',value:priority.Low,color:'#18835d'},
-  {group:'Initial Review Completed — '+initial.length,label:'No Initial Estimate',value:priority.Unvalued,color:'#75899b'},
-  {group:'Provisional Sums',label:'Provisional Sum CMIs',value:team.filter(r=>normalise(registerCategoryValue(r))==='provisional sum - to be submitted').length,color:'#23adc8'},
-  {group:'Included in other CMIs',label:'Included in other CMIs',value:team.filter(r=>normalise(registerCategoryValue(r))==='included in other cmis - to be submitted').length,color:'#147e8b'},
-  {group:'Others',label:'Under Review - To be Submitted',value:team.filter(r=>normalise(registerCategoryValue(r))==='under review - to be submitted').length,color:'#6b4cb5'}
+  {group:'Initial Review Completed — '+initial.length,label:'High',value:priority.High,color:'#183b56'},
+  {group:'Initial Review Completed — '+initial.length,label:'Medium',value:priority.Medium,color:'#55788e'},
+  {group:'Initial Review Completed — '+initial.length,label:'Low',value:priority.Low,color:'#9fb6c4'},
+  {group:'Initial Review Completed — '+initial.length,label:'No Initial Estimate',value:priority.Unvalued,color:'#d3dbe1'},
+  {group:'Provisional Sums',label:'Provisional Sum CMIs',value:team.filter(r=>normalise(registerCategoryValue(r))==='provisional sum - to be submitted').length,color:'#b39a65'},
+  {group:'Included in other CMIs',label:'Included in other CMIs',value:team.filter(r=>normalise(registerCategoryValue(r))==='included in other cmis - to be submitted').length,color:'#82939e'},
+  {group:'Others',label:'Under Review - To be Submitted',value:team.filter(r=>normalise(registerCategoryValue(r))==='under review - to be submitted').length,color:'#b7c2ca'}
  ];
  const unmatched=team.length-slices.reduce((n,x)=>n+x.value,0);
- if(unmatched)slices.push({group:'Category Review',label:'Unmapped Register Category',value:unmatched,color:'#a5b2bd'});
+ if(unmatched)slices.push({group:'Category Review',label:'Unmapped Register Category',value:unmatched,color:'#748896'});
  return {slices,total:team.length};
 }
 function internalPortfolioValueSplit(records,meta){
@@ -2631,11 +2657,11 @@ function internalPortfolioValueSplit(records,meta){
  const otherPlaceholder=Number(meta.unallocatedPortfolioAllowance)||0,provisionalPlaceholder=Number(meta.provisionalPortfolioAllowance)||0;
  const group='To be Submitted';
  const slices=[
-  {label:'Agreed — Agreed Amount',value:total(agreed,'agreedAmount'),color:'#18835d'},
-  {label:'Submitted — Submitted Amount',value:total(submitted,'submittedValue'),color:'#2563a8'},
-  {group,label:'Initial review completed — Initial Estimate',value:total(initial,'initialEstimate'),color:'#bc7410'},
-  {group,label:'Provisional Sums — Placeholder + Off-Site Estimate',value:(provisional.length?provisionalPlaceholder:0)+total(provisional,'offsiteEstimate'),color:'#b62d25'},
-  {group,label:'Other CMIs — Placeholder + Off-Site Estimate',value:(other.length?otherPlaceholder:0)+total(other,'offsiteEstimate'),color:'#6b4cb5'}
+  {label:'Agreed — Agreed Amount',value:total(agreed,'agreedAmount'),color:'#2c726c'},
+  {label:'Submitted — Submitted Amount',value:total(submitted,'submittedValue'),color:'#183b56'},
+  {group,label:'Initial review completed — Initial Estimate',value:total(initial,'initialEstimate'),color:'#55788e'},
+  {group,label:'Provisional Sums — Placeholder + Off-Site Estimate',value:(provisional.length?provisionalPlaceholder:0)+total(provisional,'offsiteEstimate'),color:'#b39a65'},
+  {group,label:'Other CMIs — Placeholder + Off-Site Estimate',value:(other.length?otherPlaceholder:0)+total(other,'offsiteEstimate'),color:'#b7c2ca'}
  ];
  return {slices,netTotal:slices.reduce((n,x)=>n+x.value,0),initialCount:initial.length,initialMissing:initial.filter(r=>!known(r.initialEstimate)).length,provisionalCount:provisional.length,provisionalOffsite:total(provisional,'offsiteEstimate'),otherCount:other.length,otherOffsite:total(other,'offsiteEstimate'),includedCount:included.length,otherPlaceholder,provisionalPlaceholder};
 }
@@ -2648,8 +2674,8 @@ function renderBars(){
  const known=v=>v!==null&&v!==undefined&&v!==''&&Number.isFinite(Number(v));
  const agreedSubmitted=sum(agreed.map(r=>r.submittedValue)),agreedAmount=sum(agreed.map(r=>r.agreedAmount));
  renderDonut('agreedComparisonPie',[
-  {label:'Submitted Value',value:agreedSubmitted,color:'#2563a8'},
-  {label:'Agreed Amount',value:agreedAmount,color:'#18835d'}
+  {label:'Submitted Value',value:agreedSubmitted,color:'#183b56'},
+  {label:'Agreed Amount',value:agreedAmount,color:'#2c726c'}
  ],{valueType:'money',useMagnitude:true,centerValue:String(agreed.length),centerLabel:'Agreed work items'});
  const portfolio=internalPortfolioValueSplit(all,state.meta);
  renderDonut('portfolioValuePie',portfolio.slices,{valueType:'money',useMagnitude:true,centerValue:portfolioMoney(portfolio.netTotal),centerLabel:'Net portfolio total'});
