@@ -549,6 +549,13 @@
 #tab-clientdashboard #clientOverviewRows .client-overview-team-total td{
   font-weight:400!important;
 }
+
+/* Main breakdown bullets share the same x-coordinate. */
+#tab-clientdashboard #clientOverviewRows .client-overview-team-total td:first-child{position:relative}
+#tab-clientdashboard #clientOverviewRows .client-overview-team-total .client-overview-toggle{
+  position:absolute;left:4px;top:50%;transform:translateY(-50%);margin:0;padding:3px;
+}
+#tab-clientdashboard #clientOverviewRows .client-overview-team-total .client-overview-swatch{margin-left:0}
 </style>
 
 <!-- Supabase -->
@@ -1816,11 +1823,11 @@
    </div>
   </article>
   <article class="exec-panel">
-   <header class="exec-panel-heading"><span class="exec-section-number" aria-hidden="true">03</span><h2>CMIs Submitted (Not Agreed) before CMI Team's Mobilisation</h2></header>
+   <header class="exec-panel-heading"><span class="exec-section-number" aria-hidden="true">03</span><h2>CMIs Submitted (Yet to be Agreed) before CMI Team's Mobilisation</h2></header>
    <div class="card">
     <div class="client-overview-layout">
      <div id="clientSubmittedTable" class="client-approved-table"></div>
-     <div class="client-overview-chart"><h3>CMIs Submitted (Not Agreed) before CMI Team's Mobilisation — Count Breakdown</h3><div id="clientSubmittedPie"></div></div>
+     <div class="client-overview-chart"><h3>CMIs Submitted (Yet to be Agreed) before CMI Team's Mobilisation — Count Breakdown</h3><div id="clientSubmittedPie"></div></div>
     </div>
     
    </div>
@@ -3924,7 +3931,7 @@ function renderPreviouslySubmittedCmis(){
  const group=(id,label)=>{const bands=summary.bands.filter(x=>x.id.startsWith(id+'-'));return '<details class="client-approved-group" data-group="'+id+'"'+(savedOpen.includes(id)?' open':'')+'><summary><span>'+esc(label)+'</span><span>'+fmt(bands.reduce((n,x)=>n+x.value,0))+'</span><span>'+money(bands.reduce((n,x)=>n+x.amount,0))+'</span></summary>'+bands.map(x=>row(x.tableLabel,x.value,x.amount,x.color,'client-approved-detail')).join('')+'</details>'};
  const zero=summary.bands.find(x=>x.id==='zero'),missing=summary.bands.find(x=>x.id==='missing');
  table.innerHTML='<div class="client-approved-heading"><span>Description</span><span>Count</span><span>Value (USD)</span></div>'+row('Submitted CMIs (Total)',summary.total,summary.amount,null,'client-approved-total')+group('positive','Positive Value CMIs')+group('negative','Negative Value CMIs')+row(zero.tableLabel,zero.value,zero.amount,zero.color)+(missing.value?row(missing.tableLabel,missing.value,missing.amount,missing.color):'');
- renderDonut('clientSubmittedPie',clientValueGroupSlices(summary.bands),{centerValue:fmt(summary.total),centerLabel:'Total Submitted CMIs (Not Agreed)'});
+ renderDonut('clientSubmittedPie',clientValueGroupSlices(summary.bands),{centerValue:fmt(summary.total),centerLabel:'Total Submitted CMIs (Yet to be Agreed)'});
 }
 
 
@@ -3969,7 +3976,7 @@ function clientOverviewSummary(records){
  }
  const bands=[
   {id:'agreed',label:'CMIs - Agreed with DGJ Before Mobilising CMI Team',value:0,color:'#65ab80',amount:0},
-  {id:'submitted',label:'CMIs - Submitted to DGJ (Not Agreed) Before CMI Team',value:0,color:'#008f8c',amount:0},
+  {id:'submitted',label:'CMIs - Submitted to DGJ (Yet to be Agreed) Before CMI Team',value:0,color:'#008f8c',amount:0},
   {id:'team',label:'CMIs - Required to be Actioned by CMI Team',value:0,color:'#315fa8',amount:null}
  ];
  const stages=[
