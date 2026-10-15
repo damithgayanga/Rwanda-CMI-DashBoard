@@ -3723,7 +3723,7 @@ function clientPreviouslyApprovedSummary(records){
  ];
  const groups=new Map();
  for(const r of records||[]){
-  if(r.mainCategory!=='Agreed'||cmiTeamScopeRecord(r))continue;
+  if(String(r.mainCategory||'').trim()!=='Agreed'||MAIN_CATEGORY_BY_RECORD_ID[r.id]!=='Agreed')continue;
   const key=normCmi(r.cmiKey||r.cmiNo||'');if(!key)continue;
   if(!groups.has(key))groups.set(key,[]);groups.get(key).push(r);
  }
@@ -3843,7 +3843,7 @@ function clientOverviewSummary(records){
   const teamRows=rows.filter(cmiTeamScopeRecord);
   const id=teamRows.length?'team':rows.some(r=>r.mainCategory==='Agreed')?'agreed':rows.some(r=>r.mainCategory==='Submitted')?'submitted':'team';
   for(const [category,bandId,field] of [['Agreed','agreed','agreedAmount'],['Submitted','submitted','submittedValue']]){
-   const matching=rows.filter(r=>r.mainCategory===category&&!cmiTeamScopeRecord(r));
+   const matching=rows.filter(r=>String(r.mainCategory||'').trim()===category&&(category!=='Agreed'||MAIN_CATEGORY_BY_RECORD_ID[r.id]==='Agreed'));
    if(!matching.length)continue;
    const target=bands.find(x=>x.id===bandId);
    target.value++;
