@@ -307,6 +307,22 @@
 @media(min-width:761px) and (max-width:1100px){
 #tab-clientdashboard #clientProcessStages{grid-template-columns:repeat(3,minmax(0,1fr))}
 }
+
+/* Executive value donut legends: a single vertical list. */
+#tab-clientdashboard #clientApprovedPie .pie-legend,
+#tab-clientdashboard #clientSubmittedPie .pie-legend{
+  display:grid;
+  grid-template-columns:minmax(0,1fr);
+  gap:0;
+  width:100%;
+  align-content:center;
+}
+#tab-clientdashboard #clientApprovedPie .pie-legend-row,
+#tab-clientdashboard #clientSubmittedPie .pie-legend-row{
+  width:100%;
+  padding:12px 0;
+  border-bottom:1px solid #e8eef3;
+}
 </style>
 <style id="executive-presentation-v2">
 /* Executive presentation: scoped to the management report only. */
