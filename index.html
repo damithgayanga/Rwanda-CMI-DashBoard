@@ -274,6 +274,19 @@
 @media(max-width:1250px){#tab-clientdashboard .client-overview-layout{grid-template-columns:minmax(0,1.2fr) minmax(330px,1fr);gap:22px}#tab-clientdashboard .pie-layout{grid-template-columns:1fr}#tab-clientdashboard .client-overview-chart{padding-left:22px}}
 @media(max-width:900px){#tab-clientdashboard .client-overview-layout{grid-template-columns:1fr}#tab-clientdashboard .client-overview-chart{border-left:0;border-top:1px solid #e5ebf0;padding:22px 0 0}#tab-clientdashboard .pie-layout{grid-template-columns:190px minmax(0,1fr)}}
 @media(max-width:540px){#tab-clientdashboard .card{padding:16px}#tab-clientdashboard .pie-layout{grid-template-columns:1fr}#tab-clientdashboard .client-approved-row,#tab-clientdashboard .client-approved-group summary{font-size:11px}.client-stage-caption{display:none}.client-process-table td{font-size:12px}.client-process-table td:last-child{font-size:22px;width:70px}}
+
+#tab-clientdashboard #clientOverviewRows tr{border-bottom:1px solid #e1e9ef}
+#tab-clientdashboard #clientOverviewRows .client-overview-team-total{background:#edf3f7;font-weight:650}
+#tab-clientdashboard #clientOverviewRows .client-overview-team-total td{font-weight:650;color:#183b56}
+.client-team-breakdown{margin-top:26px;padding-top:22px;border-top:1px solid #dce7ee}
+.client-team-breakdown>h3{margin:0 0 20px;color:#183b56;font-size:15px}
+.client-team-table{width:100%;border-collapse:collapse;font-size:12px}
+.client-team-table th{text-align:left;background:#f3f7fa;font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:#658096;padding:12px 14px}
+.client-team-table td{padding:13px 14px;border-bottom:1px solid #e1e9ef;color:#41596b;line-height:1.5}
+.client-team-table td:last-child,.client-team-table th:last-child{text-align:right;white-space:nowrap}
+.client-team-table .client-team-subrow td:first-child{padding-left:40px;font-size:11px}
+.client-team-table .client-team-balance td,.client-team-table .client-team-total td{font-weight:650;color:#183b56;background:#f3f7fa}
+.client-team-table .client-team-total td{border-top:2px solid #dce7ee}
 </style>
 <style id="executive-presentation-v2">
 /* Executive presentation: scoped to the management report only. */
@@ -718,6 +731,8 @@
         registerCategoryUpdatedAt:r.registerCategoryUpdatedAt||'',
         mainCategory:r.mainCategory||'',
         mainCategoryUpdatedAt:r.mainCategoryUpdatedAt||'',
+        wasCmiTeam:cmiTeamScopeRecord(r),
+        ...(r.masterValuesUpdatedAt?{initialEstimate:r.initialEstimate,submittedValue:r.submittedValue,agreedAmount:r.agreedAmount,agreedDate:r.agreedDate,masterValuesUpdatedAt:r.masterValuesUpdatedAt}:{}),
         ...(r.masterInitialEstimateVersion?{initialEstimate:r.initialEstimate,masterInitialEstimateVersion:r.masterInitialEstimateVersion}:{}),
         isReopened:!!r.isReopened,
         reopenedAt:r.reopenedAt||'',
@@ -794,6 +809,11 @@
           ||state.records.find(x=>String(x.cmiKey||'')===String(rr.cmiKey||''));
         if(!local)return;
         if(!Object.prototype.hasOwnProperty.call(rr,'mainCategory')&&rr.registerStatusUpdated){rr={...rr,mainCategory:rr.registerStatusUpdated,mainCategoryUpdatedAt:rr.registerStatusUpdatedAt||''};}
+        if(rr.wasCmiTeam||cmiTeamScopeRecord(local))local.wasCmiTeam=true;
+        if(rr.masterValuesUpdatedAt&&String(rr.masterValuesUpdatedAt)>String(local.masterValuesUpdatedAt||'')){
+          for(const field of ['initialEstimate','submittedValue','agreedAmount','agreedDate'])if(Object.prototype.hasOwnProperty.call(rr,field))local[field]=rr[field];
+          local.masterValuesUpdatedAt=rr.masterValuesUpdatedAt;
+        }
         if(Object.prototype.hasOwnProperty.call(rr,'mainCategory')&&String(rr.mainCategoryUpdatedAt||'')>=String(local.mainCategoryUpdatedAt||'')){
           local.mainCategory=rr.mainCategory==='CMI Team'?'TBS by CMI Team':(rr.mainCategory||'');
           local.mainCategoryUpdatedAt=rr.mainCategoryUpdatedAt||'';
@@ -1658,6 +1678,14 @@
     <div class="client-overview-chart"><h3>Total CMIs — Submission Breakdown</h3><div id="clientOverviewPie"></div></div>
    </div>
    <div id="clientOverviewValidation" class="badge-note" style="margin-top:16px"></div>
+   <div class="client-team-breakdown">
+    <h3>CMIs - Required to be Actioned by CMI Team</h3>
+    <div class="client-overview-layout">
+     <div class="client-overview-table"><table class="client-team-table"><thead><tr><th>Description</th><th>CMI Count</th></tr></thead><tbody id="clientTeamBreakdownRows"></tbody></table></div>
+     <div class="client-overview-chart"><h3>CMI Team — Status Breakdown</h3><div id="clientTeamBreakdownPie"></div></div>
+    </div>
+    <div class="badge-note">(a) + (b) + (c) + (d) = CMI Team scope. Zero value / included CMIs + other CMIs = balance. Each CMI is counted once; agreed CMIs take precedence over submitted CMIs, followed by CMIs in progress.</div>
+   </div>
   </div>
  </article>
  <div class="exec-commercial-grid">
@@ -2190,7 +2218,7 @@ function ensureShape(s){
   s.meta.highLevelPlan.forEach(a=>{if(!Array.isArray(a.resources))a.resources=[];if(!a.status)a.status='To be Started';if(a.progressPct===undefined)a.progressPct=0;if(a.finishDate===undefined)a.finishDate='';if(a.actualStartDate===undefined)a.actualStartDate='';if(a.actualFinishDate===undefined)a.actualFinishDate=a.finishDate||'';if(a.notes===undefined)a.notes='';if(!a.activityId){const d=s.meta.activityList.find(x=>String(x.name||'').trim().toLowerCase()===String(a.activity||'').trim().toLowerCase());if(d)a.activityId=d.id}if(a.activityId){const d=s.meta.activityList.find(x=>x.id===a.activityId);if(d)a.activity=d.name}if(!a.groupId){const g=s.meta.deliveryLevel1.find(x=>x.name===a.group)||s.meta.deliveryLevel1.find(x=>x.countSource===a.countSource);if(g)a.groupId=g.id}});
  }
  s.meta.highLevelPlan.forEach(a=>{if(a.groupId==='wbs-unallocated'||String(a.id||'').startsWith('unallocated-')){a.groupId='wbs-unallocated';a.group='Other CMIs (No Initial Estimate and Unallocated)';a.countSource='Unvalued';}if(a.groupId==='wbs-provisional'||String(a.id||'').startsWith('provisional-')){a.groupId='wbs-provisional';a.group='Provisional Sum CMIs';a.countSource='Investigated';}});
- s.records.forEach(r=>{if(r.registerCategory===undefined)r.registerCategory=REGISTER_CATEGORY_BY_RECORD_ID[r.id]||r.status||'';if(r.mainCategory===undefined)r.mainCategory=r.registerStatusUpdated||MAIN_CATEGORY_BY_RECORD_ID[r.id]||'';if(r.mainCategory==='CMI Team')r.mainCategory='TBS by CMI Team';if(r.id==='row-300'&&r.cmiKey==='00271'&&r.masterInitialEstimateVersion!=='2026-10-13'){r.initialEstimate=20000;r.masterInitialEstimateVersion='2026-10-13';}if(r.status===LEGACY_UNALLOCATED_STATUS)r.status='To be Submitted and Unallocated';if(r.status==='To be'+' Submitted')r.status='To be Submitted - Initial Review compelted';if(r.agreedAmount===undefined){const src=SOURCE.records.find(x=>x.id===r.id);r.agreedAmount=src&&src.agreedAmount!==undefined?src.agreedAmount:null;}if(r.status==='To be'+' Investigated')r.status='Provisional Sum CMI';if(r.siteResource===undefined)r.siteResource='';if(r.offsiteResource===undefined)r.offsiteResource='';if(r.inDeliveryPlan===undefined)r.inDeliveryPlan=false;if(!r.deliveryStatus)r.deliveryStatus='To be Started';if(r.deliveryValue===undefined)r.deliveryValue=null;if(r.startDate===undefined)r.startDate='';if(r.targetDate===undefined)r.targetDate='';if(r.finishDate===undefined)r.finishDate='';if(r.progressPct===undefined)r.progressPct=0;if(r.progressNotes===undefined)r.progressNotes='';if(r.isReopened===undefined)r.isReopened=false;if(r.reopenedAt===undefined)r.reopenedAt='';if(r.reopenReason===undefined)r.reopenReason='';if(r.reopenRestartActivityId===undefined)r.reopenRestartActivityId='';if(!Array.isArray(r.reopenHistory))r.reopenHistory=[];if(!Array.isArray(r.cmiActivities))r.cmiActivities=[];r.cmiActivities.forEach((a,i)=>{if(!a.id)a.id='cma-'+r.id+'-'+i;if(a.activityId===undefined)a.activityId='';if(a.activityName===undefined)a.activityName='';if(a.siteResource===undefined)a.siteResource='';if(a.offsiteResource===undefined)a.offsiteResource='';if(a.startDate===undefined)a.startDate='';if(a.targetDate===undefined)a.targetDate='';if(a.finishDate===undefined)a.finishDate='';if(a.actualStartDate===undefined)a.actualStartDate='';if(a.actualFinishDate===undefined)a.actualFinishDate=a.finishDate||'';if(!a.status)a.status='To be Started';if(a.progressPct===undefined)a.progressPct=0;if(!a.resourceProgress||typeof a.resourceProgress!=='object')a.resourceProgress={};if(a.notes===undefined)a.notes='';const d=s.meta.activityList.find(x=>x.id===a.activityId);if(d)a.activityName=d.name;});});
+ s.records.forEach(r=>{if(r.registerCategory===undefined)r.registerCategory=REGISTER_CATEGORY_BY_RECORD_ID[r.id]||r.status||'';if(r.mainCategory===undefined)r.mainCategory=r.registerStatusUpdated||MAIN_CATEGORY_BY_RECORD_ID[r.id]||'';if(r.mainCategory==='CMI Team')r.mainCategory='TBS by CMI Team';if(cmiTeamScopeRecord(r))r.wasCmiTeam=true;if(r.id==='row-300'&&r.cmiKey==='00271'&&r.masterInitialEstimateVersion!=='2026-10-13'){r.initialEstimate=20000;r.masterInitialEstimateVersion='2026-10-13';}if(r.status===LEGACY_UNALLOCATED_STATUS)r.status='To be Submitted and Unallocated';if(r.status==='To be'+' Submitted')r.status='To be Submitted - Initial Review compelted';if(r.agreedAmount===undefined){const src=SOURCE.records.find(x=>x.id===r.id);r.agreedAmount=src&&src.agreedAmount!==undefined?src.agreedAmount:null;}if(r.status==='To be'+' Investigated')r.status='Provisional Sum CMI';if(r.siteResource===undefined)r.siteResource='';if(r.offsiteResource===undefined)r.offsiteResource='';if(r.inDeliveryPlan===undefined)r.inDeliveryPlan=false;if(!r.deliveryStatus)r.deliveryStatus='To be Started';if(r.deliveryValue===undefined)r.deliveryValue=null;if(r.startDate===undefined)r.startDate='';if(r.targetDate===undefined)r.targetDate='';if(r.finishDate===undefined)r.finishDate='';if(r.progressPct===undefined)r.progressPct=0;if(r.progressNotes===undefined)r.progressNotes='';if(r.isReopened===undefined)r.isReopened=false;if(r.reopenedAt===undefined)r.reopenedAt='';if(r.reopenReason===undefined)r.reopenReason='';if(r.reopenRestartActivityId===undefined)r.reopenRestartActivityId='';if(!Array.isArray(r.reopenHistory))r.reopenHistory=[];if(!Array.isArray(r.cmiActivities))r.cmiActivities=[];r.cmiActivities.forEach((a,i)=>{if(!a.id)a.id='cma-'+r.id+'-'+i;if(a.activityId===undefined)a.activityId='';if(a.activityName===undefined)a.activityName='';if(a.siteResource===undefined)a.siteResource='';if(a.offsiteResource===undefined)a.offsiteResource='';if(a.startDate===undefined)a.startDate='';if(a.targetDate===undefined)a.targetDate='';if(a.finishDate===undefined)a.finishDate='';if(a.actualStartDate===undefined)a.actualStartDate='';if(a.actualFinishDate===undefined)a.actualFinishDate=a.finishDate||'';if(!a.status)a.status='To be Started';if(a.progressPct===undefined)a.progressPct=0;if(!a.resourceProgress||typeof a.resourceProgress!=='object')a.resourceProgress={};if(a.notes===undefined)a.notes='';const d=s.meta.activityList.find(x=>x.id===a.activityId);if(d)a.activityName=d.name;});});
  return s;
 }
 function mergeMasterRegisterAdditions(s){
@@ -2339,7 +2367,7 @@ function derivedDeliveryStatus(r){
  if(!r)return 'To be Started';
 
  // Submission Classification defines team scope; activity progress defines delivery stage.
- if(!isCmiTeamSubmission(r))return ['Agreed','Submitted'].includes(r.mainCategory)?'Submitted':'Not Applicable';
+ if(!isCmiTeamSubmission(r))return ['Agreed','Submitted','Agreed - CMI Team'].includes(r.mainCategory)?'Submitted':'Not Applicable';
 
  const measure=findActivityByIdOrName(r,'act-measure','measurement works');
  const clearance=findActivityByIdOrName(r,'act-clearance','technical and commercial clearance');
@@ -2586,7 +2614,7 @@ function renderDonut(id,slices,opt={}){
 }
 function internalStatusSplit(records){
  const normalise=v=>String(v||'').trim().replace(/\s+/g,' ').toLowerCase();
- const agreed=records.filter(r=>normalise(r.mainCategory)==='agreed'),submitted=records.filter(r=>normalise(r.mainCategory)==='submitted'),team=records.filter(r=>normalise(r.mainCategory)==='tbs by cmi team');
+ const agreed=records.filter(r=>['agreed','agreed - cmi team'].includes(normalise(r.mainCategory))),submitted=records.filter(r=>normalise(r.mainCategory)==='submitted'),team=records.filter(r=>normalise(r.mainCategory)==='tbs by cmi team');
  const defs=[
   {label:'Initial review completed',category:'to be submitted',color:'#bc7410'},
   {label:'Provisional Sums',category:'provisional sum - to be submitted',color:'#b62d25'},
@@ -2597,7 +2625,7 @@ function internalStatusSplit(records){
  const slices=[{label:'Agreed',value:agreed.length,color:'#18835d'},{label:'Submitted - to be Agreed',value:submitted.length,color:'#2563a8'},...defs.map(d=>({group,label:d.label,value:team.filter(r=>normalise(registerCategoryValue(r))===d.category).length,color:d.color}))];
  const unmatched=team.filter(r=>!defs.some(d=>normalise(registerCategoryValue(r))===d.category));
  if(unmatched.length)slices.push({group,label:'Unmapped Register Category',value:unmatched.length,color:'#23adc8'});
- const unknown=records.filter(r=>!['agreed','submitted','tbs by cmi team'].includes(normalise(r.mainCategory)));
+ const unknown=records.filter(r=>!['agreed','agreed - cmi team','submitted','tbs by cmi team'].includes(normalise(r.mainCategory)));
  if(unknown.length)slices.push({label:'Unmapped Submission Classification',value:unknown.length,color:'#a5b2bd'});
  return {slices,teamTotal:team.length,unmatched:unmatched.length+unknown.length};
 }
@@ -2622,7 +2650,7 @@ function internalPortfolioValueSplit(records,meta){
  const normalise=v=>String(v||'').trim().replace(/\s+/g,' ').toLowerCase();
  const known=v=>v!==null&&v!==undefined&&v!==''&&Number.isFinite(Number(v));
  const total=(rows,key)=>rows.reduce((n,r)=>n+(known(r[key])?Number(r[key]):0),0);
- const agreed=records.filter(r=>normalise(r.mainCategory)==='agreed'),submitted=records.filter(r=>normalise(r.mainCategory)==='submitted'),team=records.filter(isCmiTeamSubmission);
+ const agreed=records.filter(r=>['agreed','agreed - cmi team'].includes(normalise(r.mainCategory))),submitted=records.filter(r=>normalise(r.mainCategory)==='submitted'),team=records.filter(isCmiTeamSubmission);
  const category=(r,name)=>normalise(registerCategoryValue(r))===name;
  const initial=team.filter(r=>category(r,'to be submitted'));
  const provisional=team.filter(r=>category(r,'provisional sum - to be submitted'));
@@ -2640,7 +2668,7 @@ function internalPortfolioValueSplit(records,meta){
  return {slices,netTotal:slices.reduce((n,x)=>n+x.value,0),initialCount:initial.length,initialMissing:initial.filter(r=>!known(r.initialEstimate)).length,provisionalCount:provisional.length,provisionalOffsite:total(provisional,'offsiteEstimate'),otherCount:other.length,otherOffsite:total(other,'offsiteEstimate'),includedCount:included.length,otherPlaceholder,provisionalPlaceholder};
 }
 function renderBars(){
- const all=state.records,team=all.filter(isCmiTeamSubmission),agreed=all.filter(r=>r.mainCategory==='Agreed'),submitted=all.filter(r=>r.mainCategory==='Submitted');
+ const all=state.records,team=all.filter(isCmiTeamSubmission),agreed=all.filter(r=>['Agreed','Agreed - CMI Team'].includes(r.mainCategory)),submitted=all.filter(r=>r.mainCategory==='Submitted');
  const statusSplit=internalStatusSplit(all);
  renderDonut('statusPie',statusSplit.slices,{centerValue:String(all.length),centerLabel:'CMI work items'});
  const prioritySplit=internalSubmissionPrioritySplit(all);
@@ -2706,7 +2734,7 @@ function populateFilters(){
   el.value=values.includes(previous)?previous:'';
  };
  {const el=document.getElementById('fStatus');if(el){const previous=el.value;el.replaceChildren(new Option('All register categories',''));registerCategories.forEach(v=>el.add(new Option(v,v)));el.value=registerCategories.includes(previous)?previous:'';}}
- const updatedStatuses=uniq(state.records.map(r=>String(r.mainCategory||'').trim()).filter(Boolean).concat(['Agreed','Submitted','TBS by CMI Team']));
+ const updatedStatuses=uniq(state.records.map(r=>String(r.mainCategory||'').trim()).filter(Boolean).concat(['Agreed','Submitted','TBS by CMI Team','Agreed - CMI Team']));
  for(const id of ['fMainCategory','eMainCategory']){
   const el=document.getElementById(id);if(!el)continue;const previous=el.value;
   el.replaceChildren(new Option(id==='fMainCategory'?'All submission classifications':'Not set',''));
@@ -3697,7 +3725,7 @@ function clientPreviouslyApprovedSummary(records){
  ];
  const groups=new Map();
  for(const r of records||[]){
-  if(r.mainCategory!=='Agreed')continue;
+  if(r.mainCategory!=='Agreed'||cmiTeamScopeRecord(r))continue;
   const key=normCmi(r.cmiKey||r.cmiNo||'');if(!key)continue;
   if(!groups.has(key))groups.set(key,[]);groups.get(key).push(r);
  }
@@ -3737,7 +3765,7 @@ function clientPreviouslySubmittedSummary(records){
  ];
  const groups=new Map();
  for(const r of records||[]){
-  if(r.mainCategory!=='Submitted')continue;
+  if(r.mainCategory!=='Submitted'||cmiTeamScopeRecord(r))continue;
   const key=normCmi(r.cmiKey||r.cmiNo||'');if(!key)continue;
   if(!groups.has(key))groups.set(key,[]);groups.get(key).push(r);
  }
@@ -3785,6 +3813,15 @@ function renderClientProcessStages(){
  el.innerHTML=labels.map((label,i)=>'<tr><td><span class="client-stage-number">'+String(i+1).padStart(2,'0')+'</span><span>'+esc(label)+'</span></td><td>'+Number(counts[i]).toLocaleString('en-US')+'</td></tr>').join('');
 }
 
+function cmiTeamScopeRecord(r){
+ if(!r)return false;
+ const category=String(r.mainCategory||'').trim();
+ return ['TBS by CMI Team','Agreed - CMI Team'].includes(category)||r.wasCmiTeam===true||MAIN_CATEGORY_BY_RECORD_ID[r.id]==='TBS by CMI Team'||(SOURCE.records||[]).some(x=>x.id===r.id&&x.mainCategory==='TBS by CMI Team');
+}
+function cmiTeamAgreedRecord(r){
+ const known=r.agreedAmount!==null&&r.agreedAmount!==undefined&&r.agreedAmount!==''&&Number.isFinite(Number(r.agreedAmount));
+ return r.mainCategory==='Agreed - CMI Team'||(cmiTeamScopeRecord(r)&&known&&(r.mainCategory==='Agreed'||String(registerCategoryValue(r)).trim()==='Agreed'||r.status==='Agreed'));
+}
 function clientOverviewSummary(records){
  const groups=new Map();
  for(const r of records||[]){
@@ -3792,23 +3829,41 @@ function clientOverviewSummary(records){
   if(!groups.has(key))groups.set(key,[]);groups.get(key).push(r);
  }
  const bands=[
-  {id:'agreed',label:"CMIs Agreed with DGJ before CMI Team's Mobilisation",value:0,color:'#65ab80',amount:0},
-  {id:'submitted',label:"CMIs Submitted to DGJ (Not Agreed) before CMI Team's Mobilisation",value:0,color:'#008f8c',amount:0},
-  {id:'team',label:'CMIs to Be Initiated by CMI Team (Required for Submission)',value:0,color:'#315fa8',amount:null}
+  {id:'agreed',label:'CMIs - Agreed with DGJ Before Mobilising CMI Team',value:0,color:'#65ab80',amount:0},
+  {id:'submitted',label:'CMIs - Submitted to DGJ (Not Approved) Before CMI Team',value:0,color:'#008f8c',amount:0},
+  {id:'team',label:'CMIs - Required to be Actioned by CMI Team',value:0,color:'#315fa8',amount:null}
  ];
- let mixed=0;
+ const stages=[
+  {id:'progress',label:'CMIs in Progress',value:0,color:'#d6a23e'},
+  {id:'submitted',label:'CMIs Submitted to DGJ',value:0,color:'#008f8c'},
+  {id:'agreed',label:'CMIs Agreed with DGJ',value:0,color:'#65ab80'},
+  {id:'balance',label:'Balance CMIs to be Actioned',value:0,color:'#315fa8'}
+ ];
+ let zeroBalance=0,otherBalance=0;
  for(const rows of groups.values()){
-  const categories=new Set(rows.map(r=>String(r.mainCategory||'').trim()));
-  if(categories.size>1)mixed++;
-  // Outstanding team scopes take precedence so a multi-scope CMI is counted once.
-  const id=categories.has('TBS by CMI Team')?'team':categories.has('Agreed')?'agreed':categories.has('Submitted')?'submitted':'team';
+  const teamRows=rows.filter(cmiTeamScopeRecord);
+  const id=teamRows.length?'team':rows.some(r=>r.mainCategory==='Agreed')?'agreed':rows.some(r=>r.mainCategory==='Submitted')?'submitted':'team';
   const band=bands.find(x=>x.id===id);band.value++;
   if(id!=='team'){
    const category=id==='agreed'?'Agreed':'Submitted',field=id==='agreed'?'agreedAmount':'submittedValue';
-   band.amount+=rows.filter(r=>String(r.mainCategory||'').trim()===category).reduce((n,r)=>n+(Number(r[field])||0),0);
+   band.amount+=rows.filter(r=>r.mainCategory===category).reduce((n,r)=>n+(Number(r[field])||0),0);
+   continue;
+  }
+  const scoped=teamRows.length?teamRows:rows;
+  const submitted=scoped.some(r=>{const a=findActivityByIdOrName(r,'act-submit-dgj','submission to dgj');return activityProgressAt100(a)&&!!a.actualFinishDate;});
+  const started=scoped.some(r=>{const a=findActivityByIdOrName(r,'act-measure','measurement works');return !!(a&&(a.actualStartDate||a.actualFinishDate||Number(a.progressPct)>0));});
+  const stage=scoped.some(cmiTeamAgreedRecord)?'agreed':submitted?'submitted':started?'progress':'balance';
+  stages.find(x=>x.id===stage).value++;
+  if(stage==='balance'){
+   const zeroOrIncluded=scoped.every(r=>{
+    const initial=r.initialEstimate;
+    const zero=initial!==null&&initial!==undefined&&initial!==''&&Number.isFinite(Number(initial))&&Number(initial)===0;
+    return zero||/included in other cmis|covered.*(?:other )?cmis/i.test(String(registerCategoryValue(r)||'')+' '+String(r.status||''));
+   });
+   if(zeroOrIncluded)zeroBalance++;else otherBalance++;
   }
  }
- return {total:groups.size,bands,mixed};
+ return {total:groups.size,bands,stages,zeroBalance,otherBalance};
 }
 function renderClientDashboard(){
  renderPreviouslyApprovedCmis();
@@ -3818,10 +3873,15 @@ function renderClientDashboard(){
  const summary=clientOverviewSummary(state.records);
  const items=[['Total CMIs',summary.total,null],...summary.bands.map(x=>[x.label,x.value,x.amount,x.color])];
  const fmt=n=>Number(n).toLocaleString('en-US',{maximumFractionDigits:0});
- body.innerHTML=items.map(x=>'<tr style="border-bottom:1px solid #e1e9ef"><td style="padding:11px 10px">'+(x[3]?'<span class="client-overview-swatch" style="background:'+x[3]+'"></span>':'')+esc(x[0])+'</td><td style="text-align:right;padding:11px 10px">'+fmt(x[1])+'</td><td style="text-align:right;padding:11px 10px">'+(x[2]===null?'':money(x[2]))+'</td></tr>').join('');
+ body.innerHTML=items.map((x,i)=>'<tr'+(i===3?' class="client-overview-team-total"':'')+'><td>'+(x[3]?'<span class="client-overview-swatch" style="background:'+x[3]+'"></span>':'')+esc(x[0])+'</td><td style="text-align:right">'+fmt(x[1])+'</td><td style="text-align:right">'+(x[2]===null?'':money(x[2]))+'</td></tr>').join('');
  const note=document.getElementById('clientOverviewValidation');
- if(note)note.textContent="Each CMI number is counted once. The three groups add up to Total CMIs. CMIs required for submission by the CMI Team remain in the team group regardless of current progress. Where a CMI has scopes in different groups, outstanding team scopes take precedence, followed by agreed scopes and then submitted scopes.";
- renderDonut('clientOverviewPie',summary.bands,{centerValue:fmt(summary.total),centerLabel:'Total CMIs',note:'The three colour-coded table rows form this chart. Each CMI number appears in one group only.'});
+ if(note)note.textContent='Each CMI number is counted once. The three groups add up to Total CMIs.';
+ renderDonut('clientOverviewPie',summary.bands,{centerValue:fmt(summary.total),centerLabel:'Total CMIs'});
+ const detail=document.getElementById('clientTeamBreakdownRows');
+ if(detail){
+  detail.innerHTML=summary.stages.map((x,i)=>'<tr'+(x.id==='balance'?' class="client-team-balance"':'')+'><td><span class="client-overview-swatch" style="background:'+x.color+'"></span>('+String.fromCharCode(97+i)+') '+esc(x.label)+'</td><td>'+fmt(x.value)+'</td></tr>'+(x.id==='balance'?'<tr class="client-team-subrow"><td>Zero Value CMIs / CMIs Included in Other CMIs</td><td>'+fmt(summary.zeroBalance)+'</td></tr><tr class="client-team-subrow"><td>Other CMIs</td><td>'+fmt(summary.otherBalance)+'</td></tr>':'')).join('')+'<tr class="client-team-total"><td>Total CMIs - Required to be Actioned by CMI Team</td><td>'+fmt(summary.bands.find(x=>x.id==='team').value)+'</td></tr>';
+ }
+ renderDonut('clientTeamBreakdownPie',summary.stages,{centerValue:fmt(summary.bands.find(x=>x.id==='team').value),centerLabel:'CMI Team Scope'});
 }
 function renderDashboard(){renderKpis();renderBars();renderDeliverySnapshot();renderResourcePerformance();renderDashboardOperationalTables()}
 function renderActiveTab(){const active=document.querySelector('.tabbtn.active')?.dataset.tab||'dashboard';if(active==='clientdashboard')renderClientDashboard();else if(active==='dashboard')renderDashboard();else if(active==='register')renderRegister();else if(active==='activities'){renderActivityList();renderDeliveryWbsManager();}else if(active==='allocation')renderAllocation();else if(active==='delivery')renderDelivery();else if(active==='readiness')renderReadiness();else if(active==='rfi')renderRfiTracker();else if(active==='progress')renderProgress();else if(active==='organisation')renderOrganisation();else if(active==='quality')renderQuality();else if(active==='changes')renderChangesLog();else if(active==='audit')renderAuditLog()}
@@ -3927,7 +3987,7 @@ async function reopenCmi(id){
 function openEdit(id){if(!canManageDelivery())return;const r=state.records.find(x=>x.id===id);if(!r)return;document.getElementById('modalTitle').textContent='Edit CMI Register';const map={eId:r.id,eCmiNo:r.cmiNo,eReference:r.reference,eDescription:r.description,eCmiDate:r.cmiDate,eStatus:registerCategoryValue(r),eMainCategory:r.mainCategory||'',eAsset:r.assetCode,eLocation:r.location,eInitial:r.initialEstimate??'',eSubmittedValue:r.submittedValue??'',eAgreedAmount:r.agreedAmount??'',eSubmittedDate:r.submittedDate,eAgreedDate:r.agreedDate,eRemarks:r.remarks,eNotes:r.notes};Object.entries(map).forEach(([i,v])=>document.getElementById(i).value=v);document.getElementById('editModal').classList.add('open')}
 function openAdd(){if(!canManageDelivery())return;document.getElementById('modalTitle').textContent='Add New CMI';document.getElementById('editForm').reset();document.getElementById('eId').value='';document.getElementById('eStatus').value='To be submitted';document.getElementById('editModal').classList.add('open')}
 function closeModal(){document.getElementById('editModal').classList.remove('open')}
-function saveEdit(){if(!canManageDelivery())return;const id=document.getElementById('eId').value;let r=id?state.records.find(x=>x.id===id):null;if(!r){r={id:'new-'+Date.now(),sourceRow:null,createdInTracker:true,cmiKey:'',siteResource:'',offsiteResource:'',inDeliveryPlan:false,deliveryStatus:'To be Started',deliveryValue:null,startDate:'',targetDate:'',finishDate:'',progressPct:0,progressNotes:'',cmiActivities:[]};state.records.push(r)}r.cmiNo=document.getElementById('eCmiNo').value.trim();r.cmiKey=normCmi(r.cmiNo);r.reference=document.getElementById('eReference').value.trim();r.description=document.getElementById('eDescription').value.trim();r.cmiDate=document.getElementById('eCmiDate').value;const category=document.getElementById('eStatus').value;if(category!==registerCategoryValue(r)){r.registerCategory=category;r.registerCategoryUpdatedAt=new Date().toISOString();}if(!r.status)r.status='To be Submitted and Unallocated';const updatedStatus=document.getElementById('eMainCategory').value;if(updatedStatus!==(r.mainCategory||'')){r.mainCategory=updatedStatus;r.mainCategoryUpdatedAt=new Date().toISOString();}r.assetCode=document.getElementById('eAsset').value.trim();r.location=document.getElementById('eLocation').value.trim();const ini=document.getElementById('eInitial').value,sv=document.getElementById('eSubmittedValue').value,av=document.getElementById('eAgreedAmount').value;r.initialEstimate=ini===''?null:Number(ini);r.submittedValue=sv===''?null:Number(sv);r.agreedAmount=av===''?null:Number(av);if(!['Agreed','Submitted'].includes(r.status)){if(r.initialEstimate===0)r.initialEstimate=null;if(r.submittedValue===0)r.submittedValue=null}r.submittedDate=document.getElementById('eSubmittedDate').value;r.agreedDate=document.getElementById('eAgreedDate').value;r.remarks=document.getElementById('eRemarks').value;r.notes=document.getElementById('eNotes').value;closeModal();saveState()}
+function saveEdit(){if(!canManageDelivery())return;const id=document.getElementById('eId').value;let r=id?state.records.find(x=>x.id===id):null;if(!r){r={id:'new-'+Date.now(),sourceRow:null,createdInTracker:true,cmiKey:'',siteResource:'',offsiteResource:'',inDeliveryPlan:false,deliveryStatus:'To be Started',deliveryValue:null,startDate:'',targetDate:'',finishDate:'',progressPct:0,progressNotes:'',cmiActivities:[]};state.records.push(r)}r.cmiNo=document.getElementById('eCmiNo').value.trim();r.cmiKey=normCmi(r.cmiNo);r.reference=document.getElementById('eReference').value.trim();r.description=document.getElementById('eDescription').value.trim();r.cmiDate=document.getElementById('eCmiDate').value;const category=document.getElementById('eStatus').value;if(category!==registerCategoryValue(r)){r.registerCategory=category;r.registerCategoryUpdatedAt=new Date().toISOString();}if(!r.status)r.status='To be Submitted and Unallocated';if(cmiTeamScopeRecord(r))r.wasCmiTeam=true;let updatedStatus=document.getElementById('eMainCategory').value;if(updatedStatus==='Agreed'&&r.wasCmiTeam)updatedStatus='Agreed - CMI Team';if(updatedStatus!==(r.mainCategory||'')){r.mainCategory=updatedStatus;r.mainCategoryUpdatedAt=new Date().toISOString();}r.assetCode=document.getElementById('eAsset').value.trim();r.location=document.getElementById('eLocation').value.trim();const ini=document.getElementById('eInitial').value,sv=document.getElementById('eSubmittedValue').value,av=document.getElementById('eAgreedAmount').value;const valuesChanged=r.initialEstimate!==(ini===''?null:Number(ini))||r.submittedValue!==(sv===''?null:Number(sv))||r.agreedAmount!==(av===''?null:Number(av))||(r.agreedDate||'')!==document.getElementById('eAgreedDate').value;r.initialEstimate=ini===''?null:Number(ini);r.submittedValue=sv===''?null:Number(sv);r.agreedAmount=av===''?null:Number(av);if(valuesChanged)r.masterValuesUpdatedAt=new Date().toISOString();if(cmiTeamScopeRecord(r))r.wasCmiTeam=true;r.submittedDate=document.getElementById('eSubmittedDate').value;r.agreedDate=document.getElementById('eAgreedDate').value;r.remarks=document.getElementById('eRemarks').value;r.notes=document.getElementById('eNotes').value;closeModal();saveState()}
 function download(name,text,type='text/plain'){const b=new Blob([text],{type}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500)}
 function csvEscape(v){const s=String(v??'');return /[",\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s}
 function exportCsv(rows,name){const h=['CMI No','Reference','Description','CMI Date','Asset Code','Location','Initial Estimate','Off-Site Estimate','Submitted Value','Agreed Amount','Register Category','Submission Classification','Priority','Site Resource','Off-site Resource','In Delivery Plan','Delivery Status','Delivery Value','Start Date','Target Date','Finish Date','Progress %','Progress Notes'];const lines=[h.join(',')];rows.forEach(r=>lines.push([r.cmiNo,r.reference,r.description,r.cmiDate,r.assetCode,r.location,moneyText(r.initialEstimate),moneyText(r.offsiteEstimate),moneyText(r.submittedValue),moneyText(r.agreedAmount),registerCategoryValue(r),r.mainCategory||'',calcPriority(r),r.siteResource,r.offsiteResource,isInDeliveryPlanRecord(r)?'Yes':'No',derivedDeliveryStatus(r),moneyText(r.deliveryValue),r.startDate,r.targetDate,r.finishDate,weightedCmiProgress(r),r.progressNotes].map(csvEscape).join(',')));download(name,'\ufeff'+lines.join('\n'),'text/csv;charset=utf-8')}
@@ -4444,3 +4504,4 @@ document.getElementById('clExport')?.addEventListener('click',exportChangeLog);
 })();
 </script>
 </body></html>
+
