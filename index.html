@@ -2588,17 +2588,17 @@ function internalStatusSplit(records){
  const normalise=v=>String(v||'').trim().replace(/\s+/g,' ').toLowerCase();
  const agreed=records.filter(r=>normalise(r.mainCategory)==='agreed'),submitted=records.filter(r=>normalise(r.mainCategory)==='submitted'),team=records.filter(r=>normalise(r.mainCategory)==='tbs by cmi team');
  const defs=[
-  {label:'Initial review completed',category:'to be submitted',color:'#55788e'},
-  {label:'Provisional Sums',category:'provisional sum - to be submitted',color:'#b39a65'},
-  {label:'Included in other CMIs',category:'included in other cmis - to be submitted',color:'#82939e'},
-  {label:'Others',category:'under review - to be submitted',color:'#b7c2ca'}
+  {label:'Initial review completed',category:'to be submitted',color:'#4fa3d1'},
+  {label:'Provisional Sums',category:'provisional sum - to be submitted',color:'#d6a23e'},
+  {label:'Included in other CMIs',category:'included in other cmis - to be submitted',color:'#7955a5'},
+  {label:'Others',category:'under review - to be submitted',color:'#56a7b8'}
  ];
  const group='To be Submitted — '+team.length.toLocaleString('en-US');
- const slices=[{label:'Agreed',value:agreed.length,color:'#2c726c'},{label:'Submitted - to be Agreed',value:submitted.length,color:'#183b56'},...defs.map(d=>({group,label:d.label,value:team.filter(r=>normalise(registerCategoryValue(r))===d.category).length,color:d.color}))];
+ const slices=[{label:'Agreed',value:agreed.length,color:'#65ab80'},{label:'Submitted - to be Agreed',value:submitted.length,color:'#315fa8'},...defs.map(d=>({group,label:d.label,value:team.filter(r=>normalise(registerCategoryValue(r))===d.category).length,color:d.color}))];
  const unmatched=team.filter(r=>!defs.some(d=>normalise(registerCategoryValue(r))===d.category));
- if(unmatched.length)slices.push({group,label:'Unmapped Register Category',value:unmatched.length,color:'#748896'});
+ if(unmatched.length)slices.push({group,label:'Unmapped Register Category',value:unmatched.length,color:'#b883ae'});
  const unknown=records.filter(r=>!['agreed','submitted','tbs by cmi team'].includes(normalise(r.mainCategory)));
- if(unknown.length)slices.push({label:'Unmapped Submission Classification',value:unknown.length,color:'#d3dbe1'});
+ if(unknown.length)slices.push({label:'Unmapped Submission Classification',value:unknown.length,color:'#b883ae'});
  return {slices,teamTotal:team.length,unmatched:unmatched.length+unknown.length};
 }
 function internalSubmissionPrioritySplit(records){
@@ -2606,16 +2606,16 @@ function internalSubmissionPrioritySplit(records){
  const team=records.filter(isCmiTeamSubmission),initial=team.filter(r=>normalise(registerCategoryValue(r))==='to be submitted');
  const priority={High:0,Medium:0,Low:0,Unvalued:0};initial.forEach(r=>priority[calcPriority(r)]++);
  const slices=[
-  {group:'Initial Review Completed — '+initial.length,label:'High',value:priority.High,color:'#183b56'},
-  {group:'Initial Review Completed — '+initial.length,label:'Medium',value:priority.Medium,color:'#55788e'},
-  {group:'Initial Review Completed — '+initial.length,label:'Low',value:priority.Low,color:'#9fb6c4'},
-  {group:'Initial Review Completed — '+initial.length,label:'No Initial Estimate',value:priority.Unvalued,color:'#d3dbe1'},
-  {group:'Provisional Sums',label:'Provisional Sum CMIs',value:team.filter(r=>normalise(registerCategoryValue(r))==='provisional sum - to be submitted').length,color:'#b39a65'},
-  {group:'Included in other CMIs',label:'Included in other CMIs',value:team.filter(r=>normalise(registerCategoryValue(r))==='included in other cmis - to be submitted').length,color:'#82939e'},
-  {group:'Others',label:'Under Review - To be Submitted',value:team.filter(r=>normalise(registerCategoryValue(r))==='under review - to be submitted').length,color:'#b7c2ca'}
+  {group:'Initial Review Completed — '+initial.length,label:'High',value:priority.High,color:'#315fa8'},
+  {group:'Initial Review Completed — '+initial.length,label:'Medium',value:priority.Medium,color:'#4fa3d1'},
+  {group:'Initial Review Completed — '+initial.length,label:'Low',value:priority.Low,color:'#65ab80'},
+  {group:'Initial Review Completed — '+initial.length,label:'No Initial Estimate',value:priority.Unvalued,color:'#b883ae'},
+  {group:'Provisional Sums',label:'Provisional Sum CMIs',value:team.filter(r=>normalise(registerCategoryValue(r))==='provisional sum - to be submitted').length,color:'#d6a23e'},
+  {group:'Included in other CMIs',label:'Included in other CMIs',value:team.filter(r=>normalise(registerCategoryValue(r))==='included in other cmis - to be submitted').length,color:'#7955a5'},
+  {group:'Others',label:'Under Review - To be Submitted',value:team.filter(r=>normalise(registerCategoryValue(r))==='under review - to be submitted').length,color:'#56a7b8'}
  ];
  const unmatched=team.length-slices.reduce((n,x)=>n+x.value,0);
- if(unmatched)slices.push({group:'Category Review',label:'Unmapped Register Category',value:unmatched,color:'#748896'});
+ if(unmatched)slices.push({group:'Category Review',label:'Unmapped Register Category',value:unmatched,color:'#b883ae'});
  return {slices,total:team.length};
 }
 function internalPortfolioValueSplit(records,meta){
@@ -2631,11 +2631,11 @@ function internalPortfolioValueSplit(records,meta){
  const otherPlaceholder=Number(meta.unallocatedPortfolioAllowance)||0,provisionalPlaceholder=Number(meta.provisionalPortfolioAllowance)||0;
  const group='To be Submitted';
  const slices=[
-  {label:'Agreed — Agreed Amount',value:total(agreed,'agreedAmount'),color:'#2c726c'},
-  {label:'Submitted — Submitted Amount',value:total(submitted,'submittedValue'),color:'#183b56'},
-  {group,label:'Initial review completed — Initial Estimate',value:total(initial,'initialEstimate'),color:'#55788e'},
-  {group,label:'Provisional Sums — Placeholder + Off-Site Estimate',value:(provisional.length?provisionalPlaceholder:0)+total(provisional,'offsiteEstimate'),color:'#b39a65'},
-  {group,label:'Other CMIs — Placeholder + Off-Site Estimate',value:(other.length?otherPlaceholder:0)+total(other,'offsiteEstimate'),color:'#b7c2ca'}
+  {label:'Agreed — Agreed Amount',value:total(agreed,'agreedAmount'),color:'#65ab80'},
+  {label:'Submitted — Submitted Amount',value:total(submitted,'submittedValue'),color:'#315fa8'},
+  {group,label:'Initial review completed — Initial Estimate',value:total(initial,'initialEstimate'),color:'#4fa3d1'},
+  {group,label:'Provisional Sums — Placeholder + Off-Site Estimate',value:(provisional.length?provisionalPlaceholder:0)+total(provisional,'offsiteEstimate'),color:'#d6a23e'},
+  {group,label:'Other CMIs — Placeholder + Off-Site Estimate',value:(other.length?otherPlaceholder:0)+total(other,'offsiteEstimate'),color:'#56a7b8'}
  ];
  return {slices,netTotal:slices.reduce((n,x)=>n+x.value,0),initialCount:initial.length,initialMissing:initial.filter(r=>!known(r.initialEstimate)).length,provisionalCount:provisional.length,provisionalOffsite:total(provisional,'offsiteEstimate'),otherCount:other.length,otherOffsite:total(other,'offsiteEstimate'),includedCount:included.length,otherPlaceholder,provisionalPlaceholder};
 }
@@ -2648,8 +2648,8 @@ function renderBars(){
  const known=v=>v!==null&&v!==undefined&&v!==''&&Number.isFinite(Number(v));
  const agreedSubmitted=sum(agreed.map(r=>r.submittedValue)),agreedAmount=sum(agreed.map(r=>r.agreedAmount));
  renderDonut('agreedComparisonPie',[
-  {label:'Submitted Value',value:agreedSubmitted,color:'#183b56'},
-  {label:'Agreed Amount',value:agreedAmount,color:'#2c726c'}
+  {label:'Submitted Value',value:agreedSubmitted,color:'#315fa8'},
+  {label:'Agreed Amount',value:agreedAmount,color:'#65ab80'}
  ],{valueType:'money',useMagnitude:true,centerValue:String(agreed.length),centerLabel:'Agreed work items'});
  const portfolio=internalPortfolioValueSplit(all,state.meta);
  renderDonut('portfolioValuePie',portfolio.slices,{valueType:'money',useMagnitude:true,centerValue:portfolioMoney(portfolio.netTotal),centerLabel:'Net portfolio total'});
@@ -3685,15 +3685,15 @@ function renderDashboardOperationalTables(){
 
 function clientPreviouslyApprovedSummary(records){
  const bands=[
-  {id:'positive-ps',label:'Positive Value — PS',tableLabel:'PS',value:0,amount:0,color:'#2c726c'},
-  {id:'positive-high',label:'Positive Value — High',tableLabel:'High Value CMIs (USD 500,000 and above)',value:0,amount:0,color:'#183b56'},
-  {id:'positive-medium',label:'Positive Value — Medium',tableLabel:'Medium Value CMIs (USD 100,000 to below 500,000)',value:0,amount:0,color:'#55788e'},
-  {id:'positive-low',label:'Positive Value — Low',tableLabel:'Low Value CMIs (above USD 0 to below 100,000)',value:0,amount:0,color:'#9fb6c4'},
-  {id:'negative-high',label:'Negative Value — High',tableLabel:'High Value CMIs (USD 500,000 and above)',value:0,amount:0,color:'#485966'},
-  {id:'negative-medium',label:'Negative Value — Medium',tableLabel:'Medium Value CMIs (USD 100,000 to below 500,000)',value:0,amount:0,color:'#82939e'},
-  {id:'negative-low',label:'Negative Value — Low',tableLabel:'Low Value CMIs (above USD 0 to below 100,000)',value:0,amount:0,color:'#b7c2ca'},
-  {id:'zero',label:'Zero Value CMIs',tableLabel:'Zero Value CMIs',value:0,amount:0,color:'#d3dbe1'},
-  {id:'missing',label:'Agreed Amount Not Recorded',tableLabel:'Agreed Amount Not Recorded',value:0,amount:0,color:'#748896'}
+  {id:'positive-ps',label:'Positive Value — PS',tableLabel:'PS',value:0,amount:0,color:'#008f8c'},
+  {id:'positive-high',label:'Positive Value — High',tableLabel:'High Value CMIs (USD 500,000 and above)',value:0,amount:0,color:'#315fa8'},
+  {id:'positive-medium',label:'Positive Value — Medium',tableLabel:'Medium Value CMIs (USD 100,000 to below 500,000)',value:0,amount:0,color:'#4fa3d1'},
+  {id:'positive-low',label:'Positive Value — Low',tableLabel:'Low Value CMIs (above USD 0 to below 100,000)',value:0,amount:0,color:'#65ab80'},
+  {id:'negative-high',label:'Negative Value — High',tableLabel:'High Value CMIs (USD 500,000 and above)',value:0,amount:0,color:'#7955a5'},
+  {id:'negative-medium',label:'Negative Value — Medium',tableLabel:'Medium Value CMIs (USD 100,000 to below 500,000)',value:0,amount:0,color:'#cb6f53'},
+  {id:'negative-low',label:'Negative Value — Low',tableLabel:'Low Value CMIs (above USD 0 to below 100,000)',value:0,amount:0,color:'#d6a23e'},
+  {id:'zero',label:'Zero Value CMIs',tableLabel:'Zero Value CMIs',value:0,amount:0,color:'#56a7b8'},
+  {id:'missing',label:'Agreed Amount Not Recorded',tableLabel:'Agreed Amount Not Recorded',value:0,amount:0,color:'#b883ae'}
  ];
  const groups=new Map();
  for(const r of records||[]){
@@ -3725,15 +3725,15 @@ function renderPreviouslyApprovedCmis(){
 
 function clientPreviouslySubmittedSummary(records){
  const bands=[
-  {id:'positive-ps',label:'Positive Value — PS',tableLabel:'PS',value:0,amount:0,color:'#2c726c'},
-  {id:'positive-high',label:'Positive Value — High',tableLabel:'High Value CMIs (USD 500,000 and above)',value:0,amount:0,color:'#183b56'},
-  {id:'positive-medium',label:'Positive Value — Medium',tableLabel:'Medium Value CMIs (USD 100,000 to below 500,000)',value:0,amount:0,color:'#55788e'},
-  {id:'positive-low',label:'Positive Value — Low',tableLabel:'Low Value CMIs (above USD 0 to below 100,000)',value:0,amount:0,color:'#9fb6c4'},
-  {id:'negative-high',label:'Negative Value — High',tableLabel:'High Value CMIs (USD 500,000 and above)',value:0,amount:0,color:'#485966'},
-  {id:'negative-medium',label:'Negative Value — Medium',tableLabel:'Medium Value CMIs (USD 100,000 to below 500,000)',value:0,amount:0,color:'#82939e'},
-  {id:'negative-low',label:'Negative Value — Low',tableLabel:'Low Value CMIs (above USD 0 to below 100,000)',value:0,amount:0,color:'#b7c2ca'},
-  {id:'zero',label:'Zero Value CMIs',tableLabel:'Zero Value CMIs',value:0,amount:0,color:'#d3dbe1'},
-  {id:'missing',label:'Submitted Value Not Recorded',tableLabel:'Submitted Value Not Recorded',value:0,amount:0,color:'#748896'}
+  {id:'positive-ps',label:'Positive Value — PS',tableLabel:'PS',value:0,amount:0,color:'#008f8c'},
+  {id:'positive-high',label:'Positive Value — High',tableLabel:'High Value CMIs (USD 500,000 and above)',value:0,amount:0,color:'#315fa8'},
+  {id:'positive-medium',label:'Positive Value — Medium',tableLabel:'Medium Value CMIs (USD 100,000 to below 500,000)',value:0,amount:0,color:'#4fa3d1'},
+  {id:'positive-low',label:'Positive Value — Low',tableLabel:'Low Value CMIs (above USD 0 to below 100,000)',value:0,amount:0,color:'#65ab80'},
+  {id:'negative-high',label:'Negative Value — High',tableLabel:'High Value CMIs (USD 500,000 and above)',value:0,amount:0,color:'#7955a5'},
+  {id:'negative-medium',label:'Negative Value — Medium',tableLabel:'Medium Value CMIs (USD 100,000 to below 500,000)',value:0,amount:0,color:'#cb6f53'},
+  {id:'negative-low',label:'Negative Value — Low',tableLabel:'Low Value CMIs (above USD 0 to below 100,000)',value:0,amount:0,color:'#d6a23e'},
+  {id:'zero',label:'Zero Value CMIs',tableLabel:'Zero Value CMIs',value:0,amount:0,color:'#56a7b8'},
+  {id:'missing',label:'Submitted Value Not Recorded',tableLabel:'Submitted Value Not Recorded',value:0,amount:0,color:'#b883ae'}
  ];
  const groups=new Map();
  for(const r of records||[]){
@@ -3818,10 +3818,10 @@ function renderClientDashboard(){
 
  }
  const teamRows=[
-  {label:'CMIs to Be Initiated by CMI Team',value:notStarted,color:'#a5b4bf',amount:null},
-  {label:'CMIs Under Progress by CMI Team',value:underProgress,color:'#b39a65',amount:null},
-  {label:'Submitted to DGJ by CMI Team',value:pendingApproval,color:'#183b56',amount:pendingValue},
-  {label:'Approved CMIs Submitted by CMI Team',value:approvedByTeam,color:'#2c726c',amount:approvedValue}
+  {label:'CMIs to Be Initiated by CMI Team',value:notStarted,color:'#315fa8',amount:null},
+  {label:'CMIs Under Progress by CMI Team',value:underProgress,color:'#d6a23e',amount:null},
+  {label:'Submitted to DGJ by CMI Team',value:pendingApproval,color:'#008f8c',amount:pendingValue},
+  {label:'Approved CMIs Submitted by CMI Team',value:approvedByTeam,color:'#65ab80',amount:approvedValue}
  ];
  const items=[
   ['Total No. of CMIs Received',groups.size,null],
