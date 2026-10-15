@@ -1,0 +1,53 @@
+name: Option five executive chart colours
+on:
+  push:
+    paths: ['.github/workflows/option-five-colours.yml']
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply approved chart palette
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          def patch_section(start,end,changes):
+              global s
+              a=s.index(start)
+              b=s.index(end,a)
+              part=s[a:b]
+              for old,new in changes:
+                  assert part.count(old)==1,(start,old,part.count(old))
+                  part=part.replace(old,new)
+              s=s[:a]+part+s[b:]
+          patch_section('function clientOverviewSummary(records){','function renderClientDashboard(){',[
+              ("color:'#65ab80'","color:'#42B74B'"),
+              ("color:'#008f8c'","color:'#1684FF'"),
+              ("color:'#d6a23e'","color:'#FF941A'"),
+              ("color:'#4fa3d1'","color:'#9AA4AF'"),
+              ("color:'#7955a5'","color:'#853FD5'"),
+              ("color:'#315fa8',amount:null","color:'#095198',amount:null")
+          ])
+          patch_section('function clientValueGroupSlices(bands){','function renderPreviouslyApprovedCmis(){',[
+              ("color:'#008f8c'","color:'#189D79'"),
+              ("color:'#d6a23e'","color:'#FFA324'"),
+              ("color:'#56a7b8'","color:'#40AFE0'")
+          ])
+          patch_section('function renderClientDashboard(){','function renderDashboard(){',[
+              ("value:summary.zeroBalance,color:'#b883ae'","value:summary.zeroBalance,color:'#EA0BAF'"),
+              ("value:summary.otherBalance,color:'#315fa8'","value:summary.otherBalance,color:'#095198'"),
+              ("background:#b883ae","background:#EA0BAF"),
+              ("background:#315fa8","background:#095198")
+          ])
+          p.write_text(s,encoding='utf-8')
+          PY
+      - name: Commit dashboard palette
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git diff --cached --quiet || (git commit -m "Apply Option 5 distinct category colours to executive charts" && git push)
