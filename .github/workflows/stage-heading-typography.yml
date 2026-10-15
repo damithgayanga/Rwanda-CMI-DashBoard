@@ -1,0 +1,42 @@
+name: Match stage heading typography
+on:
+  push:
+    paths: ['.github/workflows/stage-heading-typography.yml']
+permissions:
+  contents: write
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Match KPI heading text
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          css="""
+          /* Executive stage labels match the compact dark-blue KPI headings. */
+          #tab-clientdashboard #clientProcessStages td:first-child span:last-child{
+            font-family:inherit;
+            font-size:11px!important;
+            font-weight:750!important;
+            color:#526b83!important;
+            letter-spacing:.035em;
+            line-height:1.35;
+            text-transform:uppercase;
+            white-space:normal;
+          }
+          """
+          if 'Executive stage labels match the compact dark-blue KPI headings.' not in s:
+              at=s.rfind('</style>')
+              assert at>=0
+              s=s[:at]+css+s[at:]
+              p.write_text(s,encoding='utf-8')
+          PY
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git diff --cached --quiet || (git commit -m "Match executive stage label font to KPI headings" && git push)
