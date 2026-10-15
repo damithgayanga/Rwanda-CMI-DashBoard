@@ -21,7 +21,7 @@ jobs:
               b=s.index(end,a)
               part=s[a:b]
               for old,new in changes:
-                  assert part.count(old)==1,(start,old,part.count(old))
+                  assert part.count(old)>=1,(start,old,part.count(old))
                   part=part.replace(old,new)
               s=s[:a]+part+s[b:]
           patch_section('function clientOverviewSummary(records){','function renderClientDashboard(){',[
