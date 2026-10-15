@@ -289,6 +289,10 @@
 #tab-clientdashboard .client-overview-chevron{display:inline-block;font-size:14px;transition:transform .15s ease}
 #tab-clientdashboard .client-overview-toggle[aria-expanded="true"] .client-overview-chevron{transform:rotate(90deg)}
 #tab-clientdashboard .client-overview-toggle:focus-visible{outline:2px solid #315fa8;outline-offset:2px;border-radius:3px}
+#tab-clientdashboard #clientOverviewPie .pie-legend-label{text-align:left!important}
+#tab-clientdashboard #clientOverviewPie .pie-legend-row{text-align:left}
+#tab-clientdashboard .client-overview-chart:has(#clientOverviewPie) h3{text-align:center}
+#tab-clientdashboard #clientOverviewValidation{display:none!important}
 </style>
 <style id="executive-presentation-v2">
 /* Executive presentation: scoped to the management report only. */
@@ -452,6 +456,10 @@
 #tab-clientdashboard #clientOverviewRows .client-team-balance td:first-child{position:relative}
 #tab-clientdashboard #clientOverviewRows .client-team-balance .client-overview-toggle{position:absolute;left:12px;top:50%;transform:translateY(-50%);margin:0;padding:3px}
 #tab-clientdashboard #clientOverviewRows .client-team-balance .client-overview-swatch{margin-left:0}
+#tab-clientdashboard #clientOverviewPie .pie-legend-label{text-align:left!important}
+#tab-clientdashboard #clientOverviewPie .pie-legend-row{text-align:left}
+#tab-clientdashboard .client-overview-chart:has(#clientOverviewPie) h3{text-align:center}
+#tab-clientdashboard #clientOverviewValidation{display:none!important}
 </style>
 
 <!-- Supabase -->
@@ -1715,26 +1723,26 @@
      <div id="clientApprovedTable" class="client-approved-table"></div>
      <div class="client-overview-chart"><h3>CMIs Agreed with DGJ before CMI Team's mobilisation — Count Breakdown</h3><div id="clientApprovedPie"></div></div>
     </div>
-    <div class="badge-note" style="margin-top:16px">Based on existing Agreed register entries. Counts use unique CMI numbers; values sum their agreed amounts in USD. Negative value bands use absolute amounts. The chart shows counts, with the same colours as the detailed table rows.</div>
+    
    </div>
   </article>
   <article class="exec-panel">
-   <header class="exec-panel-heading"><span class="exec-section-number" aria-hidden="true">03</span><h2>CMIs Submitted (Not Agreed) before CMI Team's Mobilisation</h2></header>
+   <header class="exec-panel-heading"><span class="exec-section-number" aria-hidden="true">03</span><h2>CMIs Submitted (Not Approved) before CMI Team's Mobilisation</h2></header>
    <div class="card">
     <div class="client-overview-layout">
      <div id="clientSubmittedTable" class="client-approved-table"></div>
-     <div class="client-overview-chart"><h3>CMIs Submitted (Not Agreed) before CMI Team's Mobilisation — Count Breakdown</h3><div id="clientSubmittedPie"></div></div>
+     <div class="client-overview-chart"><h3>CMIs Submitted (Not Approved) before CMI Team's Mobilisation — Count Breakdown</h3><div id="clientSubmittedPie"></div></div>
     </div>
-    <div class="badge-note" style="margin-top:16px">Based on entries marked Submitted in Register Category. Counts use unique CMI numbers; values sum their submitted values in USD. Negative value bands use absolute amounts. The chart shows counts, with the same colours as the detailed table rows.</div>
+    
    </div>
   </article>
  </div>
 
  <article class="exec-panel exec-process-panel">
-  <header class="exec-panel-heading"><span class="exec-section-number" aria-hidden="true">04</span><h2>CMIs Under Process (Stages)</h2><span class="client-stage-caption">Cumulative stage milestones</span></header>
+  <header class="exec-panel-heading"><span class="exec-section-number" aria-hidden="true">04</span><h2>CMIs Under Process (Stages)</h2></header>
   <div class="card client-process-card">
    <table class="client-process-table"><thead><tr><th>Stage</th><th>Count</th></tr></thead><tbody id="clientProcessStages"></tbody></table>
-   <details class="client-data-note"><summary>Basis of stage counts</summary><p>Each CMI number is counted once within each stage, including CMIs subsequently agreed by the CMI Team. Sent to Measurement Team: actual document handover recorded. Commenced by Measurement Team: Measurement &amp; Valuation has an actual start date, an actual finish date or progress above zero. Received from Measurement Team: Measurement &amp; Valuation at 100% with an actual finish date. Submitted to CM: Technical &amp; Commercial Clearance has an actual start date. Received from CM: Technical &amp; Commercial Clearance at 100% with an actual finish date. These cumulative milestones can include the same CMI at more than one stage.</p></details>
+   
   </div>
  </article>
 </section>
@@ -2648,7 +2656,7 @@ function renderDonut(id,slices,opt={}){
  const centerValue=opt.centerValue!==undefined?opt.centerValue:(opt.valueType==='money'?portfolioMoney(clean.reduce((a,x)=>a+x.value,0)):String(clean.reduce((a,x)=>a+x.value,0)));
  const centerLabel=opt.centerLabel||'Total';
  let lastGroup='';const legend=clean.map((x,i)=>{const share=totalWeight?weights[i]/totalWeight*100:0;const val=opt.valueType==='money'?portfolioMoney(x.value):Number(x.value).toLocaleString('en-US');const group=x.group&&x.group!==lastGroup?`<div class="pie-legend-group">${esc(x.group)}</div>`:'';if(x.group)lastGroup=x.group;return `${group}<div class="pie-legend-row"><span class="pie-swatch" style="background:${x.color}"></span><div class="pie-legend-label">${esc(x.label)}<div class="pie-legend-share">${share.toFixed(1)}% of ${opt.useMagnitude?'chart magnitude':'total'}</div></div><div class="pie-legend-value">${val}</div></div>`}).join('');
- el.innerHTML=`<div class="pie-layout"><div class="donut-wrap"><div class="donut" style="background:conic-gradient(${parts.join(',')})"><div class="donut-center"><b>${esc(centerValue)}</b><span>${esc(centerLabel)}</span></div></div></div><div class="pie-legend">${legend}</div></div>${opt.note?`<div class="badge-note" style="margin-top:10px">${opt.note}</div>`:''}`;
+ el.innerHTML=`<div class="pie-layout"><div class="donut-wrap"><div class="donut" style="background:conic-gradient(${parts.join(',')})"><div class="donut-center"><b>${esc(centerValue)}</b>${opt.hideCenterLabel?'':`<span>${esc(centerLabel)}</span>`}</div></div></div><div class="pie-legend">${legend}</div></div>${opt.note?`<div class="badge-note" style="margin-top:10px">${opt.note}</div>`:''}`;
 }
 function internalStatusSplit(records){
  const normalise=v=>String(v||'').trim().replace(/\s+/g,' ').toLowerCase();
@@ -3777,6 +3785,7 @@ function clientPreviouslyApprovedSummary(records){
  }
  return {bands,total:groups.size,amount:bands.reduce((n,x)=>n+x.amount,0)};
 }
+function clientValueGroupSlices(bands){return [{id:'positive',label:'Positive Value',color:'#008f8c'},{id:'negative',label:'Negative Value',color:'#d6a23e'},{id:'zero',label:'Zero Value',color:'#56a7b8'}].map(c=>({label:c.label,color:c.color,value:bands.filter(b=>b.id===c.id||b.id.startsWith(c.id+'-')).reduce((n,b)=>n+b.value,0)}))}
 function renderPreviouslyApprovedCmis(){
  const table=document.getElementById('clientApprovedTable');if(!table)return;
  const savedOpen=[...table.querySelectorAll('details[open]')].map(x=>x.dataset.group);
@@ -3786,7 +3795,7 @@ function renderPreviouslyApprovedCmis(){
  const group=(id,label)=>{const bands=summary.bands.filter(x=>x.id.startsWith(id+'-'));return '<details class="client-approved-group" data-group="'+id+'"'+(savedOpen.includes(id)?' open':'')+'><summary><span>'+esc(label)+'</span><span>'+fmt(bands.reduce((n,x)=>n+x.value,0))+'</span><span>'+money(bands.reduce((n,x)=>n+x.amount,0))+'</span></summary>'+bands.map(x=>row(x.tableLabel,x.value,x.amount,x.color,'client-approved-detail')).join('')+'</details>'};
  const zero=summary.bands.find(x=>x.id==='zero'),missing=summary.bands.find(x=>x.id==='missing');
  table.innerHTML='<div class="client-approved-heading"><span>Description</span><span>Count</span><span>Value (USD)</span></div>'+row('Agreed CMIs (Total)',summary.total,summary.amount,null,'client-approved-total')+group('positive','Positive Value CMIs')+group('negative','Negative Value CMIs')+row(zero.tableLabel,zero.value,zero.amount,zero.color)+(missing.value?row(missing.tableLabel,missing.value,missing.amount,missing.color):'');
- renderDonut('clientApprovedPie',summary.bands.filter(x=>x.id!=='missing'||x.value>0),{centerValue:fmt(summary.total),centerLabel:"CMIs Agreed with DGJ before CMI Team's mobilisation"});
+ renderDonut('clientApprovedPie',clientValueGroupSlices(summary.bands),{centerValue:fmt(summary.total),hideCenterLabel:true});
 }
 
 function clientPreviouslySubmittedSummary(records){
@@ -3826,13 +3835,13 @@ function renderPreviouslySubmittedCmis(){
  const group=(id,label)=>{const bands=summary.bands.filter(x=>x.id.startsWith(id+'-'));return '<details class="client-approved-group" data-group="'+id+'"'+(savedOpen.includes(id)?' open':'')+'><summary><span>'+esc(label)+'</span><span>'+fmt(bands.reduce((n,x)=>n+x.value,0))+'</span><span>'+money(bands.reduce((n,x)=>n+x.amount,0))+'</span></summary>'+bands.map(x=>row(x.tableLabel,x.value,x.amount,x.color,'client-approved-detail')).join('')+'</details>'};
  const zero=summary.bands.find(x=>x.id==='zero'),missing=summary.bands.find(x=>x.id==='missing');
  table.innerHTML='<div class="client-approved-heading"><span>Description</span><span>Count</span><span>Value (USD)</span></div>'+row('Submitted CMIs (Total)',summary.total,summary.amount,null,'client-approved-total')+group('positive','Positive Value CMIs')+group('negative','Negative Value CMIs')+row(zero.tableLabel,zero.value,zero.amount,zero.color)+(missing.value?row(missing.tableLabel,missing.value,missing.amount,missing.color):'');
- renderDonut('clientSubmittedPie',summary.bands.filter(x=>x.id!=='missing'||x.value>0),{centerValue:fmt(summary.total),centerLabel:'Previously Submitted to DG Jones'});
+ renderDonut('clientSubmittedPie',clientValueGroupSlices(summary.bands),{centerValue:fmt(summary.total),hideCenterLabel:true});
 }
 
 
 
 function clientProcessStageCounts(records,readiness){
- const sets=Array.from({length:5},()=>new Set());
+ const sets=Array.from({length:6},()=>new Set());
  for(const r of records||[]){
   if(!cmiTeamScopeRecord(r))continue;
   const key=normCmi(r.cmiKey||r.cmiNo||'');if(!key)continue;
@@ -3842,13 +3851,15 @@ function clientProcessStageCounts(records,readiness){
   if(activityProgressAt100(a.measure)&&a.measure.actualFinishDate)sets[2].add(key);
   if(a.clearance&&a.clearance.actualStartDate)sets[3].add(key);
   if(activityProgressAt100(a.clearance)&&a.clearance.actualFinishDate)sets[4].add(key);
+  const submission=findActivityByIdOrName(r,'act-submit-dgj','submission to dgj');
+  if(activityComplete(submission)&&afterTrackerStart(submission))sets[5].add(key);
  }
  return sets.map(x=>x.size);
 }
 function renderClientProcessStages(){
  const el=document.getElementById('clientProcessStages');if(!el)return;
  const counts=clientProcessStageCounts(state.records,documentReadinessMap());
- const labels=['CMIs Sent to Measurement Team','CMIs Commenced by Measurement Team','CMIs Received from Measurement Team','CMIs Submitted to CM','CMIs Received from CM'];
+ const labels=['CMIs Sent to Measurement Team','CMIs Commenced by Measurement Team','CMIs Completed by Measurement Team','CMIs Submitted to CM','CMIs Received from CM','Submitted to DGJ'];
  el.innerHTML=labels.map((label,i)=>'<tr><td><span class="client-stage-number">'+String(i+1).padStart(2,'0')+'</span><span>'+esc(label)+'</span></td><td>'+Number(counts[i]).toLocaleString('en-US')+'</td></tr>').join('');
 }
 
