@@ -1,0 +1,49 @@
+name: Executive labels and donut captions
+on:
+  push:
+    paths: ['.github/workflows/executive-labels-captions.yml']
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Update headings and chart captions
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          changes=[
+            ('CMIs Under Process (Stages)</h2>','CMIs Actioned by CMI Team</h2>'),
+            ('CMIs - Submitted to DGJ (Not Approved) Before CMI Team','CMIs - Submitted to DGJ (Not Agreed) Before CMI Team'),
+            ("renderDonut('clientApprovedPie',clientValueGroupSlices(summary.bands),{centerValue:fmt(summary.total),hideCenterLabel:true});","renderDonut('clientApprovedPie',clientValueGroupSlices(summary.bands),{centerValue:fmt(summary.total),centerLabel:'Total Agreed CMIs'});"),
+            ("renderDonut('clientSubmittedPie',clientValueGroupSlices(summary.bands),{centerValue:fmt(summary.total),hideCenterLabel:true});","renderDonut('clientSubmittedPie',clientValueGroupSlices(summary.bands),{centerValue:fmt(summary.total),centerLabel:'Total Submitted CMIs (Not Agreed)'});")
+          ]
+          for old,new in changes:
+              assert s.count(old)==1,(old,s.count(old))
+              s=s.replace(old,new)
+          css="""
+          #tab-clientdashboard #clientApprovedPie .donut-center span,
+          #tab-clientdashboard #clientSubmittedPie .donut-center span{
+            display:block;
+            max-width:165px;
+            margin:7px auto 0;
+            text-align:center;
+            font-size:11px;
+            font-weight:600;
+            line-height:1.35;
+          }
+          """
+          pos=s.rfind('</style>')
+          assert pos>=0
+          s=s[:pos]+css+s[pos:]
+          p.write_text(s,encoding='utf-8')
+          PY
+      - name: Commit dashboard
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git diff --cached --quiet || (git commit -m "Revise executive headings and add donut centre captions" && git push)
