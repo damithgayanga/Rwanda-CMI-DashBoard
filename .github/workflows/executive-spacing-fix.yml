@@ -1,0 +1,63 @@
+name: Refine executive legends and stage row
+on:
+  push:
+    paths: ['.github/workflows/executive-spacing-fix.yml']
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply final spacing
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          css="""
+          /* Executive legends: counts directly beside labels, not at far right. */
+          #tab-clientdashboard #clientApprovedPie .pie-legend,
+          #tab-clientdashboard #clientSubmittedPie .pie-legend{
+            display:grid;
+            grid-template-columns:1fr;
+            justify-items:start;
+            align-content:center;
+            width:100%;
+          }
+          #tab-clientdashboard #clientApprovedPie .pie-legend-row,
+          #tab-clientdashboard #clientSubmittedPie .pie-legend-row{
+            display:grid;
+            grid-template-columns:9px minmax(0,135px) 42px;
+            gap:9px;
+            align-items:center;
+            width:215px;
+            max-width:100%;
+          }
+          #tab-clientdashboard #clientApprovedPie .pie-legend-value,
+          #tab-clientdashboard #clientSubmittedPie .pie-legend-value{
+            text-align:right;
+          }
+          /* Keep all six stage cards in one desktop row. */
+          @media(min-width:1101px){
+            #tab-clientdashboard #clientProcessStages{
+              grid-template-columns:repeat(6,minmax(0,1fr))!important;
+            }
+            #tab-clientdashboard #clientProcessStages tr{
+              min-width:0;
+              padding:6px 12px!important;
+            }
+          }
+          """
+          if 'Executive legends: counts directly beside labels' not in s:
+              at=s.rfind('</style>')
+              if at<0: raise RuntimeError('CSS closing tag missing')
+              s=s[:at]+css+s[at:]
+              p.write_text(s,encoding='utf-8')
+          PY
+      - name: Commit source update
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git diff --cached --quiet || (git commit -m "Bring legend counts closer and keep six stages on one row" && git push)
