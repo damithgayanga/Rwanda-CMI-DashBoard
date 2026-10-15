@@ -1655,7 +1655,7 @@
      <thead><tr><th style="text-align:left;padding:10px">Description</th><th style="text-align:right;padding:10px">CMI Count</th><th style="text-align:right;padding:10px">Value</th></tr></thead>
      <tbody id="clientOverviewRows"></tbody>
     </table></div>
-    <div class="client-overview-chart"><h3>CMI Team Progress Distribution</h3><div id="clientOverviewPie"></div></div>
+    <div class="client-overview-chart"><h3>Total CMIs — Submission Breakdown</h3><div id="clientOverviewPie"></div></div>
    </div>
    <div id="clientOverviewValidation" class="badge-note" style="margin-top:16px"></div>
   </div>
@@ -3785,57 +3785,43 @@ function renderClientProcessStages(){
  el.innerHTML=labels.map((label,i)=>'<tr><td><span class="client-stage-number">'+String(i+1).padStart(2,'0')+'</span><span>'+esc(label)+'</span></td><td>'+Number(counts[i]).toLocaleString('en-US')+'</td></tr>').join('');
 }
 
+function clientOverviewSummary(records){
+ const groups=new Map();
+ for(const r of records||[]){
+  const key=normCmi(r.cmiKey||r.cmiNo||'');if(!key)continue;
+  if(!groups.has(key))groups.set(key,[]);groups.get(key).push(r);
+ }
+ const bands=[
+  {id:'agreed',label:"CMIs Agreed with DGJ before CMI Team's Mobilisation",value:0,color:'#65ab80',amount:0},
+  {id:'submitted',label:"CMIs Submitted to DGJ (Not Agreed) before CMI Team's Mobilisation",value:0,color:'#008f8c',amount:0},
+  {id:'team',label:'CMIs to Be Initiated by CMI Team (Required for Submission)',value:0,color:'#315fa8',amount:null}
+ ];
+ let mixed=0;
+ for(const rows of groups.values()){
+  const categories=new Set(rows.map(r=>String(r.mainCategory||'').trim()));
+  if(categories.size>1)mixed++;
+  // Outstanding team scopes take precedence so a multi-scope CMI is counted once.
+  const id=categories.has('TBS by CMI Team')?'team':categories.has('Agreed')?'agreed':categories.has('Submitted')?'submitted':'team';
+  const band=bands.find(x=>x.id===id);band.value++;
+  if(id!=='team'){
+   const category=id==='agreed'?'Agreed':'Submitted',field=id==='agreed'?'agreedAmount':'submittedValue';
+   band.amount+=rows.filter(r=>String(r.mainCategory||'').trim()===category).reduce((n,r)=>n+(Number(r[field])||0),0);
+  }
+ }
+ return {total:groups.size,bands,mixed};
+}
 function renderClientDashboard(){
  renderPreviouslyApprovedCmis();
  renderPreviouslySubmittedCmis();
  renderClientProcessStages();
  const body=document.getElementById('clientOverviewRows');if(!body)return;
- const all=state.records||[],groups=new Map();
- for(const r of all){const key=normCmi(r.cmiKey||r.cmiNo||'');if(!key)continue;if(!groups.has(key))groups.set(key,[]);groups.get(key).push(r)}
- const numeric=v=>v===null||v===undefined||v===''?null:(Number.isFinite(Number(v))?Number(v):null);
- const sums=(rows,key)=>rows.reduce((n,r)=>n+(numeric(r[key])||0),0);
- const agreed=new Set(),submitted=new Set(),zero=new Set();
- for(const [key,rows] of groups){
-  if(rows.some(r=>r.mainCategory==='Agreed'))agreed.add(key);
-  if(rows.some(r=>r.mainCategory==='Submitted'))submitted.add(key);
-  if(rows.some(r=>r.mainCategory==='Submitted'&&numeric(r.submittedValue)===0))zero.add(key);
- }
- const eligible=new Map();
- for(const [key,rows] of groups){const allocated=rows.filter(r=>isInDeliveryPlanRecord(r));if(allocated.length)eligible.set(key,allocated)}
- let approvedByTeam=0,approvedValue=0,pendingValue=0,notStarted=0,underProgress=0,pendingApproval=0;
- for(const [key,rows] of eligible){
-  const denominator=rows.length;
-  for(const r of rows){
-   const weight=1/denominator;
-   const measurement=findActivityByIdOrName(r,'act-measure','measurement works');
-   const submission=findActivityByIdOrName(r,'act-submit-dgj','submission to dgj');
-   const started=!!(measurement&&(measurement.actualStartDate||measurement.actualFinishDate||Number(measurement.progressPct)>0));
-   const finished=!!(submission&&submission.actualFinishDate&&submission.actualFinishDate>='2026-10-01'&&Number(submission.progressPct)>=100);
-   const approved=finished&&numeric(r.agreedAmount)!==null;
-   if(approved){approvedByTeam+=weight;approvedValue+=numeric(r.agreedAmount)||0}
-   if(approved){}else if(finished){pendingApproval+=weight;pendingValue+=numeric(submission.submittedValue)??numeric(r.submittedValue)??0}else if(started)underProgress+=weight;else notStarted+=weight;
-  }
-
- }
- const teamRows=[
-  {label:'CMIs to Be Initiated by CMI Team',value:notStarted,color:'#315fa8',amount:null},
-  {label:'CMIs Under Progress by CMI Team',value:underProgress,color:'#d6a23e',amount:null},
-  {label:'Submitted to DGJ by CMI Team',value:pendingApproval,color:'#008f8c',amount:pendingValue},
-  {label:'Approved CMIs Submitted by CMI Team',value:approvedByTeam,color:'#65ab80',amount:approvedValue}
- ];
- const items=[
-  ['Total No. of CMIs Received',groups.size,null],
-  ['CMIs Agreed with DGJ Before Mobilising CMI Team',agreed.size,sums(all.filter(r=>r.mainCategory==='Agreed'),'agreedAmount')],
-  ['CMIs Submitted to DGJ (Not Approved) Before CMI Team',submitted.size,sums(all.filter(r=>r.mainCategory==='Submitted'),'submittedValue')],
-  ['Zero Value CMIs to Be Agreed with DGJ',zero.size,null],
-  ['Total CMIs Required for Submission by CMI Team',eligible.size,null],
-  ...teamRows.map(x=>[x.label,x.value,x.amount,x.color])
- ];
- const fmt=n=>Number(n).toLocaleString('en-US',{maximumFractionDigits:2});
- body.innerHTML=items.map((x,i)=>'<tr style="border-bottom:1px solid #e1e9ef'+(i===4?';font-weight:700':'')+'"><td style="padding:11px 10px">'+(x[3]?'<span class="client-overview-swatch" style="background:'+x[3]+'"></span>':'')+esc(x[0])+'</td><td style="text-align:right;padding:11px 10px">'+fmt(x[1])+'</td><td style="text-align:right;padding:11px 10px">'+(x[2]===null?'':money(x[2]))+'</td></tr>').join('');
+ const summary=clientOverviewSummary(state.records);
+ const items=[['Total CMIs',summary.total,null],...summary.bands.map(x=>[x.label,x.value,x.amount,x.color])];
+ const fmt=n=>Number(n).toLocaleString('en-US',{maximumFractionDigits:0});
+ body.innerHTML=items.map(x=>'<tr style="border-bottom:1px solid #e1e9ef"><td style="padding:11px 10px">'+(x[3]?'<span class="client-overview-swatch" style="background:'+x[3]+'"></span>':'')+esc(x[0])+'</td><td style="text-align:right;padding:11px 10px">'+fmt(x[1])+'</td><td style="text-align:right;padding:11px 10px">'+(x[2]===null?'':money(x[2]))+'</td></tr>').join('');
  const note=document.getElementById('clientOverviewValidation');
- if(note)note.textContent='Scope: Submission Classification = TBS by CMI Team. '+planned().length+' work items across '+eligible.size+' unique CMIs, including '+planned().filter(r=>!hasOffsiteDeliveryAllocation(r)).length+' work items awaiting off-site allocation. Multiple scopes under the same CMI number are counted once in this overview.';
- renderDonut('clientOverviewPie',teamRows,{centerValue:fmt(eligible.size),centerLabel:'CMI Team Submission Scope',note:'The four colour-coded table rows form this chart. Each CMI is counted once across these stages; the team scope total is not an additional slice.'});
+ if(note)note.textContent="Each CMI number is counted once. The three groups add up to Total CMIs. CMIs required for submission by the CMI Team remain in the team group regardless of current progress. Where a CMI has scopes in different groups, outstanding team scopes take precedence, followed by agreed scopes and then submitted scopes.";
+ renderDonut('clientOverviewPie',summary.bands,{centerValue:fmt(summary.total),centerLabel:'Total CMIs',note:'The three colour-coded table rows form this chart. Each CMI number appears in one group only.'});
 }
 function renderDashboard(){renderKpis();renderBars();renderDeliverySnapshot();renderResourcePerformance();renderDashboardOperationalTables()}
 function renderActiveTab(){const active=document.querySelector('.tabbtn.active')?.dataset.tab||'dashboard';if(active==='clientdashboard')renderClientDashboard();else if(active==='dashboard')renderDashboard();else if(active==='register')renderRegister();else if(active==='activities'){renderActivityList();renderDeliveryWbsManager();}else if(active==='allocation')renderAllocation();else if(active==='delivery')renderDelivery();else if(active==='readiness')renderReadiness();else if(active==='rfi')renderRfiTracker();else if(active==='progress')renderProgress();else if(active==='organisation')renderOrganisation();else if(active==='quality')renderQuality();else if(active==='changes')renderChangesLog();else if(active==='audit')renderAuditLog()}
