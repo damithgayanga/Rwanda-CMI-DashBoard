@@ -1557,11 +1557,11 @@
    <div class="assumption-box">
     <div class="assumption-title">Editable value assumptions</div>
     <div class="assumption-grid">
-     <div class="field"><label>CMI Team items without an estimate — allowance ($)</label><input type="number" min="0" step="100000" id="unallocatedPortfolioAllowanceInput"></div>
-     <div class="field"><label>CMI Team Provisional Sum items — allowance ($)</label><input type="number" min="0" step="100000" id="provisionalPortfolioAllowanceInput"></div>
+     <div class="field"><label>Other CMIs (Under Review) — placeholder ($)</label><input type="number" min="0" step="100000" id="unallocatedPortfolioAllowanceInput"></div>
+     <div class="field"><label>Provisional Sums — placeholder ($)</label><input type="number" min="0" step="100000" id="provisionalPortfolioAllowanceInput"></div>
      <button class="btn primary" id="savePortfolioAssumptionsBtn" type="button">Save</button>
     </div>
-    <div class="assumption-note">Allowances apply to TBS by CMI Team items only. Each is a total category allowance, not an amount per CMI. Existing saved assumptions are retained.</div>
+    <div class="assumption-note">Placeholders are totals for each category, not amounts per CMI. Recorded off-site estimates are added to the respective placeholder. Applies only to TBS by CMI Team items. Existing saved placeholder values are retained.</div>
    </div>
   </div>
  </div>
@@ -2463,6 +2463,27 @@ function internalSubmissionPrioritySplit(records){
  if(unmatched)slices.push({group:'Category Review',label:'Unmapped Register Category',value:unmatched,color:'#a5b2bd'});
  return {slices,total:team.length};
 }
+function internalPortfolioValueSplit(records,meta){
+ const normalise=v=>String(v||'').trim().replace(/\s+/g,' ').toLowerCase();
+ const known=v=>v!==null&&v!==undefined&&v!==''&&Number.isFinite(Number(v));
+ const total=(rows,key)=>rows.reduce((n,r)=>n+(known(r[key])?Number(r[key]):0),0);
+ const agreed=records.filter(r=>normalise(r.mainCategory)==='agreed'),submitted=records.filter(r=>normalise(r.mainCategory)==='submitted'),team=records.filter(isCmiTeamSubmission);
+ const category=(r,name)=>normalise(registerCategoryValue(r))===name;
+ const initial=team.filter(r=>category(r,'to be submitted'));
+ const provisional=team.filter(r=>category(r,'provisional sum - to be submitted'));
+ const other=team.filter(r=>category(r,'under review - to be submitted'));
+ const included=team.filter(r=>category(r,'included in other cmis - to be submitted'));
+ const otherPlaceholder=Number(meta.unallocatedPortfolioAllowance)||0,provisionalPlaceholder=Number(meta.provisionalPortfolioAllowance)||0;
+ const group='To be Submitted';
+ const slices=[
+  {label:'Agreed — Agreed Amount',value:total(agreed,'agreedAmount'),color:'#18835d'},
+  {label:'Submitted — Submitted Amount',value:total(submitted,'submittedValue'),color:'#2563a8'},
+  {group,label:'Initial review completed — Initial Estimate',value:total(initial,'initialEstimate'),color:'#bc7410'},
+  {group,label:'Provisional Sums — Placeholder + Off-Site Estimate',value:(provisional.length?provisionalPlaceholder:0)+total(provisional,'offsiteEstimate'),color:'#b62d25'},
+  {group,label:'Other CMIs — Placeholder + Off-Site Estimate',value:(other.length?otherPlaceholder:0)+total(other,'offsiteEstimate'),color:'#6b4cb5'}
+ ];
+ return {slices,netTotal:slices.reduce((n,x)=>n+x.value,0),initialCount:initial.length,initialMissing:initial.filter(r=>!known(r.initialEstimate)).length,provisionalCount:provisional.length,provisionalOffsite:total(provisional,'offsiteEstimate'),otherCount:other.length,otherOffsite:total(other,'offsiteEstimate'),includedCount:included.length,otherPlaceholder,provisionalPlaceholder};
+}
 function renderBars(){
  const all=state.records,team=all.filter(isCmiTeamSubmission),agreed=all.filter(r=>r.mainCategory==='Agreed'),submitted=all.filter(r=>r.mainCategory==='Submitted');
  const statusSplit=internalStatusSplit(all);
@@ -2475,21 +2496,11 @@ function renderBars(){
   {label:'Submitted Value',value:agreedSubmitted,color:'#2563a8'},
   {label:'Agreed Amount',value:agreedAmount,color:'#18835d'}
  ],{valueType:'money',useMagnitude:true,centerValue:String(agreed.length),centerLabel:'Agreed work items',note:'Submission Classification = Agreed. Recorded values only; '+agreed.filter(r=>!known(r.submittedValue)).length+' submitted values and '+agreed.filter(r=>!known(r.agreedAmount)).length+' agreed amounts are missing. Percentages compare absolute value magnitudes.'});
- const estimated=team.filter(r=>deliveryWorkBucket(r)!=='Investigated'&&known(r.initialEstimate));
- const unvalued=team.filter(r=>deliveryWorkBucket(r)!=='Investigated'&&!known(r.initialEstimate));
- const provisional=team.filter(r=>deliveryWorkBucket(r)==='Investigated');
- const unallocatedAllowance=Number(state.meta.unallocatedPortfolioAllowance)||0,provisionalAllowance=Number(state.meta.provisionalPortfolioAllowance)||0;
- const portfolioSlices=[
-  {label:'Agreed — Recorded Agreed Amount',value:agreedAmount,color:'#18835d'},
-  {label:'Submitted — Recorded Submitted Value',value:sum(submitted.map(r=>r.submittedValue)),color:'#2563a8'},
-  {label:'TBS by CMI Team — Known Initial Estimates (excluding PS)',value:sum(estimated.map(r=>r.initialEstimate)),color:'#bc7410'},
-  {label:'TBS by CMI Team — No Estimate Allowance',value:unvalued.length?unallocatedAllowance:0,color:'#6b4cb5'},
-  {label:'TBS by CMI Team — Provisional Sum Allowance',value:provisional.length?provisionalAllowance:0,color:'#b62d25'}
- ];
- const netTotal=sum(portfolioSlices.map(x=>x.value));
- renderDonut('portfolioValuePie',portfolioSlices,{valueType:'money',useMagnitude:true,centerValue:portfolioMoney(netTotal),centerLabel:'Net portfolio total',note:estimated.length+' team work items have recorded non-PS estimates; '+unvalued.length+' have no non-PS estimate; '+provisional.length+' are covered by the total PS allowance. Saved allowances are assumptions, not recorded CMI values. Percentages use absolute magnitudes.'});
- const unallocated=document.getElementById('unallocatedPortfolioAllowanceInput'),ps=document.getElementById('provisionalPortfolioAllowanceInput');if(unallocated)unallocated.value=unallocatedAllowance;if(ps)ps.value=provisionalAllowance;
+ const portfolio=internalPortfolioValueSplit(all,state.meta);
+ renderDonut('portfolioValuePie',portfolio.slices,{valueType:'money',useMagnitude:true,centerValue:portfolioMoney(portfolio.netTotal),centerLabel:'Net portfolio total',note:'Agreed and Submitted amounts follow Submission Classification. To be Submitted includes TBS by CMI Team only. Initial review completed uses Initial Estimates ('+portfolio.initialMissing+' missing). Provisional Sums = total placeholder + recorded off-site estimates ('+portfolioMoney(portfolio.provisionalOffsite)+'). Other CMIs (Under Review) = total placeholder + recorded off-site estimates ('+portfolioMoney(portfolio.otherOffsite)+'). Included in other CMIs ('+portfolio.includedCount+' work items) have no separate value in this chart. Percentages use absolute magnitudes.'});
+ const unallocated=document.getElementById('unallocatedPortfolioAllowanceInput'),ps=document.getElementById('provisionalPortfolioAllowanceInput');if(unallocated)unallocated.value=portfolio.otherPlaceholder;if(ps)ps.value=portfolio.provisionalPlaceholder;
 }
+
 function savePortfolioAssumptions(){
  const unallocated=document.getElementById('unallocatedPortfolioAllowanceInput'),ps=document.getElementById('provisionalPortfolioAllowanceInput');if(!unallocated||!ps)return;
  const u=Number(unallocated.value),p=Number(ps.value);
