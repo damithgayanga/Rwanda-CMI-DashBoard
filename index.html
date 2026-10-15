@@ -278,15 +278,10 @@
 #tab-clientdashboard #clientOverviewRows tr{border-bottom:1px solid #e1e9ef}
 #tab-clientdashboard #clientOverviewRows .client-overview-team-total{background:#edf3f7;font-weight:650}
 #tab-clientdashboard #clientOverviewRows .client-overview-team-total td{font-weight:650;color:#183b56}
-.client-team-breakdown{margin-top:26px;padding-top:22px;border-top:1px solid #dce7ee}
-.client-team-breakdown>h3{margin:0 0 20px;color:#183b56;font-size:15px}
-.client-team-table{width:100%;border-collapse:collapse;font-size:12px}
-.client-team-table th{text-align:left;background:#f3f7fa;font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:#658096;padding:12px 14px}
-.client-team-table td{padding:13px 14px;border-bottom:1px solid #e1e9ef;color:#41596b;line-height:1.5}
-.client-team-table td:last-child,.client-team-table th:last-child{text-align:right;white-space:nowrap}
-.client-team-table .client-team-subrow td:first-child{padding-left:40px;font-size:11px}
-.client-team-table .client-team-balance td,.client-team-table .client-team-total td{font-weight:650;color:#183b56;background:#f3f7fa}
-.client-team-table .client-team-total td{border-top:2px solid #dce7ee}
+#tab-clientdashboard #clientOverviewRows .client-team-detail td:first-child{padding-left:30px!important}
+#tab-clientdashboard #clientOverviewRows .client-team-subrow td:first-child{padding-left:50px!important;font-size:11px}
+#tab-clientdashboard #clientOverviewRows .client-team-balance td,#tab-clientdashboard #clientOverviewRows .client-team-total td{font-weight:650;color:#183b56;background:#f3f7fa}
+
 </style>
 <style id="executive-presentation-v2">
 /* Executive presentation: scoped to the management report only. */
@@ -324,8 +319,6 @@
 #tab-clientdashboard #clientOverviewRows tr:first-child{background:#edf3f7}
 #tab-clientdashboard #clientOverviewRows tr:first-child td{font-weight:650;color:#183b56}
 #tab-clientdashboard #clientOverviewRows tr:first-child td:nth-child(2){font-size:22px;letter-spacing:-.5px}
-#tab-clientdashboard #clientOverviewRows tr:nth-child(5){background:#f4f8fa;border-top:2px solid #dce7ee!important}
-#tab-clientdashboard #clientOverviewRows tr:nth-child(5) td{font-weight:650;color:#183b56}
 #tab-clientdashboard .client-overview-swatch{width:7px;height:7px;border-radius:50%;margin-right:9px}
 #tab-clientdashboard .exec-commercial-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px;align-items:start}
 #tab-clientdashboard .exec-commercial-grid .exec-panel{height:100%;display:flex;flex-direction:column}
@@ -1678,14 +1671,7 @@
     <div class="client-overview-chart"><h3>Total CMIs — Submission Breakdown</h3><div id="clientOverviewPie"></div></div>
    </div>
    <div id="clientOverviewValidation" class="badge-note" style="margin-top:16px"></div>
-   <div class="client-team-breakdown">
-    <h3>CMIs - Required to be Actioned by CMI Team</h3>
-    <div class="client-overview-layout">
-     <div class="client-overview-table"><table class="client-team-table"><thead><tr><th>Description</th><th>CMI Count</th></tr></thead><tbody id="clientTeamBreakdownRows"></tbody></table></div>
-     <div class="client-overview-chart"><h3>CMI Team — Status Breakdown</h3><div id="clientTeamBreakdownPie"></div></div>
-    </div>
-    <div class="badge-note">(a) + (b) + (c) + (d) = CMI Team scope. Zero value / included CMIs + other CMIs = balance. Each CMI is counted once; agreed CMIs take precedence over submitted CMIs, followed by CMIs in progress.</div>
-   </div>
+
   </div>
  </article>
  <div class="exec-commercial-grid">
@@ -3877,11 +3863,7 @@ function renderClientDashboard(){
  const note=document.getElementById('clientOverviewValidation');
  if(note)note.textContent='Each CMI number is counted once. The three groups add up to Total CMIs.';
  renderDonut('clientOverviewPie',summary.bands,{centerValue:fmt(summary.total),centerLabel:'Total CMIs'});
- const detail=document.getElementById('clientTeamBreakdownRows');
- if(detail){
-  detail.innerHTML=summary.stages.map((x,i)=>'<tr'+(x.id==='balance'?' class="client-team-balance"':'')+'><td><span class="client-overview-swatch" style="background:'+x.color+'"></span>('+String.fromCharCode(97+i)+') '+esc(x.label)+'</td><td>'+fmt(x.value)+'</td></tr>'+(x.id==='balance'?'<tr class="client-team-subrow"><td>Zero Value CMIs / CMIs Included in Other CMIs</td><td>'+fmt(summary.zeroBalance)+'</td></tr><tr class="client-team-subrow"><td>Other CMIs</td><td>'+fmt(summary.otherBalance)+'</td></tr>':'')).join('')+'<tr class="client-team-total"><td>Total CMIs - Required to be Actioned by CMI Team</td><td>'+fmt(summary.bands.find(x=>x.id==='team').value)+'</td></tr>';
- }
- renderDonut('clientTeamBreakdownPie',summary.stages,{centerValue:fmt(summary.bands.find(x=>x.id==='team').value),centerLabel:'CMI Team Scope'});
+ body.innerHTML+=summary.stages.map((x,i)=>'<tr class="client-team-detail'+(x.id==='balance'?' client-team-balance':'')+'"><td><span class="client-overview-swatch" style="background:'+x.color+'"></span>('+String.fromCharCode(97+i)+') '+esc(x.label)+'</td><td style="text-align:right">'+fmt(x.value)+'</td><td></td></tr>'+(x.id==='balance'?'<tr class="client-team-subrow"><td>Zero Value CMIs / CMIs Included in Other CMIs</td><td style="text-align:right">'+fmt(summary.zeroBalance)+'</td><td></td></tr><tr class="client-team-subrow"><td>Other CMIs</td><td style="text-align:right">'+fmt(summary.otherBalance)+'</td><td></td></tr>':'')).join('')+'<tr class="client-team-total"><td>Total CMIs - Required to be Actioned by CMI Team</td><td style="text-align:right">'+fmt(summary.bands.find(x=>x.id==="team").value)+'</td><td></td></tr>';
 }
 function renderDashboard(){renderKpis();renderBars();renderDeliverySnapshot();renderResourcePerformance();renderDashboardOperationalTables()}
 function renderActiveTab(){const active=document.querySelector('.tabbtn.active')?.dataset.tab||'dashboard';if(active==='clientdashboard')renderClientDashboard();else if(active==='dashboard')renderDashboard();else if(active==='register')renderRegister();else if(active==='activities'){renderActivityList();renderDeliveryWbsManager();}else if(active==='allocation')renderAllocation();else if(active==='delivery')renderDelivery();else if(active==='readiness')renderReadiness();else if(active==='rfi')renderRfiTracker();else if(active==='progress')renderProgress();else if(active==='organisation')renderOrganisation();else if(active==='quality')renderQuality();else if(active==='changes')renderChangesLog();else if(active==='audit')renderAuditLog()}
