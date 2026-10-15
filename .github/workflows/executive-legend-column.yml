@@ -1,0 +1,44 @@
+name: Executive donut legend single column
+on:
+  push:
+    paths: ['.github/workflows/executive-legend-column.yml']
+permissions:
+  contents: write
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set single column legends
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          css="""
+          /* Executive value donut legends: a single vertical list. */
+          #tab-clientdashboard #clientApprovedPie .pie-legend,
+          #tab-clientdashboard #clientSubmittedPie .pie-legend{
+            display:grid;
+            grid-template-columns:minmax(0,1fr);
+            gap:0;
+            width:100%;
+            align-content:center;
+          }
+          #tab-clientdashboard #clientApprovedPie .pie-legend-row,
+          #tab-clientdashboard #clientSubmittedPie .pie-legend-row{
+            width:100%;
+            padding:12px 0;
+            border-bottom:1px solid #e8eef3;
+          }
+          """
+          if 'Executive value donut legends: a single vertical list.' not in s:
+              s=s.replace('</style>',css+'</style>',1)
+              p.write_text(s,encoding='utf-8')
+          PY
+      - name: Commit layout change
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git diff --cached --quiet || (git commit -m "Display executive donut legends in one column" && git push)
