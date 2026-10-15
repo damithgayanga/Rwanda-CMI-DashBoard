@@ -1,4 +1,4 @@
-name: Apply approved Executive Dashboard updates
+name: Apply approved Executive Dashboard updates (corrected)
 on:
   push:
     paths:
@@ -16,37 +16,37 @@ jobs:
         shell: bash
         run: |
           python3 - <<'PY'
-            from pathlib import Path
-            p=Path("index.html")
-            s=p.read_text(encoding="utf-8")
-            def change(old,new,expected=1):
-             global s
-             actual=s.count(old)
-             if actual!=expected: raise RuntimeError(f"Expected {expected}, found {actual}: {old[:80]}")
-             s=s.replace(old,new)
-            change('<span class="client-stage-caption">Cumulative stage milestones</span>','')
-            change("CMIs Submitted (Not Agreed) before CMI Team's Mobilisation","CMIs Submitted (Not Approved) before CMI Team's Mobilisation",2)
-            change("CMIs Received from Measurement Team","CMIs Completed by Measurement Team")
-            change("const sets=Array.from({length:5},()=>new Set());\n for(const r of records||[]){\n  if(!cmiTeamScopeRecord(r))continue;","const sets=Array.from({length:6},()=>new Set());\n for(const r of records||[]){\n  if(!cmiTeamScopeRecord(r))continue;")
-            change("if(activityProgressAt100(a.clearance)&&a.clearance.actualFinishDate)sets[4].add(key);\n }\n return sets.map","if(activityProgressAt100(a.clearance)&&a.clearance.actualFinishDate)sets[4].add(key);\n  const submission=findActivityByIdOrName(r,'act-submit-dgj','submission to dgj');\n  if(activityComplete(submission)&&afterTrackerStart(submission))sets[5].add(key);\n }\n return sets.map")
-            change("'CMIs Received from CM'];","'CMIs Received from CM','Submitted to DGJ'];")
-            change("function renderPreviouslyApprovedCmis(){","function clientValueGroupSlices(bands){return [{id:'positive',label:'Positive Value',color:'#008f8c'},{id:'negative',label:'Negative Value',color:'#d6a23e'},{id:'zero',label:'Zero Value',color:'#56a7b8'}].map(c=>({label:c.label,color:c.color,value:bands.filter(b=>b.id===c.id||b.id.startsWith(c.id+'-')).reduce((n,b)=>n+b.value,0)}))}\nfunction renderPreviouslyApprovedCmis(){")
-            change("renderDonut('clientApprovedPie',summary.bands.filter(x=>x.id!=='missing'||x.value>0),{centerValue:fmt(summary.total),centerLabel:\"CMIs Agreed with DGJ before CMI Team's mobilisation\"});","renderDonut('clientApprovedPie',clientValueGroupSlices(summary.bands),{centerValue:fmt(summary.total),hideCenterLabel:true});")
-            change("renderDonut('clientSubmittedPie',summary.bands.filter(x=>x.id!=='missing'||x.value>0),{centerValue:fmt(summary.total),centerLabel:'Previously Submitted to DG Jones'});","renderDonut('clientSubmittedPie',clientValueGroupSlices(summary.bands),{centerValue:fmt(summary.total),hideCenterLabel:true});")
-            change("<span>${esc(centerLabel)}</span></div></div></div>","${opt.hideCenterLabel?'':`<span>${esc(centerLabel)}</span>`}</div></div></div>")
-            for start in ('<details class="client-data-note"><summary>Basis of stage counts</summary>','<div class="badge-note" style="margin-top:16px">Based on existing Agreed register entries.','<div class="badge-note" style="margin-top:16px">Based on entries marked Submitted in Register Category.'):
-             i=s.index(start)
-             ending='</details>' if start.startswith('<details') else '</div>'
-             j=s.index(ending,i)
-             s=s[:i]+s[j+len(ending):]
-            change('</style>',"""#tab-clientdashboard #clientOverviewPie .pie-legend-label{text-align:left!important}
-            #tab-clientdashboard #clientOverviewPie .pie-legend-row{text-align:left}
-            #tab-clientdashboard .client-overview-chart:has(#clientOverviewPie) h3{text-align:center}
-            #tab-clientdashboard #clientOverviewValidation{display:none!important}
-            </style>""",2)
-            p.write_text(s,encoding="utf-8")
-            
-          PY
+          from pathlib import Path
+          p=Path("index.html")
+          s=p.read_text(encoding="utf-8")
+          def change(old,new,expected=1):
+           global s
+           actual=s.count(old)
+           if actual!=expected: raise RuntimeError(f"Expected {expected}, found {actual}: {old[:80]}")
+           s=s.replace(old,new)
+          change('<span class="client-stage-caption">Cumulative stage milestones</span>','')
+          change("CMIs Submitted (Not Agreed) before CMI Team's Mobilisation","CMIs Submitted (Not Approved) before CMI Team's Mobilisation",2)
+          change("CMIs Received from Measurement Team","CMIs Completed by Measurement Team")
+          change("const sets=Array.from({length:5},()=>new Set());\n for(const r of records||[]){\n  if(!cmiTeamScopeRecord(r))continue;","const sets=Array.from({length:6},()=>new Set());\n for(const r of records||[]){\n  if(!cmiTeamScopeRecord(r))continue;")
+          change("if(activityProgressAt100(a.clearance)&&a.clearance.actualFinishDate)sets[4].add(key);\n }\n return sets.map","if(activityProgressAt100(a.clearance)&&a.clearance.actualFinishDate)sets[4].add(key);\n  const submission=findActivityByIdOrName(r,'act-submit-dgj','submission to dgj');\n  if(activityComplete(submission)&&afterTrackerStart(submission))sets[5].add(key);\n }\n return sets.map")
+          change("'CMIs Received from CM'];","'CMIs Received from CM','Submitted to DGJ'];")
+          change("function renderPreviouslyApprovedCmis(){","function clientValueGroupSlices(bands){return [{id:'positive',label:'Positive Value',color:'#008f8c'},{id:'negative',label:'Negative Value',color:'#d6a23e'},{id:'zero',label:'Zero Value',color:'#56a7b8'}].map(c=>({label:c.label,color:c.color,value:bands.filter(b=>b.id===c.id||b.id.startsWith(c.id+'-')).reduce((n,b)=>n+b.value,0)}))}\nfunction renderPreviouslyApprovedCmis(){")
+          change("renderDonut('clientApprovedPie',summary.bands.filter(x=>x.id!=='missing'||x.value>0),{centerValue:fmt(summary.total),centerLabel:\"CMIs Agreed with DGJ before CMI Team's mobilisation\"});","renderDonut('clientApprovedPie',clientValueGroupSlices(summary.bands),{centerValue:fmt(summary.total),hideCenterLabel:true});")
+          change("renderDonut('clientSubmittedPie',summary.bands.filter(x=>x.id!=='missing'||x.value>0),{centerValue:fmt(summary.total),centerLabel:'Previously Submitted to DG Jones'});","renderDonut('clientSubmittedPie',clientValueGroupSlices(summary.bands),{centerValue:fmt(summary.total),hideCenterLabel:true});")
+          change("<span>${esc(centerLabel)}</span></div></div></div>","${opt.hideCenterLabel?'':`<span>${esc(centerLabel)}</span>`}</div></div></div>")
+          for start in ('<details class="client-data-note"><summary>Basis of stage counts</summary>','<div class="badge-note" style="margin-top:16px">Based on existing Agreed register entries.','<div class="badge-note" style="margin-top:16px">Based on entries marked Submitted in Register Category.'):
+           i=s.index(start)
+           ending='</details>' if start.startswith('<details') else '</div>'
+           j=s.index(ending,i)
+           s=s[:i]+s[j+len(ending):]
+          change('</style>',"""#tab-clientdashboard #clientOverviewPie .pie-legend-label{text-align:left!important}
+          #tab-clientdashboard #clientOverviewPie .pie-legend-row{text-align:left}
+          #tab-clientdashboard .client-overview-chart:has(#clientOverviewPie) h3{text-align:center}
+          #tab-clientdashboard #clientOverviewValidation{display:none!important}
+          </style>""",2)
+          p.write_text(s,encoding="utf-8")
+          
+                    PY
       - name: Commit updated dashboard
         run: |
           git config user.name "github-actions[bot]"
