@@ -2485,7 +2485,7 @@ function derivedDeliveryStatus(r){
  if(!r)return 'To be Started';
 
  // Submission Classification defines team scope; activity progress defines delivery stage.
- if(!isCmiTeamSubmission(r))return ['Agreed','Submitted','Agreed - CMI Team'].includes(r.mainCategory)?'Submitted':'Not Applicable';
+ if(!isCmiTeamSubmission(r))return ['Agreed','Submitted','Submitted - CMI Team','Agreed - CMI Team'].includes(r.mainCategory)?'Submitted':'Not Applicable';
 
  const measure=findActivityByIdOrName(r,'act-measure','measurement works');
  const clearance=findActivityByIdOrName(r,'act-clearance','technical and commercial clearance');
@@ -2852,7 +2852,7 @@ function populateFilters(){
   el.value=values.includes(previous)?previous:'';
  };
  {const el=document.getElementById('fStatus');if(el){const previous=el.value;el.replaceChildren(new Option('All register categories',''));registerCategories.forEach(v=>el.add(new Option(v,v)));el.value=registerCategories.includes(previous)?previous:'';}}
- const updatedStatuses=uniq(state.records.map(r=>String(r.mainCategory||'').trim()).filter(Boolean).concat(['Agreed','Submitted','TBS by CMI Team','Agreed - CMI Team']));
+ const updatedStatuses=uniq(state.records.map(r=>String(r.mainCategory||'').trim()).filter(Boolean).concat(['Agreed','Submitted','TBS by CMI Team','Submitted - CMI Team','Agreed - CMI Team']));
  for(const id of ['fMainCategory','eMainCategory']){
   const el=document.getElementById(id);if(!el)continue;const previous=el.value;
   el.replaceChildren(new Option(id==='fMainCategory'?'All submission classifications':'Not set',''));
@@ -3938,7 +3938,7 @@ function renderClientProcessStages(){
 function cmiTeamScopeRecord(r){
  if(!r)return false;
  const category=String(r.mainCategory||'').trim();
- return ['TBS by CMI Team','Agreed - CMI Team'].includes(category)||r.wasCmiTeam===true||MAIN_CATEGORY_BY_RECORD_ID[r.id]==='TBS by CMI Team'||(SOURCE.records||[]).some(x=>x.id===r.id&&x.mainCategory==='TBS by CMI Team');
+ return ['TBS by CMI Team','Submitted - CMI Team','Agreed - CMI Team'].includes(category)||r.wasCmiTeam===true||MAIN_CATEGORY_BY_RECORD_ID[r.id]==='TBS by CMI Team'||(SOURCE.records||[]).some(x=>x.id===r.id&&x.mainCategory==='TBS by CMI Team');
 }
 function cmiTeamAgreedRecord(r){
  const known=r.agreedAmount!==null&&r.agreedAmount!==undefined&&r.agreedAmount!==''&&Number.isFinite(Number(r.agreedAmount));
@@ -3956,10 +3956,10 @@ function clientOverviewSummary(records){
   {id:'team',label:'CMIs - Required to be Actioned by CMI Team',value:0,color:'#315fa8',amount:null}
  ];
  const stages=[
-  {id:'progress',label:'CMI Team - In Progress',value:0,color:'#d6a23e'},
-  {id:'submitted',label:'CMI Team - Submitted to DGJ',value:0,color:'#4fa3d1'},
-  {id:'agreed',label:'CMI Team - Agreed with DGJ',value:0,color:'#7955a5'},
-  {id:'balance',label:'Balance CMIs to be Actioned',value:0,color:'#315fa8'}
+  {id:'progress',label:'CMI Team - In Progress',value:0,color:'#d6a23e',amount:null},
+  {id:'submitted',label:'CMI Team - Submitted to DGJ',value:0,color:'#4fa3d1',amount:0},
+  {id:'agreed',label:'CMI Team - Agreed with DGJ',value:0,color:'#7955a5',amount:0},
+  {id:'balance',label:'Balance CMIs to be Actioned',value:0,color:'#315fa8',amount:null}
  ];
  let zeroBalance=0,otherBalance=0;
  for(const rows of groups.values()){
@@ -3975,10 +3975,14 @@ function clientOverviewSummary(records){
   if(id!=='team')continue;
   bands.find(x=>x.id==='team').value++;
   const scoped=teamRows.length?teamRows:rows;
-  const submitted=scoped.some(r=>{const a=findActivityByIdOrName(r,'act-submit-dgj','submission to dgj');return activityProgressAt100(a)&&!!a.actualFinishDate;});
+  const teamAgreed=scoped.filter(r=>String(r.mainCategory||'').trim()==='Agreed - CMI Team');
+  const teamSubmitted=scoped.filter(r=>String(r.mainCategory||'').trim()==='Submitted - CMI Team');
   const started=scoped.some(r=>{const a=findActivityByIdOrName(r,'act-measure','measurement works');return !!(a&&(a.actualStartDate||a.actualFinishDate||Number(a.progressPct)>0));});
-  const stage=scoped.some(cmiTeamAgreedRecord)?'agreed':submitted?'submitted':started?'progress':'balance';
-  stages.find(x=>x.id===stage).value++;
+  const stage=teamAgreed.length?'agreed':teamSubmitted.length?'submitted':started?'progress':'balance';
+  const stageRow=stages.find(x=>x.id===stage);
+  stageRow.value++;
+  if(stage==='agreed')stageRow.amount+=teamAgreed.reduce((sum,r)=>sum+(Number(r.agreedAmount)||0),0);
+  if(stage==='submitted')stageRow.amount+=teamSubmitted.reduce((sum,r)=>sum+(Number(r.submittedValue)||0),0);
   if(stage==='balance'){
    const zeroOrIncluded=scoped.every(r=>{
     const initial=r.initialEstimate;
@@ -4010,7 +4014,7 @@ function renderClientDashboard(){
   {label:'CMI Team - Other CMIs',value:summary.otherBalance,color:'#315fa8'}
  ];
  renderDonut('clientOverviewPie',overviewSlices,{centerValue:fmt(summary.total),centerLabel:'Total CMIs'});
- body.innerHTML+=summary.stages.map(x=>'<tr class="client-team-detail'+(x.id==='balance'?' client-team-balance':'')+'"'+(!teamExpanded?' hidden':'')+'><td>'+(x.id==='balance'?'<button type="button" class="client-overview-toggle" data-toggle="balance" aria-expanded="'+balanceExpanded+'" aria-label="'+(balanceExpanded?'Collapse':'Expand')+' balance CMIs"><span class="client-overview-chevron" aria-hidden="true">▸</span></button>':'')+'<span class="client-overview-swatch" style="background:'+x.color+'"></span>'+esc(x.label)+'</td><td style="text-align:right">'+fmt(x.value)+'</td><td></td></tr>'+(x.id==='balance'?'<tr class="client-team-subrow"'+(!(teamExpanded&&balanceExpanded)?' hidden':'')+'><td><span class="client-overview-swatch" style="background:#b883ae"></span>CMI Team - Zero Value CMIs / CMIs Included in Other CMIs</td><td style="text-align:right">'+fmt(summary.zeroBalance)+'</td><td></td></tr><tr class="client-team-subrow"'+(!(teamExpanded&&balanceExpanded)?' hidden':'')+'><td><span class="client-overview-swatch" style="background:#315fa8"></span>CMI Team - Other CMIs</td><td style="text-align:right">'+fmt(summary.otherBalance)+'</td><td></td></tr>':'')).join('');
+ body.innerHTML+=summary.stages.map(x=>'<tr class="client-team-detail'+(x.id==='balance'?' client-team-balance':'')+'"'+(!teamExpanded?' hidden':'')+'><td>'+(x.id==='balance'?'<button type="button" class="client-overview-toggle" data-toggle="balance" aria-expanded="'+balanceExpanded+'" aria-label="'+(balanceExpanded?'Collapse':'Expand')+' balance CMIs"><span class="client-overview-chevron" aria-hidden="true">▸</span></button>':'')+'<span class="client-overview-swatch" style="background:'+x.color+'"></span>'+esc(x.label)+'</td><td style="text-align:right">'+fmt(x.value)+'</td><td style="text-align:right">'+(x.amount===null?'':money(x.amount))+'</td></tr>'+(x.id==='balance'?'<tr class="client-team-subrow"'+(!(teamExpanded&&balanceExpanded)?' hidden':'')+'><td><span class="client-overview-swatch" style="background:#b883ae"></span>CMI Team - Zero Value CMIs / CMIs Included in Other CMIs</td><td style="text-align:right">'+fmt(summary.zeroBalance)+'</td><td></td></tr><tr class="client-team-subrow"'+(!(teamExpanded&&balanceExpanded)?' hidden':'')+'><td><span class="client-overview-swatch" style="background:#315fa8"></span>CMI Team - Other CMIs</td><td style="text-align:right">'+fmt(summary.otherBalance)+'</td><td></td></tr>':'')).join('');
  body.querySelectorAll('[data-toggle]').forEach(button=>button.addEventListener('click',()=>{
   const name=button.dataset.toggle;
   body.dataset[name==='team'?'teamExpanded':'balanceExpanded']=String(!(name==='team'?body.dataset.teamExpanded==='true':body.dataset.balanceExpanded==='true'));
