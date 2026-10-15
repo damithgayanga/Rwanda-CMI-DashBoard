@@ -543,6 +543,12 @@
   font-weight:600;
   line-height:1.35;
 }
+
+/* Main team breakdown row uses the same regular text weight as other classifications. */
+#tab-clientdashboard #clientOverviewRows .client-overview-team-total,
+#tab-clientdashboard #clientOverviewRows .client-overview-team-total td{
+  font-weight:400!important;
+}
 </style>
 
 <!-- Supabase -->
@@ -4015,7 +4021,7 @@ function renderClientDashboard(){
  const balanceExpanded=body.dataset.balanceExpanded==='true';
  const items=[['Total CMIs',summary.total,null],...summary.bands.map(x=>[x.label,x.value,x.amount,x.color])];
  const fmt=n=>Number(n).toLocaleString('en-US',{maximumFractionDigits:0});
- body.innerHTML=items.map((x,i)=>'<tr'+(i===3?' class="client-overview-team-total"':'')+'><td>'+(i===3?'<button type="button" class="client-overview-toggle" data-toggle="team" aria-expanded="'+teamExpanded+'" aria-label="'+(teamExpanded?'Collapse':'Expand')+' CMIs required to be actioned"><span class="client-overview-chevron" aria-hidden="true">▸</span></button>':'')+(x[3]&&i!==3?'<span class="client-overview-swatch" style="background:'+x[3]+'"></span>':'')+esc(x[0])+'</td><td style="text-align:right">'+fmt(x[1])+'</td><td style="text-align:right">'+(x[2]===null?'':money(x[2]))+'</td></tr>').join('');
+ body.innerHTML=items.map((x,i)=>'<tr'+(i===3?' class="client-overview-team-total"':'')+'><td>'+(i===3?'<button type="button" class="client-overview-toggle" data-toggle="team" aria-expanded="'+teamExpanded+'" aria-label="'+(teamExpanded?'Collapse':'Expand')+' CMIs required to be actioned"><span class="client-overview-chevron" aria-hidden="true">▸</span></button>':'')+(x[3]?'<span class="client-overview-swatch" style="background:'+x[3]+'"></span>':'')+esc(x[0])+'</td><td style="text-align:right">'+fmt(x[1])+'</td><td style="text-align:right">'+(x[2]===null?'':money(x[2]))+'</td></tr>').join('');
  const note=document.getElementById('clientOverviewValidation');
  if(note)note.textContent='Total CMIs counts each number once across the portfolio. Classification counts are unique within each group and may overlap. Values sum every applicable source row.';
  const overviewSlices=[
