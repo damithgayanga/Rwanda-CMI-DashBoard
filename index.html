@@ -1138,6 +1138,7 @@
     if(a.activityId==='act-submit-dgj'||String(a.activityName||'').toLowerCase().includes('submission to dgj')){
       const v=row.submitted_value;
       if(v!==null&&v!==undefined&&v!=='')r.submittedValue=Number(v);
+      syncCompletedDgjSubmission(r,a,row.updated_at);
     }
     if(a.actualFinishDate||a.progressPct>=100)a.status='Completed';
     else if(a.actualStartDate||a.progressPct>0)a.status='In Progress';
@@ -2514,8 +2515,19 @@ function setHeader(){
  if(sourceFileFoot)sourceFileFoot.textContent=state.meta.sourceFile||'';
 }
 function hasActivityProgress(r){return (r.cmiActivities||[]).some(a=>!!(a.actualStartDate||a.actualFinishDate||Number(a.progressPct)>0))}
+// Promote only outstanding CMI Team submissions; agreed and pre-team rows retain their classification.
+function syncCompletedDgjSubmission(r,a,updatedAt){
+ if(!r||String(r.mainCategory||'').trim()!=='TBS by CMI Team')return false;
+ const submission=a&&(a.activityId==='act-submit-dgj'||String(a.activityName||'').toLowerCase().includes('submission to dgj'));
+ if(!submission||!activityComplete(a))return false;
+ r.wasCmiTeam=true;
+ r.mainCategory='Submitted - CMI Team';
+ r.mainCategoryUpdatedAt=updatedAt||new Date().toISOString();
+ r.submittedDate=a.actualFinishDate;
+ return true;
+}
 function isCmiTeamSubmission(r){return !!r&&String(r.mainCategory||'').trim()==='TBS by CMI Team'}
-function deliveryPlanApplicable(r){return isCmiTeamSubmission(r)}
+function deliveryPlanApplicable(r){return cmiTeamScopeRecord(r)}
 function deliveryWorkBucket(r){if(String(registerCategoryValue(r)||'').trim()==='Provisional Sum - To be Submitted')return 'Investigated';return calcPriority(r)==='Unvalued'?'Unvalued':calcPriority(r)}
 function hasOffsiteDeliveryAllocation(r){
  if(!r)return false;
@@ -2525,7 +2537,8 @@ function hasOffsiteDeliveryAllocation(r){
   return activityReadyForDelivery(a)||activityStarted(a);
  });
 }
-function isInDeliveryPlanRecord(r){return isCmiTeamSubmission(r)}
+// Delivery Plan membership survives submission and agreement.
+function isInDeliveryPlanRecord(r){return cmiTeamScopeRecord(r)}
 function activityProgressAt100(a){return !!(a&&Number(a.progressPct)>=100)}
 
 const CMI_ACTIVITY_WEIGHTS=Object.freeze({
@@ -2572,15 +2585,15 @@ function weightedDeliverySummaryProgress(){
 function derivedDeliveryStatus(r){
  if(!r)return 'To be Started';
 
- // Submission Classification defines team scope; activity progress defines delivery stage.
- if(!isCmiTeamSubmission(r))return ['Agreed','Submitted','Submitted - CMI Team','Agreed - CMI Team'].includes(r.mainCategory)?'Submitted':'Not Applicable';
+ // Original CMI Team assignment defines plan scope; completion defines delivery stage.
+ if(!isInDeliveryPlanRecord(r))return ['Agreed','Submitted','Submitted - CMI Team','Agreed - CMI Team'].includes(r.mainCategory)?'Submitted':'Not Applicable';
 
  const measure=findActivityByIdOrName(r,'act-measure','measurement works');
  const clearance=findActivityByIdOrName(r,'act-clearance','technical and commercial clearance');
  const submission=findActivityByIdOrName(r,'act-submit-dgj','submission to dgj');
 
- // Once the DGJ submission activity reaches 100%, the CMI is submitted.
- if(activityProgressAt100(submission))return 'Submitted';
+ // Retain completed team deliveries even after they are subsequently agreed.
+ if(['Submitted - CMI Team','Agreed - CMI Team','Submitted','Agreed'].includes(r.mainCategory)||activityComplete(submission))return 'Submitted';
 
  // After Technical & Commercial Clearance reaches 100%, the CMI is being finalised for DGJ.
  if(activityProgressAt100(clearance))return 'Under Finalisation for DGJ Submission';
@@ -2594,7 +2607,7 @@ function derivedDeliveryStatus(r){
  // Measurement has not started, including where it has only planned dates.
  return 'To be Started';
 }
-function planned(){return state.records.filter(isCmiTeamSubmission)}
+function planned(){return state.records.filter(isInDeliveryPlanRecord)}
 function resourceLocation(name){
  const row=(supabaseResources||[]).find(r=>(r.resource_name||'')===name&&!r.is_deleted);
  if(row)return unpackResourceRole(row.role).location;
@@ -3068,7 +3081,7 @@ function renderCmiActivityPanel(r){
  const acts=r.cmiActivities||[];if(!expandedCmiActivities.has(r.id))return '';
  const siteNames=currentSiteResources(),offsiteNames=currentOffsiteResources();
  const rows=acts.map(a=>`<tr data-cmia="${a.id}"><td><select class="activity-name-select" data-cmia-field="activityId">${activityOptions(a.activityId,a.activityName)}</select></td><td><select class="resource-select" data-cmia-field="siteResource">${resourceOptions(siteNames,a.siteResource,'No site resource')}</select></td><td><select class="resource-select" data-cmia-field="offsiteResource">${resourceOptions(offsiteNames,a.offsiteResource,'No off-site resource')}</select></td><td><input class="date-input" type="date" data-cmia-field="startDate" value="${a.startDate||''}"></td><td><input class="date-input" type="date" data-cmia-field="targetDate" value="${a.targetDate||''}"></td><td><button class="btn danger" type="button" onclick="removeCmiActivity('${r.id}','${a.id}')">Remove</button></td></tr>`).join('');
- return `<tr class="cmi-plan-row"><td colspan="8"><div class="activity-plan-panel" data-cmi-plan="${esc(r.id)}"><div class="activity-plan-head"><div><b>${esc(r.cmiNo)} — Activity Allocation</b><div class="activity-help">All TBS by CMI Team items belong to the Delivery Plan. Assign resources and planned dates here to schedule their activities.</div></div><div class="activity-toolbar"><button class="btn good" type="button" onclick="saveCmiActivityPlan('${r.id}')">Save CMI Activity Plan</button></div></div><div style="overflow:auto"><table class="activity-assignment-table"><thead><tr><th>Activity</th><th>Site Resource</th><th>Off-site Resource</th><th>Start Date</th><th>Target Date</th><th>Action</th></tr></thead><tbody>${rows||'<tr><td colspan="6" class="muted">No activities selected yet. Use the activity dropdown in the CMI row above.</td></tr>'}</tbody></table></div></div></td></tr>`;
+ return `<tr class="cmi-plan-row"><td colspan="8"><div class="activity-plan-panel" data-cmi-plan="${esc(r.id)}"><div class="activity-plan-head"><div><b>${esc(r.cmiNo)} — Activity Allocation</b><div class="activity-help">All items originally assigned to the CMI Team remain in the Delivery Plan, including submitted and agreed items. Assign resources and planned dates here to schedule their activities.</div></div><div class="activity-toolbar"><button class="btn good" type="button" onclick="saveCmiActivityPlan('${r.id}')">Save CMI Activity Plan</button></div></div><div style="overflow:auto"><table class="activity-assignment-table"><thead><tr><th>Activity</th><th>Site Resource</th><th>Off-site Resource</th><th>Start Date</th><th>Target Date</th><th>Action</th></tr></thead><tbody>${rows||'<tr><td colspan="6" class="muted">No activities selected yet. Use the activity dropdown in the CMI row above.</td></tr>'}</tbody></table></div></div></td></tr>`;
 }
 function persistStateOnly(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(state))}catch(e){}queueSharedStateSync()}
 function activityReadyForDelivery(a){return !!(a&&a.activityId&&(a.siteResource||a.offsiteResource)&&a.startDate&&a.targetDate&&a.targetDate>=a.startDate)}
@@ -3183,7 +3196,7 @@ function resetDataDate(){
  renderDeliveryHighLevelSummary();renderHighLevelGantt();renderGantt();
 }
 function renderDelivery(){const dataDateInput=document.getElementById('dataDateInput'),dataDateStatus=document.getElementById('dataDateStatus');if(dataDateInput)dataDateInput.value=programmeDataDate||todayISO();if(dataDateStatus){dataDateStatus.textContent='Data Date: '+formatDateText(programmeDataDate||todayISO())+((programmeDataDate||todayISO())===todayISO()?' (Today)':'');dataDateStatus.style.color='var(--muted)'}document.getElementById('targetDateInput').value=state.meta.defaultDeliveryTarget;document.getElementById('capacityInput').value=state.meta.weeklyCapacity;document.getElementById('preCompletedInput').value=state.meta.preTrackerCompleted;document.getElementById('fullTeamInput').value=state.meta.fullOffsiteTeamStart;const m=capacityMetrics(),p=planned();document.getElementById('deliveryCapacity').innerHTML=`<div class="capacity"><div><div class="capacity-big">${p.length} CMIs planned</div><div class="capacity-sub">${p.filter(completedDelivery).length} complete/submitted · ${p.filter(r=>['Measurement in Progress','Pending Technical and Commercial Clearance','Under Finalisation for DGJ Submission'].includes(derivedDeliveryStatus(r))).length} in progress · ${p.filter(r=>derivedDeliveryStatus(r)==='To be Started').length} to be started.</div><div class="gauge"><div style="width:${p.length?Math.min(100,p.filter(completedDelivery).length/p.length*100):0}%"></div></div><div class="small muted">Current production assumption: ${m.cap} CMIs/week · open To-be-Submitted demand ${m.backlog}</div></div><div><div class="metric-line"><span>Target date</span><b>${fmtDate(m.target)}</b></div><div class="metric-line"><span>Required average</span><b>${Number.isFinite(m.required)?m.required.toFixed(1):'—'}/week</b></div><div class="metric-line"><span>Capacity gap</span><b>${Number.isFinite(m.gap)?m.gap.toFixed(1):'—'}/week</b></div></div></div>`;renderDeliveryWbsManager();renderDeliveryHighLevelSummary();renderHighLevelGantt();renderGantt();renderDeliveryTable()}
-function renderDeliveryTable(){const rows=planned().sort((a,b)=>(a.startDate||'9999').localeCompare(b.startDate||'9999')||({High:0,Medium:1,Low:2,Unvalued:3}[calcPriority(a)]-({High:0,Medium:1,Low:2,Unvalued:3}[calcPriority(b)])));document.getElementById('deliveryBody').innerHTML=rows.map(r=>`<tr><td><b>${esc(r.cmiNo)}</b></td><td class="desc">${esc(r.description)}</td><td>${priorityPill(calcPriority(r))}</td><td class="money">${money(r.initialEstimate)}</td><td>${esc(r.siteResource)}</td><td>${esc(r.offsiteResource)}</td><td>${fmtDate(r.startDate)}</td><td>${fmtDate(r.targetDate)}</td><td>${fmtDate(r.finishDate)}</td><td>${deliveryPill(derivedDeliveryStatus(r))}</td><td class="money">${money(r.deliveryValue)}</td><td><div class="row-actions"><button class="iconbtn" onclick="goProgress('${r.id}')">Progress</button></div></td></tr>`).join('')||'<tr><td colspan="12" class="muted">No CMIs are classified as TBS by CMI Team.</td></tr>'}
+function renderDeliveryTable(){const rows=planned().sort((a,b)=>(a.startDate||'9999').localeCompare(b.startDate||'9999')||({High:0,Medium:1,Low:2,Unvalued:3}[calcPriority(a)]-({High:0,Medium:1,Low:2,Unvalued:3}[calcPriority(b)])));document.getElementById('deliveryBody').innerHTML=rows.map(r=>`<tr><td><b>${esc(r.cmiNo)}</b></td><td class="desc">${esc(r.description)}</td><td>${priorityPill(calcPriority(r))}</td><td class="money">${money(r.initialEstimate)}</td><td>${esc(r.siteResource)}</td><td>${esc(r.offsiteResource)}</td><td>${fmtDate(r.startDate)}</td><td>${fmtDate(r.targetDate)}</td><td>${fmtDate(r.finishDate)}</td><td>${deliveryPill(derivedDeliveryStatus(r))}</td><td class="money">${money(r.deliveryValue)}</td><td><div class="row-actions"><button class="iconbtn" onclick="goProgress('${r.id}')">Progress</button></div></td></tr>`).join('')||'<tr><td colspan="12" class="muted">No CMIs have been assigned to the CMI Team.</td></tr>'}
 function removeFromPlan(id){const r=state.records.find(x=>x.id===id);if(!r)return;alert('Delivery Plan membership follows Submission Classification. Change the classification in CMI Master to remove this item from team scope.');}
 function toggleDeliveryCmi(id){expandedDeliveryCmis.has(id)?expandedDeliveryCmis.delete(id):expandedDeliveryCmis.add(id);renderGantt()}
 function toggleDeliveryActivity(recordId,activityId){const key=`${recordId}|${activityId}`;expandedDeliveryActivities.has(key)?expandedDeliveryActivities.delete(key):expandedDeliveryActivities.add(key);renderGantt()}
@@ -3737,6 +3750,7 @@ async function submitProgressUpdate(){
     if(r.initialEstimate===null||r.initialEstimate===undefined||r.initialEstimate==='')r.initialEstimate=offsiteEstimate;
   }
   if(isSubmission&&submittedValue!==null)r.submittedValue=submittedValue;
+  if(isSubmission)syncCompletedDgjSubmission(r,a);
   const resources=uniq([a.siteResource,a.offsiteResource]).filter(Boolean);
   if(!a.resourceProgress||typeof a.resourceProgress!=='object')a.resourceProgress={};
   resources.forEach(n=>a.resourceProgress[n]=pct);
@@ -3747,7 +3761,7 @@ async function submitProgressUpdate(){
  try{localStorage.setItem(STORAGE_KEY,JSON.stringify(state))}catch(e){}
  renderAll();
  const key=progressSearchRecords()[0]?.cmiKey||normCmi(document.getElementById('progressCmiSearch')?.value||'');
- const msg='Progress update saved to Supabase for CMI '+key+'. The shared Delivery Plan and CMI values have been updated.';
+ const msg='Progress update saved to Supabase for CMI '+key+'. The shared Delivery Plan, submission classification and CMI values have been updated.';
  const st=document.getElementById('progressSubmitStatus');if(st)st.textContent=msg;
 }
 function goProgress(id){
@@ -4224,7 +4238,7 @@ function toggleDeliveryRoot(){deliveryRootCollapsed=!deliveryRootCollapsed;rende
 function highLevelGroupKey(a){return a.groupId||`${a.group}|${a.countSource}`}
 function toggleHighLevelGroup(key){collapsedHighLevelGroups.has(key)?collapsedHighLevelGroups.delete(key):collapsedHighLevelGroups.add(key);renderHighLevelGantt()}
 function highLevelRecordMatches(a,r){
- if(!isCmiTeamSubmission(r))return false;
+ if(!isInDeliveryPlanRecord(r))return false;
  const bucket=deliveryWorkBucket(r);
  if(a.groupId==='wbs-unallocated'||String(a.id||'').startsWith('unallocated-'))return bucket==='Unvalued';
  if(['High','Medium','Low','Unvalued','Investigated'].includes(a.countSource))return bucket===a.countSource;
