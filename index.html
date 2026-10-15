@@ -275,6 +275,146 @@
 @media(max-width:900px){#tab-clientdashboard .client-overview-layout{grid-template-columns:1fr}#tab-clientdashboard .client-overview-chart{border-left:0;border-top:1px solid #e5ebf0;padding:22px 0 0}#tab-clientdashboard .pie-layout{grid-template-columns:190px minmax(0,1fr)}}
 @media(max-width:540px){#tab-clientdashboard .card{padding:16px}#tab-clientdashboard .pie-layout{grid-template-columns:1fr}#tab-clientdashboard .client-approved-row,#tab-clientdashboard .client-approved-group summary{font-size:11px}.client-stage-caption{display:none}.client-process-table td{font-size:12px}.client-process-table td:last-child{font-size:22px;width:70px}}
 </style>
+<style id="executive-presentation-v2">
+/* Executive presentation: scoped to the management report only. */
+#tab-clientdashboard{--executive-ink:#183b56;--executive-muted:#6c7f8e;max-width:1680px;margin:0 auto;color:#243e50;font-size:13px}
+#tab-clientdashboard .exec-page-heading{display:flex;align-items:center;gap:28px;margin:6px 0 28px}
+#tab-clientdashboard .exec-page-heading h2{margin:0;font-size:28px;line-height:1.2;font-weight:650;letter-spacing:-.8px;color:#183b56}
+#tab-clientdashboard .exec-heading-rule{height:1px;background:#d4dfe6;flex:1}
+#tab-clientdashboard .exec-panel{background:#fff;border:1px solid #d7e1e7;border-radius:8px;overflow:hidden;margin-bottom:24px;box-shadow:0 2px 5px rgba(24,59,86,.025);min-width:0}
+#tab-clientdashboard .exec-panel-heading{display:flex;align-items:center;gap:12px;min-height:68px;padding:19px 26px;border-bottom:1px solid #e5ecf0;background:#fff}
+#tab-clientdashboard .exec-panel-heading h2{margin:0;font-size:16px;line-height:1.45;letter-spacing:-.15px;font-weight:650;color:#183b56}
+#tab-clientdashboard .exec-section-number{display:inline-flex;align-items:center;justify-content:center;flex:0 0 26px;width:26px;height:26px;border-radius:4px;background:#edf3f6;font-size:11px;font-weight:650;color:#728a9c}
+#tab-clientdashboard .exec-panel>.card{border:0;border-radius:0;box-shadow:none;padding:26px;background:white}
+#tab-clientdashboard .exec-overview-panel>.card{padding:28px}
+#tab-clientdashboard .client-overview-layout{grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:32px;align-items:start}
+#tab-clientdashboard .client-overview-chart{min-width:0;padding:0 0 0 30px;border-left:1px solid #e5ecf0;background:none}
+#tab-clientdashboard .client-overview-chart h3{font-size:10px;line-height:1.55;font-weight:650;letter-spacing:.09em;text-transform:uppercase;color:#718594;margin:0 0 22px}
+#tab-clientdashboard .pie-layout{display:grid;grid-template-columns:180px minmax(0,1fr);align-items:center;gap:26px}
+#tab-clientdashboard .donut{width:180px;height:180px;box-shadow:none}
+#tab-clientdashboard .donut:after{inset:18%;background:#fff;box-shadow:none}
+#tab-clientdashboard .donut-center{inset:22%;color:#183b56}
+#tab-clientdashboard .donut-center b{font-size:32px;font-weight:650;letter-spacing:-1px;line-height:1.1}
+#tab-clientdashboard .donut-center span{font-size:10px;line-height:1.45;max-width:92px;color:#6c7f8e;margin-top:7px;font-weight:450}
+#tab-clientdashboard .pie-legend{gap:0;min-width:0}
+#tab-clientdashboard .pie-legend-row{grid-template-columns:7px minmax(0,1fr) auto;gap:10px;padding:8px 0;border-bottom:1px solid #eff3f6;font-size:11px;line-height:1.5;align-items:start}
+#tab-clientdashboard .pie-legend-row:last-child{border-bottom:0}
+#tab-clientdashboard .pie-swatch{width:7px;height:7px;border-radius:50%;margin-top:5px}
+#tab-clientdashboard .pie-legend-label{color:#476073;font-weight:450}
+#tab-clientdashboard .pie-legend-share{font-size:9px;font-weight:400;color:#8b9aa6;margin-top:1px}
+#tab-clientdashboard .pie-legend-value{font-size:12px;line-height:1.5;font-weight:650;color:#183b56;font-variant-numeric:tabular-nums}
+#tab-clientdashboard .client-overview-table{min-width:0}
+#tab-clientdashboard .client-overview-table thead{background:#f4f7f9;border-bottom:1px solid #dfe8ed}
+#tab-clientdashboard .client-overview-table th{font-size:10px;letter-spacing:.055em;text-transform:uppercase;font-weight:600;color:#738998;padding:13px 15px!important;white-space:nowrap}
+#tab-clientdashboard #clientOverviewRows td{padding:13px 15px!important;font-size:12px;line-height:1.55;font-weight:450;color:#41596b}
+#tab-clientdashboard #clientOverviewRows td:not(:first-child){font-variant-numeric:tabular-nums;white-space:nowrap;color:#183b56;font-weight:600}
+#tab-clientdashboard #clientOverviewRows tr:first-child{background:#edf3f7}
+#tab-clientdashboard #clientOverviewRows tr:first-child td{font-weight:650;color:#183b56}
+#tab-clientdashboard #clientOverviewRows tr:first-child td:nth-child(2){font-size:22px;letter-spacing:-.5px}
+#tab-clientdashboard #clientOverviewRows tr:nth-child(5){background:#f4f8fa;border-top:2px solid #dce7ee!important}
+#tab-clientdashboard #clientOverviewRows tr:nth-child(5) td{font-weight:650;color:#183b56}
+#tab-clientdashboard .client-overview-swatch{width:7px;height:7px;border-radius:50%;margin-right:9px}
+#tab-clientdashboard .exec-commercial-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px;align-items:start}
+#tab-clientdashboard .exec-commercial-grid .exec-panel{height:100%;display:flex;flex-direction:column}
+#tab-clientdashboard .exec-commercial-grid .exec-panel>.card{flex:1;padding:20px}
+#tab-clientdashboard .exec-commercial-grid .client-overview-layout{grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:20px}
+#tab-clientdashboard .exec-commercial-grid .client-overview-chart{padding-left:20px}
+#tab-clientdashboard .exec-commercial-grid .pie-layout{grid-template-columns:1fr;justify-items:center;gap:16px}
+#tab-clientdashboard .exec-commercial-grid .pie-legend{width:100%}
+#tab-clientdashboard .exec-commercial-grid .donut{width:146px;height:146px}
+#tab-clientdashboard .exec-commercial-grid .donut-center b{font-size:27px}
+#tab-clientdashboard .exec-commercial-grid .donut-center span{font-size:9px;max-width:78px}
+#tab-clientdashboard .client-approved-heading,#tab-clientdashboard .client-approved-row,#tab-clientdashboard .client-approved-group summary{grid-template-columns:minmax(0,1fr) 40px 100px;gap:9px;padding:13px 10px;min-height:49px;font-size:11px;line-height:1.55;border-color:#e8eef2}
+#tab-clientdashboard .client-approved-heading{background:#f4f7f9;color:#738998;text-transform:uppercase;font-size:9px;font-weight:600;letter-spacing:.05em;min-height:42px}
+#tab-clientdashboard .client-approved-total{background:#edf3f7;color:#183b56;font-weight:650}
+#tab-clientdashboard .client-approved-total span:nth-child(2){font-size:20px;line-height:1.2;letter-spacing:-.4px}
+#tab-clientdashboard .client-approved-group summary{font-weight:550;color:#41596b;transition:background .15s}
+#tab-clientdashboard .client-approved-group summary:hover{background:#f5f8fa}
+#tab-clientdashboard .client-approved-group summary>span:first-child:before{color:#92a4b2;width:14px}
+#tab-clientdashboard .client-approved-detail{padding-left:20px;background:#fafcfd;font-size:10px}
+#tab-clientdashboard .client-approved-swatch{width:7px;height:7px;border-radius:50%;margin-right:7px}
+#tab-clientdashboard .badge-note{font-size:10px;color:#8a9ba8;border-top:1px solid #edf2f5;padding-top:14px;line-height:1.7;margin-top:20px!important}
+#tab-clientdashboard .badge-note:empty{display:none}
+#tab-clientdashboard .exec-panel-heading .client-stage-caption{margin-left:auto;color:#8b9ba7;font-size:10px}
+#tab-clientdashboard .client-process-table{display:block;border:0}
+#tab-clientdashboard .client-process-table thead{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+#tab-clientdashboard #clientProcessStages{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0}
+#tab-clientdashboard #clientProcessStages tr{display:flex;flex-direction:column;min-width:0;padding:6px 28px;border-right:1px solid #e2eaf0;gap:18px}
+#tab-clientdashboard #clientProcessStages tr:first-child{padding-left:0}
+#tab-clientdashboard #clientProcessStages tr:last-child{border-right:0;padding-right:0}
+#tab-clientdashboard #clientProcessStages td{display:flex;border:0;padding:0;min-width:0;width:auto;text-align:left;font-size:12px;line-height:1.55;color:#60798b;font-weight:450}
+#tab-clientdashboard #clientProcessStages td:first-child{gap:10px;align-items:center;min-height:40px}
+#tab-clientdashboard #clientProcessStages td:last-child{font-size:38px;color:#183b56;font-weight:600;line-height:1;letter-spacing:-1px}
+#tab-clientdashboard .client-stage-number{background:none;color:#98aab7;font-size:10px;border:1px solid #dfe8ed;border-radius:50%;width:25px;height:25px;flex:0 0 25px}
+#tab-clientdashboard .client-data-note{font-size:10px;margin-top:24px;padding-top:14px;border-color:#edf2f5;color:#8a9ba8}
+@media(min-width:1500px){#tab-clientdashboard .exec-commercial-grid .exec-panel-heading{min-height:80px}}
+@media(max-width:1499px){
+ #tab-clientdashboard .exec-commercial-grid{grid-template-columns:1fr;gap:0}
+ #tab-clientdashboard .exec-commercial-grid .client-overview-layout{grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:32px}
+ #tab-clientdashboard .exec-commercial-grid .pie-layout{grid-template-columns:160px minmax(0,1fr);gap:22px;align-items:start}
+ #tab-clientdashboard .exec-commercial-grid .client-overview-chart{padding-left:28px}
+ #tab-clientdashboard .client-approved-heading,#tab-clientdashboard .client-approved-row,#tab-clientdashboard .client-approved-group summary{grid-template-columns:minmax(0,1fr) 60px 130px;font-size:12px}
+}
+@media(max-width:1100px){
+ #tab-clientdashboard .pie-layout,#tab-clientdashboard .exec-commercial-grid .pie-layout{grid-template-columns:1fr;justify-items:center}
+ #tab-clientdashboard .pie-legend{width:100%}
+}
+@media(max-width:760px){
+ #tab-clientdashboard .exec-page-heading h2{font-size:24px}
+ #tab-clientdashboard .exec-panel-heading{padding:16px 18px;min-height:60px}
+ #tab-clientdashboard .exec-panel>.card,#tab-clientdashboard .exec-overview-panel>.card,#tab-clientdashboard .exec-commercial-grid .exec-panel>.card{padding:18px}
+ #tab-clientdashboard .client-overview-layout,#tab-clientdashboard .exec-commercial-grid .client-overview-layout{grid-template-columns:1fr;gap:24px}
+ #tab-clientdashboard .client-overview-chart,#tab-clientdashboard .exec-commercial-grid .client-overview-chart{padding:22px 0 0;border-left:0;border-top:1px solid #e5ecf0}
+ #tab-clientdashboard .client-overview-table table{min-width:500px}
+ #tab-clientdashboard #clientProcessStages{grid-template-columns:repeat(2,minmax(0,1fr));gap:24px}
+ #tab-clientdashboard #clientProcessStages tr{padding:0 15px!important;border-right:0}
+ #tab-clientdashboard #clientProcessStages td:last-child{font-size:32px}
+ #tab-clientdashboard .exec-panel-heading .client-stage-caption{display:none}
+}
+@media(max-width:440px){
+ #tab-clientdashboard .client-approved-heading,#tab-clientdashboard .client-approved-row,#tab-clientdashboard .client-approved-group summary{grid-template-columns:minmax(0,1fr) 35px 95px;gap:6px;font-size:10px;padding:11px 6px}
+ #tab-clientdashboard #clientProcessStages{grid-template-columns:1fr}
+ #tab-clientdashboard #clientProcessStages tr{padding:16px 0!important;border-bottom:1px solid #edf2f5}
+}
+
+/* Paired commercial panels: compact tables above balanced chart rows. */
+#tab-clientdashboard .exec-overview-panel .client-overview-chart{align-self:stretch;display:flex;flex-direction:column;justify-content:center}
+#tab-clientdashboard #clientOverviewRows td{padding:10px 14px!important;line-height:1.45}
+#tab-clientdashboard .exec-commercial-grid{align-items:stretch}
+#tab-clientdashboard .exec-commercial-grid .client-overview-layout{grid-template-columns:1fr;gap:18px}
+#tab-clientdashboard .exec-commercial-grid .client-overview-chart{padding:18px 0 0;border-left:0;border-top:1px solid #e5ecf0}
+#tab-clientdashboard .exec-commercial-grid .client-overview-chart h3{margin-bottom:14px}
+#tab-clientdashboard .exec-commercial-grid .pie-layout{grid-template-columns:145px minmax(0,1fr);gap:22px;justify-items:stretch;align-items:center}
+#tab-clientdashboard .exec-commercial-grid .pie-legend{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:18px;align-items:start}
+#tab-clientdashboard .exec-commercial-grid .pie-legend-row{padding:6px 0;font-size:10px;gap:7px;line-height:1.45}
+#tab-clientdashboard .exec-commercial-grid .pie-legend-value{font-size:11px}
+#tab-clientdashboard .exec-commercial-grid .client-approved-heading,#tab-clientdashboard .exec-commercial-grid .client-approved-row,#tab-clientdashboard .exec-commercial-grid .client-approved-group summary{grid-template-columns:minmax(0,1fr) 52px 130px;padding:10px 12px;min-height:42px;font-size:12px}
+#tab-clientdashboard .exec-commercial-grid .client-approved-heading{font-size:9px;min-height:36px}
+#tab-clientdashboard .exec-commercial-grid .client-approved-detail{font-size:11px;padding-left:26px}
+#tab-clientdashboard .exec-commercial-grid .badge-note{font-size:9px;padding-top:12px;margin-top:16px!important}
+@media(max-width:1499px){
+ #tab-clientdashboard .exec-commercial-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}
+ #tab-clientdashboard .exec-commercial-grid .exec-panel-heading{min-height:82px;padding:16px 20px}
+ #tab-clientdashboard .exec-commercial-grid .client-overview-layout{grid-template-columns:1fr;gap:18px}
+ #tab-clientdashboard .exec-commercial-grid .client-overview-chart{padding:18px 0 0}
+ #tab-clientdashboard .exec-commercial-grid .pie-layout{grid-template-columns:120px minmax(0,1fr);gap:16px}
+ #tab-clientdashboard .exec-commercial-grid .donut{width:120px;height:120px}
+ #tab-clientdashboard .exec-commercial-grid .pie-legend{grid-template-columns:1fr}
+ #tab-clientdashboard .exec-commercial-grid .client-approved-heading,#tab-clientdashboard .exec-commercial-grid .client-approved-row,#tab-clientdashboard .exec-commercial-grid .client-approved-group summary{grid-template-columns:minmax(0,1fr) 38px 105px;font-size:11px}
+}
+@media(max-width:1050px){
+ #tab-clientdashboard .exec-commercial-grid{grid-template-columns:1fr;gap:0}
+ #tab-clientdashboard .exec-commercial-grid .exec-panel-heading{min-height:64px}
+ #tab-clientdashboard .exec-commercial-grid .pie-layout{grid-template-columns:150px minmax(0,1fr)}
+ #tab-clientdashboard .exec-commercial-grid .pie-legend{grid-template-columns:repeat(2,minmax(0,1fr))}
+ #tab-clientdashboard .exec-commercial-grid .donut{width:145px;height:145px}
+}
+@media(max-width:600px){
+ #tab-clientdashboard .exec-commercial-grid .pie-layout{grid-template-columns:1fr;justify-items:center}
+ #tab-clientdashboard .exec-commercial-grid .pie-legend{grid-template-columns:1fr}
+ #tab-clientdashboard .exec-commercial-grid .client-approved-heading,#tab-clientdashboard .exec-commercial-grid .client-approved-row,#tab-clientdashboard .exec-commercial-grid .client-approved-group summary{grid-template-columns:minmax(0,1fr) 34px 98px;font-size:10px;gap:6px;padding:10px 6px}
+}
+</style>
 
 <!-- Supabase -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -1505,46 +1645,50 @@
  </nav>
 </header>
 <main class="main">
-<section class="tab active" id="tab-clientdashboard" aria-label="Client Dashboard">
-<div class="section-title"><h2>Overview</h2></div>
-<div class="card">
-<div class="client-overview-layout">
-<div class="client-overview-table">
-<table style="width:100%;border-collapse:collapse">
-<thead><tr><th style="text-align:left;padding:10px">Description</th><th style="text-align:right;padding:10px">CMI Count</th><th style="text-align:right;padding:10px">Value</th></tr></thead>
-<tbody id="clientOverviewRows"></tbody></table>
-</div>
-<div class="client-overview-chart"><h3>CMI Team Progress Distribution</h3><div id="clientOverviewPie"></div></div>
-</div>
-<div id="clientOverviewValidation" class="badge-note" style="margin-top:16px"></div>
-</div>
-
-<div class="section-title" style="margin-top:24px"><h2>Previously Approved CMIs</h2></div>
-<div class="card">
- <div class="client-overview-layout">
-  <div id="clientApprovedTable" class="client-approved-table"></div>
-  <div class="client-overview-chart"><h3>Previously Approved CMIs — Count Breakdown</h3><div id="clientApprovedPie"></div></div>
+<section class="tab active" id="tab-clientdashboard" aria-label="Executive Dashboard">
+ <div class="exec-page-heading"><h2>Executive Dashboard</h2><span class="exec-heading-rule" aria-hidden="true"></span></div>
+ <article class="exec-panel exec-overview-panel">
+  <header class="exec-panel-heading"><span class="exec-section-number" aria-hidden="true">01</span><h2>Overview</h2></header>
+  <div class="card">
+   <div class="client-overview-layout">
+    <div class="client-overview-table"><table style="width:100%;border-collapse:collapse">
+     <thead><tr><th style="text-align:left;padding:10px">Description</th><th style="text-align:right;padding:10px">CMI Count</th><th style="text-align:right;padding:10px">Value</th></tr></thead>
+     <tbody id="clientOverviewRows"></tbody>
+    </table></div>
+    <div class="client-overview-chart"><h3>CMI Team Progress Distribution</h3><div id="clientOverviewPie"></div></div>
+   </div>
+   <div id="clientOverviewValidation" class="badge-note" style="margin-top:16px"></div>
+  </div>
+ </article>
+ <div class="exec-commercial-grid">
+  <article class="exec-panel">
+   <header class="exec-panel-heading"><span class="exec-section-number" aria-hidden="true">02</span><h2>Previously Approved CMIs</h2></header>
+   <div class="card">
+    <div class="client-overview-layout">
+     <div id="clientApprovedTable" class="client-approved-table"></div>
+     <div class="client-overview-chart"><h3>Previously Approved CMIs — Count Breakdown</h3><div id="clientApprovedPie"></div></div>
+    </div>
+    <div class="badge-note" style="margin-top:16px">Based on existing Agreed register entries. Counts use unique CMI numbers; values sum their agreed amounts in USD. Negative value bands use absolute amounts. The chart shows counts, with the same colours as the detailed table rows.</div>
+   </div>
+  </article>
+  <article class="exec-panel">
+   <header class="exec-panel-heading"><span class="exec-section-number" aria-hidden="true">03</span><h2>CMIs Previously Submitted to DG Jones</h2></header>
+   <div class="card">
+    <div class="client-overview-layout">
+     <div id="clientSubmittedTable" class="client-approved-table"></div>
+     <div class="client-overview-chart"><h3>Previously Submitted to DG Jones — Count Breakdown</h3><div id="clientSubmittedPie"></div></div>
+    </div>
+    <div class="badge-note" style="margin-top:16px">Based on entries marked Submitted in Register Category. Counts use unique CMI numbers; values sum their submitted values in USD. Negative value bands use absolute amounts. The chart shows counts, with the same colours as the detailed table rows.</div>
+   </div>
+  </article>
  </div>
- <div class="badge-note" style="margin-top:16px">Based on existing Agreed register entries. Counts use unique CMI numbers; values sum their agreed amounts in USD. Negative value bands use absolute amounts. The chart shows counts, with the same colours as the detailed table rows.</div>
-</div>
-
-<div class="section-title" style="margin-top:24px"><h2>CMIs Previously Submitted to DG Jones</h2></div>
-<div class="card">
- <div class="client-overview-layout">
-  <div id="clientSubmittedTable" class="client-approved-table"></div>
-  <div class="client-overview-chart"><h3>Previously Submitted to DG Jones — Count Breakdown</h3><div id="clientSubmittedPie"></div></div>
- </div>
- <div class="badge-note" style="margin-top:16px">Based on entries marked Submitted in Register Category. Counts use unique CMI numbers; values sum their submitted values in USD. Negative value bands use absolute amounts. The chart shows counts, with the same colours as the detailed table rows.</div>
-</div>
-
-<div class="section-title" style="margin-top:24px"><h2>CMIs Under Process (Stages)</h2><span class="client-stage-caption">Cumulative stage milestones</span></div>
-<div class="card client-process-card">
- <table class="client-process-table">
-  <thead><tr><th>Stage</th><th>Count</th></tr></thead>
-  <tbody id="clientProcessStages"></tbody>
- </table>
- <details class="client-data-note"><summary>Basis of stage counts</summary><p>Unique CMI numbers in the Delivery Plan. Sent to Measurement Team: actual document handover recorded. Received from Measurement Team: Measurement &amp; Valuation at 100% with an actual finish date. Submitted to CM: Technical &amp; Commercial Clearance started. Received from CM: Technical &amp; Commercial Clearance at 100% with an actual finish date. These cumulative milestones can include the same CMI at more than one stage.</p></details>
-</div>
+ <article class="exec-panel exec-process-panel">
+  <header class="exec-panel-heading"><span class="exec-section-number" aria-hidden="true">04</span><h2>CMIs Under Process (Stages)</h2><span class="client-stage-caption">Cumulative stage milestones</span></header>
+  <div class="card client-process-card">
+   <table class="client-process-table"><thead><tr><th>Stage</th><th>Count</th></tr></thead><tbody id="clientProcessStages"></tbody></table>
+   <details class="client-data-note"><summary>Basis of stage counts</summary><p>Unique CMI numbers in the Delivery Plan. Sent to Measurement Team: actual document handover recorded. Received from Measurement Team: Measurement &amp; Valuation at 100% with an actual finish date. Submitted to CM: Technical &amp; Commercial Clearance started. Received from CM: Technical &amp; Commercial Clearance at 100% with an actual finish date. These cumulative milestones can include the same CMI at more than one stage.</p></details>
+  </div>
+ </article>
 </section>
 <section class="tab" id="tab-dashboard">
  <div class="grid kpis" id="kpiGrid"></div>
@@ -3541,15 +3685,15 @@ function renderDashboardOperationalTables(){
 
 function clientPreviouslyApprovedSummary(records){
  const bands=[
-  {id:'positive-ps',label:'Positive Value — PS',tableLabel:'PS',value:0,amount:0,color:'#2f6f68'},
-  {id:'positive-high',label:'Positive Value — High',tableLabel:'High Value CMIs (USD 500,000 and above)',value:0,amount:0,color:'#234c72'},
-  {id:'positive-medium',label:'Positive Value — Medium',tableLabel:'Medium Value CMIs (USD 100,000 to below 500,000)',value:0,amount:0,color:'#557f94'},
-  {id:'positive-low',label:'Positive Value — Low',tableLabel:'Low Value CMIs (above USD 0 to below 100,000)',value:0,amount:0,color:'#8da9bb'},
-  {id:'negative-high',label:'Negative Value — High',tableLabel:'High Value CMIs (USD 500,000 and above)',value:0,amount:0,color:'#8a5660'},
-  {id:'negative-medium',label:'Negative Value — Medium',tableLabel:'Medium Value CMIs (USD 100,000 to below 500,000)',value:0,amount:0,color:'#aa8a59'},
-  {id:'negative-low',label:'Negative Value — Low',tableLabel:'Low Value CMIs (above USD 0 to below 100,000)',value:0,amount:0,color:'#85715e'},
-  {id:'zero',label:'Zero Value CMIs',tableLabel:'Zero Value CMIs',value:0,amount:0,color:'#a5b2bd'},
-  {id:'missing',label:'Agreed Amount Not Recorded',tableLabel:'Agreed Amount Not Recorded',value:0,amount:0,color:'#68768a'}
+  {id:'positive-ps',label:'Positive Value — PS',tableLabel:'PS',value:0,amount:0,color:'#2c726c'},
+  {id:'positive-high',label:'Positive Value — High',tableLabel:'High Value CMIs (USD 500,000 and above)',value:0,amount:0,color:'#183b56'},
+  {id:'positive-medium',label:'Positive Value — Medium',tableLabel:'Medium Value CMIs (USD 100,000 to below 500,000)',value:0,amount:0,color:'#55788e'},
+  {id:'positive-low',label:'Positive Value — Low',tableLabel:'Low Value CMIs (above USD 0 to below 100,000)',value:0,amount:0,color:'#9fb6c4'},
+  {id:'negative-high',label:'Negative Value — High',tableLabel:'High Value CMIs (USD 500,000 and above)',value:0,amount:0,color:'#485966'},
+  {id:'negative-medium',label:'Negative Value — Medium',tableLabel:'Medium Value CMIs (USD 100,000 to below 500,000)',value:0,amount:0,color:'#82939e'},
+  {id:'negative-low',label:'Negative Value — Low',tableLabel:'Low Value CMIs (above USD 0 to below 100,000)',value:0,amount:0,color:'#b7c2ca'},
+  {id:'zero',label:'Zero Value CMIs',tableLabel:'Zero Value CMIs',value:0,amount:0,color:'#d3dbe1'},
+  {id:'missing',label:'Agreed Amount Not Recorded',tableLabel:'Agreed Amount Not Recorded',value:0,amount:0,color:'#748896'}
  ];
  const groups=new Map();
  for(const r of records||[]){
@@ -3581,15 +3725,15 @@ function renderPreviouslyApprovedCmis(){
 
 function clientPreviouslySubmittedSummary(records){
  const bands=[
-  {id:'positive-ps',label:'Positive Value — PS',tableLabel:'PS',value:0,amount:0,color:'#2f6f68'},
-  {id:'positive-high',label:'Positive Value — High',tableLabel:'High Value CMIs (USD 500,000 and above)',value:0,amount:0,color:'#234c72'},
-  {id:'positive-medium',label:'Positive Value — Medium',tableLabel:'Medium Value CMIs (USD 100,000 to below 500,000)',value:0,amount:0,color:'#557f94'},
-  {id:'positive-low',label:'Positive Value — Low',tableLabel:'Low Value CMIs (above USD 0 to below 100,000)',value:0,amount:0,color:'#8da9bb'},
-  {id:'negative-high',label:'Negative Value — High',tableLabel:'High Value CMIs (USD 500,000 and above)',value:0,amount:0,color:'#8a5660'},
-  {id:'negative-medium',label:'Negative Value — Medium',tableLabel:'Medium Value CMIs (USD 100,000 to below 500,000)',value:0,amount:0,color:'#aa8a59'},
-  {id:'negative-low',label:'Negative Value — Low',tableLabel:'Low Value CMIs (above USD 0 to below 100,000)',value:0,amount:0,color:'#85715e'},
-  {id:'zero',label:'Zero Value CMIs',tableLabel:'Zero Value CMIs',value:0,amount:0,color:'#a5b2bd'},
-  {id:'missing',label:'Submitted Value Not Recorded',tableLabel:'Submitted Value Not Recorded',value:0,amount:0,color:'#68768a'}
+  {id:'positive-ps',label:'Positive Value — PS',tableLabel:'PS',value:0,amount:0,color:'#2c726c'},
+  {id:'positive-high',label:'Positive Value — High',tableLabel:'High Value CMIs (USD 500,000 and above)',value:0,amount:0,color:'#183b56'},
+  {id:'positive-medium',label:'Positive Value — Medium',tableLabel:'Medium Value CMIs (USD 100,000 to below 500,000)',value:0,amount:0,color:'#55788e'},
+  {id:'positive-low',label:'Positive Value — Low',tableLabel:'Low Value CMIs (above USD 0 to below 100,000)',value:0,amount:0,color:'#9fb6c4'},
+  {id:'negative-high',label:'Negative Value — High',tableLabel:'High Value CMIs (USD 500,000 and above)',value:0,amount:0,color:'#485966'},
+  {id:'negative-medium',label:'Negative Value — Medium',tableLabel:'Medium Value CMIs (USD 100,000 to below 500,000)',value:0,amount:0,color:'#82939e'},
+  {id:'negative-low',label:'Negative Value — Low',tableLabel:'Low Value CMIs (above USD 0 to below 100,000)',value:0,amount:0,color:'#b7c2ca'},
+  {id:'zero',label:'Zero Value CMIs',tableLabel:'Zero Value CMIs',value:0,amount:0,color:'#d3dbe1'},
+  {id:'missing',label:'Submitted Value Not Recorded',tableLabel:'Submitted Value Not Recorded',value:0,amount:0,color:'#748896'}
  ];
  const groups=new Map();
  for(const r of records||[]){
@@ -3674,10 +3818,10 @@ function renderClientDashboard(){
 
  }
  const teamRows=[
-  {label:'CMIs to Be Initiated by CMI Team',value:notStarted,color:'#a5b2bd',amount:null},
-  {label:'CMIs Under Progress by CMI Team',value:underProgress,color:'#aa8a59',amount:null},
-  {label:'Submitted to DGJ by CMI Team',value:pendingApproval,color:'#234c72',amount:pendingValue},
-  {label:'Approved CMIs Submitted by CMI Team',value:approvedByTeam,color:'#2f6f68',amount:approvedValue}
+  {label:'CMIs to Be Initiated by CMI Team',value:notStarted,color:'#a5b4bf',amount:null},
+  {label:'CMIs Under Progress by CMI Team',value:underProgress,color:'#b39a65',amount:null},
+  {label:'Submitted to DGJ by CMI Team',value:pendingApproval,color:'#183b56',amount:pendingValue},
+  {label:'Approved CMIs Submitted by CMI Team',value:approvedByTeam,color:'#2c726c',amount:approvedValue}
  ];
  const items=[
   ['Total No. of CMIs Received',groups.size,null],
