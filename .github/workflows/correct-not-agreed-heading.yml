@@ -1,0 +1,28 @@
+name: Correct Not Agreed section heading
+on:
+  push:
+    paths: ['.github/workflows/correct-not-agreed-heading.yml']
+permissions:
+  contents: write
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Correct wording
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          old="CMIs Submitted (Not Approved) before CMI Team's Mobilisation"
+          assert s.count(old)==2
+          s=s.replace(old,"CMIs Submitted (Not Agreed) before CMI Team's Mobilisation")
+          p.write_text(s,encoding='utf-8')
+          PY
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git diff --cached --quiet || (git commit -m "Replace Not Approved with Not Agreed in Executive section" && git push)
