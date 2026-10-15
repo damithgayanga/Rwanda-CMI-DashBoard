@@ -2414,12 +2414,8 @@ function renderKpis(){
   clearancePending=stages.clearancePending,
   clearanceCompleted=stages.clearanceCompleted,
   submittedDgj=stages.submittedDgj;
- const unplannedToSubmit=toSubmit.filter(x=>!hasOffsiteDeliveryAllocation(x));
- const unplannedNote=unplannedToSubmit.length
-  ? '<div class="kpi-note warn">Awaiting off-site allocation: '+unplannedToSubmit.slice(0,4).map(x=>esc(x.cmiKey||normCmi(x.cmiNo||''))).join(', ')+(unplannedToSubmit.length>4?' +'+(unplannedToSubmit.length-4)+' more':'')+'</div>'
-  : '';
  const cards=[
-  `<div class="card kpi kpi-stage kpi-submit-card"><div class="label">To be Submitted by CMI Team</div><div class="value">${toSubmit.length}<span class="value-context">out of ${r.length}</span></div>${internalTeamCategoryBreakdownHtml(toSubmit)}${unplannedNote}</div>`,
+  `<div class="card kpi kpi-stage kpi-submit-card"><div class="label">To be Submitted by CMI Team</div><div class="value">${toSubmit.length}<span class="value-context">out of ${r.length}</span></div>${internalTeamCategoryBreakdownHtml(toSubmit)}</div>`,
   weeklyActivityPlanHtml(),
   `<div class="kpi-standard">${assessmentCommencedFromHandoverKpiHtml()}</div>`,
   `<div class="kpi-standard">${stageKpiHtml('Measurement Completed',measurementCompleted,'',assessmentCommenced.length)}</div>`,
@@ -2501,17 +2497,17 @@ function internalPortfolioValueSplit(records,meta){
 function renderBars(){
  const all=state.records,team=all.filter(isCmiTeamSubmission),agreed=all.filter(r=>r.mainCategory==='Agreed'),submitted=all.filter(r=>r.mainCategory==='Submitted');
  const statusSplit=internalStatusSplit(all);
- renderDonut('statusPie',statusSplit.slices,{centerValue:String(all.length),centerLabel:'CMI work items',note:'Agreed and Submitted follow Submission Classification. To be Submitted includes TBS by CMI Team only, split by Register Category. In this chart, Initial review completed means Register Category = To be Submitted. The four sub-items form the To be Submitted total; that total is not an additional slice.'+(statusSplit.unmatched?' '+statusSplit.unmatched+' work items require category review.':'')});
+ renderDonut('statusPie',statusSplit.slices,{centerValue:String(all.length),centerLabel:'CMI work items'});
  const prioritySplit=internalSubmissionPrioritySplit(all);
- renderDonut('priorityPie',prioritySplit.slices,{centerValue:String(prioritySplit.total),centerLabel:'CMIs requiring submission to DGJ',note:'Submission Classification = TBS by CMI Team. The four main categories follow Register Category. Only Initial Review Completed is split by initial estimate: High ≥ USD 30,000; Medium USD 5,000 to below 30,000; Low below USD 5,000; No Initial Estimate where missing.'});
+ renderDonut('priorityPie',prioritySplit.slices,{centerValue:String(prioritySplit.total),centerLabel:'CMIs requiring submission to DGJ'});
  const known=v=>v!==null&&v!==undefined&&v!==''&&Number.isFinite(Number(v));
  const agreedSubmitted=sum(agreed.map(r=>r.submittedValue)),agreedAmount=sum(agreed.map(r=>r.agreedAmount));
  renderDonut('agreedComparisonPie',[
   {label:'Submitted Value',value:agreedSubmitted,color:'#2563a8'},
   {label:'Agreed Amount',value:agreedAmount,color:'#18835d'}
- ],{valueType:'money',useMagnitude:true,centerValue:String(agreed.length),centerLabel:'Agreed work items',note:'Submission Classification = Agreed. Recorded values only; '+agreed.filter(r=>!known(r.submittedValue)).length+' submitted values and '+agreed.filter(r=>!known(r.agreedAmount)).length+' agreed amounts are missing. Percentages compare absolute value magnitudes.'});
+ ],{valueType:'money',useMagnitude:true,centerValue:String(agreed.length),centerLabel:'Agreed work items'});
  const portfolio=internalPortfolioValueSplit(all,state.meta);
- renderDonut('portfolioValuePie',portfolio.slices,{valueType:'money',useMagnitude:true,centerValue:portfolioMoney(portfolio.netTotal),centerLabel:'Net portfolio total',note:'Agreed and Submitted amounts follow Submission Classification. To be Submitted includes TBS by CMI Team only. Initial review completed uses Initial Estimates ('+portfolio.initialMissing+' missing). Provisional Sums = total placeholder + recorded off-site estimates ('+portfolioMoney(portfolio.provisionalOffsite)+'). Other CMIs (Under Review) = total placeholder + recorded off-site estimates ('+portfolioMoney(portfolio.otherOffsite)+'). Included in other CMIs ('+portfolio.includedCount+' work items) have no separate value in this chart. Percentages use absolute magnitudes.'});
+ renderDonut('portfolioValuePie',portfolio.slices,{valueType:'money',useMagnitude:true,centerValue:portfolioMoney(portfolio.netTotal),centerLabel:'Net portfolio total'});
  const unallocated=document.getElementById('unallocatedPortfolioAllowanceInput'),ps=document.getElementById('provisionalPortfolioAllowanceInput');if(unallocated)unallocated.value=portfolio.otherPlaceholder;if(ps)ps.value=portfolio.provisionalPlaceholder;
 }
 
