@@ -3723,7 +3723,7 @@ function clientPreviouslyApprovedSummary(records){
   const amount=missing?0:rows.reduce((n,r)=>n+(Number(r.agreedAmount)||0),0);
   const ps=rows.some(r=>/provisional\s+sum|\bPS\b/i.test((r.description||'')+' '+(r.notes||'')));
   const magnitude=Math.abs(amount),level=magnitude>=500000?'high':magnitude>=100000?'medium':'low';
-  const id=missing?'missing':amount===0?'zero':amount>0?(ps?'positive-ps':'positive-'+level):'negative-'+level;
+  const id=amount===0?'zero':amount>0?(ps?'positive-ps':'positive-'+level):'negative-'+level;
   const band=bands.find(x=>x.id===id);band.value++;band.amount+=amount;
  }
  return {bands,total:groups.size,amount:bands.reduce((n,x)=>n+x.amount,0)};
