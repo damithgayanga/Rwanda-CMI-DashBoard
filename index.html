@@ -2402,7 +2402,8 @@ function internalTeamCategoryBreakdown(items){
  return [{label:'Initial Review Completed',value:initial.length},{label:'Provisional Sum CMIs',value:ps.length},{label:'Other CMIs',value:team.length-initial.length-ps.length}];
 }
 function internalTeamCategoryBreakdownHtml(items){
- return '<div class="kpi-group">'+internalTeamCategoryBreakdown(items).map(x=>'<div class="kpi-sub"><span class="kpi-sub-label">'+esc(x.label)+'</span><span class="kpi-sub-value" style="color:#234c72">'+x.value+'</span></div>').join('')+'</div>';
+ const colourClasses=['initial','provisional','unallocated'];
+ return '<div class="kpi-group">'+internalTeamCategoryBreakdown(items).map((x,i)=>'<div class="kpi-sub '+colourClasses[i]+'"><span class="kpi-sub-label">'+esc(x.label)+'</span><span class="kpi-sub-value">'+x.value+'</span></div>').join('')+'</div>';
 }
 function renderKpis(){
  const r=state.records,
