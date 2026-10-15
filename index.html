@@ -283,13 +283,6 @@
 #tab-clientdashboard #clientOverviewRows .client-team-balance td,#tab-clientdashboard #clientOverviewRows .client-team-total td{font-weight:650;color:#183b56;background:#f3f7fa}
 
 
-#tab-clientdashboard .client-overview-process{margin-top:24px;padding-top:20px;border-top:1px solid #dce7ee}
-#tab-clientdashboard .client-overview-process>h3{margin:0 0 16px;font-size:13px;color:#183b56}
-#tab-clientdashboard .client-overview-process #clientProcessStages{grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:12px}
-#tab-clientdashboard .client-overview-process #clientProcessStages tr{padding:0 10px!important;gap:14px;border-bottom:0}
-#tab-clientdashboard .client-overview-process #clientProcessStages td:first-child{align-items:flex-start;min-height:72px;font-size:11px;gap:6px}
-#tab-clientdashboard .client-overview-process #clientProcessStages td:last-child{font-size:28px}
-#tab-clientdashboard .client-overview-process .client-stage-number{width:21px;height:21px;flex-basis:21px;font-size:9px}
 </style>
 <style id="executive-presentation-v2">
 /* Executive presentation: scoped to the management report only. */
@@ -352,7 +345,7 @@
 #tab-clientdashboard .exec-panel-heading .client-stage-caption{margin-left:auto;color:#8b9ba7;font-size:10px}
 #tab-clientdashboard .client-process-table{display:block;border:0}
 #tab-clientdashboard .client-process-table thead{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
-#tab-clientdashboard #clientProcessStages{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0}
+#tab-clientdashboard #clientProcessStages{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:0}
 #tab-clientdashboard #clientProcessStages tr{display:flex;flex-direction:column;min-width:0;padding:6px 28px;border-right:1px solid #e2eaf0;gap:18px}
 #tab-clientdashboard #clientProcessStages tr:first-child{padding-left:0}
 #tab-clientdashboard #clientProcessStages tr:last-child{border-right:0;padding-right:0}
@@ -1677,10 +1670,7 @@
      <tbody id="clientOverviewRows"></tbody>
     </table></div>
     <div class="client-overview-chart"><h3>Total CMIs — Submission Breakdown</h3><div id="clientOverviewPie"></div>
-    <section class="client-overview-process" aria-label="CMI process stages"><h3>CMIs Under Process (Stages)</h3>
-   <table class="client-process-table"><thead><tr><th>Stage</th><th>Count</th></tr></thead><tbody id="clientProcessStages"></tbody></table>
-   <details class="client-data-note"><summary>Basis of stage counts</summary><p>Each CMI number is counted once within each stage, including CMIs subsequently agreed by the CMI Team. Sent to Measurement Team: actual document handover recorded. Commenced by Measurement Team: Measurement &amp; Valuation has an actual start date, an actual finish date or progress above zero. Received from Measurement Team: Measurement &amp; Valuation at 100% with an actual finish date. Submitted to CM: Technical &amp; Commercial Clearance has an actual start date. Received from CM: Technical &amp; Commercial Clearance at 100% with an actual finish date. These cumulative milestones can include the same CMI at more than one stage.</p></details>
-    </section></div>
+    </div>
    </div>
    <div id="clientOverviewValidation" class="badge-note" style="margin-top:16px"></div>
 
@@ -1709,6 +1699,13 @@
   </article>
  </div>
 
+ <article class="exec-panel exec-process-panel">
+  <header class="exec-panel-heading"><span class="exec-section-number" aria-hidden="true">04</span><h2>CMIs Under Process (Stages)</h2><span class="client-stage-caption">Cumulative stage milestones</span></header>
+  <div class="card client-process-card">
+   <table class="client-process-table"><thead><tr><th>Stage</th><th>Count</th></tr></thead><tbody id="clientProcessStages"></tbody></table>
+   <details class="client-data-note"><summary>Basis of stage counts</summary><p>Each CMI number is counted once within each stage, including CMIs subsequently agreed by the CMI Team. Sent to Measurement Team: actual document handover recorded. Commenced by Measurement Team: Measurement &amp; Valuation has an actual start date, an actual finish date or progress above zero. Received from Measurement Team: Measurement &amp; Valuation at 100% with an actual finish date. Submitted to CM: Technical &amp; Commercial Clearance has an actual start date. Received from CM: Technical &amp; Commercial Clearance at 100% with an actual finish date. These cumulative milestones can include the same CMI at more than one stage.</p></details>
+  </div>
+ </article>
 </section>
 <section class="tab" id="tab-dashboard">
  <div class="grid kpis" id="kpiGrid"></div>
