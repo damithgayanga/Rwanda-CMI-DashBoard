@@ -3720,7 +3720,7 @@ function clientPreviouslyApprovedSummary(records){
  }
  for(const rows of groups.values()){
   const missing=rows.some(r=>r.agreedAmount===null||r.agreedAmount===undefined||r.agreedAmount===''||!Number.isFinite(Number(r.agreedAmount)));
-  const amount=missing?0:rows.reduce((n,r)=>n+(Number(r.agreedAmount)||0),0);
+  const amount=rows.reduce((n,r)=>n+(Number(r.agreedAmount)||0),0);
   const ps=rows.some(r=>/provisional\s+sum|\bPS\b/i.test((r.description||'')+' '+(r.notes||'')));
   const magnitude=Math.abs(amount),level=magnitude>=500000?'high':magnitude>=100000?'medium':'low';
   const id=amount===0?'zero':amount>0?(ps?'positive-ps':'positive-'+level):'negative-'+level;
@@ -3833,12 +3833,15 @@ function clientOverviewSummary(records){
  for(const rows of groups.values()){
   const teamRows=rows.filter(cmiTeamScopeRecord);
   const id=teamRows.length?'team':rows.some(r=>r.mainCategory==='Agreed')?'agreed':rows.some(r=>r.mainCategory==='Submitted')?'submitted':'team';
-  const band=bands.find(x=>x.id===id);band.value++;
-  if(id!=='team'){
-   const category=id==='agreed'?'Agreed':'Submitted',field=id==='agreed'?'agreedAmount':'submittedValue';
-   band.amount+=rows.filter(r=>r.mainCategory===category).reduce((n,r)=>n+(Number(r[field])||0),0);
-   continue;
+  for(const [category,bandId,field] of [['Agreed','agreed','agreedAmount'],['Submitted','submitted','submittedValue']]){
+   const matching=rows.filter(r=>r.mainCategory===category&&!cmiTeamScopeRecord(r));
+   if(!matching.length)continue;
+   const target=bands.find(x=>x.id===bandId);
+   target.value++;
+   target.amount+=matching.reduce((sum,r)=>sum+(Number(r[field])||0),0);
   }
+  if(id!=='team')continue;
+  bands.find(x=>x.id==='team').value++;
   const scoped=teamRows.length?teamRows:rows;
   const submitted=scoped.some(r=>{const a=findActivityByIdOrName(r,'act-submit-dgj','submission to dgj');return activityProgressAt100(a)&&!!a.actualFinishDate;});
   const started=scoped.some(r=>{const a=findActivityByIdOrName(r,'act-measure','measurement works');return !!(a&&(a.actualStartDate||a.actualFinishDate||Number(a.progressPct)>0));});
@@ -3865,7 +3868,7 @@ function renderClientDashboard(){
  const fmt=n=>Number(n).toLocaleString('en-US',{maximumFractionDigits:0});
  body.innerHTML=items.map((x,i)=>'<tr'+(i===3?' class="client-overview-team-total"':'')+'><td>'+(x[3]&&i!==3?'<span class="client-overview-swatch" style="background:'+x[3]+'"></span>':'')+esc(x[0])+'</td><td style="text-align:right">'+fmt(x[1])+'</td><td style="text-align:right">'+(x[2]===null?'':money(x[2]))+'</td></tr>').join('');
  const note=document.getElementById('clientOverviewValidation');
- if(note)note.textContent='Each CMI number is counted once. The chart shows the two pre-mobilisation groups and the five CMI Team categories; together they add up to Total CMIs.';
+ if(note)note.textContent='Total CMIs counts each number once across the portfolio. Classification counts are unique within each group and may overlap. Values sum every applicable source row.';
  const overviewSlices=[
   ...summary.bands.filter(x=>x.id!=='team'),
   ...summary.stages.filter(x=>x.id!=='balance'),
