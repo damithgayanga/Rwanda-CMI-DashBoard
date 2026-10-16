@@ -4109,7 +4109,14 @@ function clientOverviewSummary(records){
  bands.find(x=>x.id==='team').amount=stages
   .filter(x=>x.id==='submitted'||x.id==='agreed')
   .reduce((total,x)=>total+x.amount,0);
- const totalAmount=bands.reduce((total,x)=>total+x.amount,0);
+ // Portfolio value always includes all four submitted/agreed categories,
+ // independently of whether the CMI Team subtotal is displayed.
+ const totalAmount=[
+  bands.find(x=>x.id==='agreed'),
+  bands.find(x=>x.id==='submitted'),
+  stages.find(x=>x.id==='submitted'),
+  stages.find(x=>x.id==='agreed')
+ ].reduce((total,x)=>total+(Number(x?.amount)||0),0);
  return {total:groups.size,totalAmount,bands,stages,zeroBalance,otherBalance};
 }
 function renderClientDashboard(){
