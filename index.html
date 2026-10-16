@@ -4044,7 +4044,7 @@ function clientProcessStageCounts(records,readiness){
 function renderClientProcessStages(){
  const el=document.getElementById('clientProcessStages');if(!el)return;
  const counts=clientProcessStageCounts(state.records,documentReadinessMap());
- const labels=['CMIs Sent to Measurement Team','CMIs Commenced by Measurement Team','CMIs Completed by Measurement Team','CMIs Submitted to CM','CMIs Received from CM','Submitted to DGJ'];
+ const labels=['CMIs Sent to Measurement Team','CMIs Commenced by Measurement Team','CMIs Completed by Measurement Team','CMIs Submitted to CM / CMI Lead','CMIs Received from CM / CMI Lead','Submitted to DGJ'];
  el.innerHTML=labels.map((label,i)=>'<tr><td><span>'+esc(label)+'</span></td><td>'+Number(counts[i]).toLocaleString('en-US')+'</td></tr>').join('');
 }
 
