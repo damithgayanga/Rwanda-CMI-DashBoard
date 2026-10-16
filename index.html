@@ -4034,7 +4034,7 @@ function clientProcessStageCounts(records,readiness){
   if(handover&&handover.actual_given_date)sets[0].add(key);
   if(activityStarted(a.measure))sets[1].add(key);
   if(activityProgressAt100(a.measure)&&a.measure.actualFinishDate)sets[2].add(key);
-  if(a.clearance&&a.clearance.actualStartDate)sets[3].add(key);
+  if(activityProgressAt100(a.review))sets[3].add(key);
   if(activityProgressAt100(a.clearance)&&a.clearance.actualFinishDate)sets[4].add(key);
   const submission=findActivityByIdOrName(r,'act-submit-dgj','submission to dgj');
   if(activityComplete(submission)&&afterTrackerStart(submission))sets[5].add(key);
