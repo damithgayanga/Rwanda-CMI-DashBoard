@@ -2996,9 +2996,12 @@ function setCmiProcessingRoute(id){
  if(!r||!cmiTeamScopeRecord(r))return;
  const target=r.processingRoute==='On-Site Only'?'Off-Site + On-Site':'On-Site Only';
  const measurement=findActivityByIdOrName(r,'act-measure','measurement works');
- const historical=measurement&&(measurement.actualStartDate||measurement.actualFinishDate||Number(measurement.progressPct)>0);
- const warning=historical?' Existing measurement progress and dates will remain stored and will become applicable again if you switch back.':'';
- if(!confirm('Change CMI '+r.cmiNo+' processing route to '+target+'?'+warning+' No existing activity data will be deleted.'))return;
+ // Measurement & Valuation must never be bypassed after the off-site team has started.
+ if(target==='On-Site Only'&&measurement&&(measurement.actualStartDate||Number(measurement.progressPct)>0)){
+  alert('CMI '+r.cmiNo+' cannot be changed to On-Site Only because Measurement & Valuation has an Actual Start Date or recorded progress. The existing processing route is retained.');
+  return;
+ }
+ if(!confirm('Change CMI '+r.cmiNo+' processing route to '+target+'? Existing activity history will be preserved.'))return;
  r.processingRoute=target;
  r.progressPct=weightedCmiProgress(r);
  persistStateOnly();
