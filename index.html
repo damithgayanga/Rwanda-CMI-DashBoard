@@ -797,7 +797,7 @@
     if(!canAdmin())return;
     const body=document.getElementById('auditBody');if(!body)return;
     body.innerHTML='<tr><td colspan="8" class="muted">Loading audit trail…</td></tr>';
-    const {data,error}=await supabaseClient.from('audit_log').select('id,username,access_role,table_name,action,record_key,old_data,new_data,changed_at').order('changed_at',{ascending:false}).limit(1000);
+    const {data,error}=await supabaseClient.from('audit_log').select('id,username,access_role,table_name,action,record_key,old_data,new_data,changed_at').order('changed_at',{ascending:false}).limit(100);
     if(error){body.innerHTML='<tr><td colspan="8" class="muted">Unable to load audit trail.</td></tr>';console.error(error);return}
     window.dashboardAuditRows=data||[];
     renderAuditLog();
@@ -806,7 +806,7 @@
   function renderAuditLog(){
     const rows=window.dashboardAuditRows||[],uf=(document.getElementById('auditUserFilter')?.value||'').toLowerCase(),af=document.getElementById('auditActionFilter')?.value||'',tf=(document.getElementById('auditTableFilter')?.value||'').toLowerCase(),rf=(document.getElementById('auditRecordFilter')?.value||'').toLowerCase();
     const filtered=rows.filter(x=>(!uf||String(x.username||'').toLowerCase().includes(uf))&&(!af||x.action===af)&&(!tf||String(x.table_name||'').toLowerCase().includes(tf))&&(!rf||String(x.record_key||'').toLowerCase().includes(rf)));
-    const count=document.getElementById('auditCount');if(count)count.textContent=`Showing ${filtered.length} of ${rows.length} recorded changes`;
+    const count=document.getElementById('auditCount');if(count)count.textContent=`Showing ${filtered.length} of ${rows.length} most recent audit entries`;
     const body=document.getElementById('auditBody');if(!body)return;
     const pretty=v=>v?esc(JSON.stringify(v,null,2)):'—';
     body.innerHTML=filtered.map(x=>`<tr><td class="nowrap">${new Date(x.changed_at).toLocaleString('en-NZ')}</td><td><b>${esc(x.username||'System')}</b></td><td>${esc(x.access_role||'')}</td><td>${esc(x.action)}</td><td>${esc(x.table_name)}</td><td>${esc(x.record_key||'')}</td><td class="audit-json">${pretty(x.old_data)}</td><td class="audit-json">${pretty(x.new_data)}</td></tr>`).join('')||'<tr><td colspan="8" class="muted">No audit records match the current filters.</td></tr>';
@@ -816,7 +816,7 @@
     if(!canViewChanges())return;
     const body=document.getElementById('changesBody');if(!body)return;
     body.innerHTML='<tr><td colspan="8" class="muted">Loading changes…</td></tr>';
-    const {data,error}=await supabaseClient.from('audit_log').select('id,username,access_role,table_name,action,record_key,old_data,new_data,changed_at').neq('access_role','admin').order('changed_at',{ascending:false}).limit(1000);
+    const {data,error}=await supabaseClient.from('audit_log').select('id,username,access_role,table_name,action,record_key,old_data,new_data,changed_at').neq('access_role','admin').order('changed_at',{ascending:false}).limit(100);
     if(error){body.innerHTML='<tr><td colspan="8" class="muted">Unable to load changes.</td></tr>';console.error(error);return}
     window.dashboardChangeRows=data||[];renderChangesLog();
   }
@@ -824,7 +824,7 @@
   function renderChangesLog(){
     const rows=window.dashboardChangeRows||[],uf=(document.getElementById('changesUserFilter')?.value||'').toLowerCase(),af=document.getElementById('changesActionFilter')?.value||'',tf=(document.getElementById('changesTableFilter')?.value||'').toLowerCase(),rf=(document.getElementById('changesRecordFilter')?.value||'').toLowerCase();
     const filtered=rows.filter(x=>(!uf||String(x.username||'').toLowerCase().includes(uf))&&(!af||x.action===af)&&(!tf||String(x.table_name||'').toLowerCase().includes(tf))&&(!rf||String(x.record_key||'').toLowerCase().includes(rf)));
-    const count=document.getElementById('changesCount');if(count)count.textContent='Showing '+filtered.length+' of '+rows.length+' non-admin changes';
+    const count=document.getElementById('changesCount');if(count)count.textContent='Showing '+filtered.length+' of '+rows.length+' most recent non-admin changes';
     const body=document.getElementById('changesBody');if(!body)return;
     const pretty=v=>v?esc(JSON.stringify(v,null,2)):'—';
     body.innerHTML=filtered.map(x=>'<tr><td class="nowrap">'+new Date(x.changed_at).toLocaleString('en-NZ')+'</td><td><b>'+esc(x.username||'System')+'</b></td><td>'+esc(x.access_role||'')+'</td><td>'+esc(x.action)+'</td><td>'+esc(x.table_name)+'</td><td>'+esc(x.record_key||'')+'</td><td class="audit-json">'+pretty(x.old_data)+'</td><td class="audit-json">'+pretty(x.new_data)+'</td></tr>').join('')||'<tr><td colspan="8" class="muted">No non-admin changes match the current filters.</td></tr>';
@@ -897,8 +897,10 @@
     if(restoredTab==='process')requestAnimationFrame(resizeProcessFlow);
     if(restoredTab==='organisation')requestAnimationFrame(resizeOrganisationTab);
 
-    if(canViewChanges())await loadChangesLog();
-    if(canAdmin()){await loadAuditLog();await loadDashboardUsers();}
+    // Load audit history only if its tab is restored.
+    if(restoredTab==='changes' && canViewChanges())await loadChangesLog();
+    if(restoredTab==='audit' && canAdmin())await loadAuditLog();
+    if(canAdmin())await loadDashboardUsers();
   }
 
   const SHARED_STATE_RESOURCE_NAME = '__CMI_DASHBOARD_SHARED_STATE__';
@@ -4662,6 +4664,9 @@ document.querySelectorAll('.tabbtn').forEach(b=>b.addEventListener('click',()=>{
  const target=activateDashboardTab(b.dataset.tab,false);
  rememberNavigationState(target,0);
  renderActiveTab();
+ // Fetch audit history only when explicitly navigating to an audit tab.
+ if(target==='changes' && canViewChanges())void loadChangesLog();
+ if(target==='audit' && canAdmin())void loadAuditLog();
  if(target==='process')requestAnimationFrame(resizeProcessFlow);
  if(target==='organisation')requestAnimationFrame(resizeOrganisationTab);
 }));
