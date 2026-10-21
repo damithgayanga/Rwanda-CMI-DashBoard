@@ -2543,7 +2543,7 @@ function isCmiTeamSubmission(r){return !!r&&String(r.mainCategory||'').trim()===
 function deliveryPlanApplicable(r){return cmiTeamScopeRecord(r)}
 function deliveryWorkBucket(r){if(String(registerCategoryValue(r)||'').trim()==='Provisional Sum - To be Submitted')return 'Investigated';return calcPriority(r)==='Unvalued'?'Unvalued':calcPriority(r)}
 function hasOffsiteDeliveryAllocation(r){
- if(!r)return false;
+ if(!r||r.processingRoute==='On-Site Only')return false;
  const activeOffsite=new Set(currentOffsiteResources());
  return (r.cmiActivities||[]).some(a=>{
   if(!a||!a.offsiteResource||!activeOffsite.has(a.offsiteResource))return false;
@@ -2783,9 +2783,9 @@ function deliveryStageMetrics(){
   clearance:findActivityByIdOrName(record,'act-clearance','technical and commercial clearance'),
   submission:findActivityByIdOrName(record,'act-submit-dgj','submission to dgj')
  }));
- const measurementCompleted=rows.filter(x=>activityProgressAt100(x.measure)).map(x=>x.record);
- const measurementInProgress=rows.filter(x=>x.measure&&!!x.measure.actualStartDate&&!activityProgressAt100(x.measure)).map(x=>x.record);
- const assessmentCommenced=rows.filter(x=>activityProgressAt100(x.measure)||(x.measure&&!!x.measure.actualStartDate)).map(x=>x.record);
+ const measurementCompleted=rows.filter(x=>x.record.processingRoute!=='On-Site Only'&&activityProgressAt100(x.measure)).map(x=>x.record);
+ const measurementInProgress=rows.filter(x=>x.record.processingRoute!=='On-Site Only'&&x.measure&&!!x.measure.actualStartDate&&!activityProgressAt100(x.measure)).map(x=>x.record);
+ const assessmentCommenced=rows.filter(x=>x.record.processingRoute==='On-Site Only'?(x.record.cmiActivities||[]).some(a=>a.activityId!=='act-measure'&&activityStarted(a)):(activityProgressAt100(x.measure)||(x.measure&&!!x.measure.actualStartDate))).map(x=>x.record);
  const clearanceCompleted=rows.filter(x=>activityProgressAt100(x.clearance)).map(x=>x.record);
  const clearancePending=rows.filter(x=>activityProgressAt100(x.measure)&&!activityProgressAt100(x.clearance)).map(x=>x.record);
  const submittedDgj=rows.filter(x=>activityProgressAt100(x.submission)).map(x=>x.record);
@@ -2990,10 +2990,25 @@ function populateFilters(){
  let es=document.getElementById('eStatus');if(es){let ev=es.value;es.innerHTML=registerCategories.map(s=>`<option>${esc(s)}</option>`).join('');if(ev)es.value=ev}
 }
 function registerFilters(){const q=document.getElementById('fSearch').value.trim().toLowerCase(),st=document.getElementById('fStatus').value,ust=document.getElementById('fMainCategory').value,p=document.getElementById('fPriority').value,a=document.getElementById('fAsset').value,pl=document.getElementById('fPlan').value,rs=document.getElementById('fResource').value;return state.records.filter(r=>{const hay=[r.cmiNo,r.reference,r.description,r.location,r.assetCode,r.remarks,r.notes].join(' ').toLowerCase();return(!q||hay.includes(q))&&(!st||registerCategoryValue(r)===st)&&(!ust||(ust==='__blank__'?!r.mainCategory:r.mainCategory===ust))&&(!p||calcPriority(r)===p)&&(!a||String(r.assetCode||'').split(/\n|,/).map(x=>x.trim()).includes(a))&&(!pl||(pl==='planned'?isInDeliveryPlanRecord(r):!isInDeliveryPlanRecord(r)))&&(!rs||resourceMatches(r,rs))})}
+function setCmiProcessingRoute(id){
+ if(!canManageDelivery())return;
+ const r=state.records.find(x=>String(x.id)===String(id));
+ if(!r||!cmiTeamScopeRecord(r))return;
+ const target=r.processingRoute==='On-Site Only'?'Off-Site + On-Site':'On-Site Only';
+ const measurement=findActivityByIdOrName(r,'act-measure','measurement works');
+ const historical=measurement&&(measurement.actualStartDate||measurement.actualFinishDate||Number(measurement.progressPct)>0);
+ const warning=historical?' Existing measurement progress and dates will remain stored and will become applicable again if you switch back.':'';
+ if(!confirm('Change CMI '+r.cmiNo+' processing route to '+target+'?'+warning+' No existing activity data will be deleted.'))return;
+ r.processingRoute=target;
+ r.progressPct=weightedCmiProgress(r);
+ persistStateOnly();
+ renderAll();
+}
 function registerActionButtons(r){
  const ds=derivedDeliveryStatus(r),canReopen=canAdmin()&&(ds==='Submitted'||ds==='Not Applicable');
  const reopened=r.isReopened?'<div class="tiny muted" style="margin-top:4px">Reopened</div>':'';
  return '<button class="iconbtn" onclick="openEdit(\''+r.id+'\')">Edit Register</button>'
+  +(canManageDelivery()&&cmiTeamScopeRecord(r)?'<button class="iconbtn" type="button" onclick="setCmiProcessingRoute(\''+r.id+'\')">'+(r.processingRoute==='On-Site Only'?'On-Site Only ↔ Standard':'Standard ↔ On-Site Only')+'</button>':'')
   +(canReopen?'<button class="btn good" style="margin-left:5px" type="button" onclick="reopenCmi(\''+r.id+'\')">Reopen CMI</button>':'')
   +reopened;
 }
@@ -3801,7 +3816,7 @@ function dashboardCmiActivities(r){
 }
 function dashboardWorkflowState(r){
  const a=dashboardCmiActivities(r);
- const measure100=activityProgressAt100(a.measure);
+ const measure100=r.processingRoute==='On-Site Only'||activityProgressAt100(a.measure);
  const review100=activityProgressAt100(a.review);
  const clearance100=activityProgressAt100(a.clearance);
  const final100=activityProgressAt100(a.finalReview);
