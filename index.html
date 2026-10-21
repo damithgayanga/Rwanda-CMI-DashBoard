@@ -1532,7 +1532,7 @@
 
   function documentReadinessItems(){
     const saved=documentReadinessMap();
-    return planned().map(r=>{
+    return planned().filter(r=>r.processingRoute!=='On-Site Only').map(r=>{
       const measure=findActivityByIdOrName(r,'act-measure','measurement works');
       const row=saved.get(String(r.id||''))||{};
       const requiredDate=documentRequiredDate(r);
@@ -2421,7 +2421,7 @@ function ensureShape(s){
  }
  s.meta.highLevelPlan.forEach(a=>{if(a.groupId==='wbs-unallocated'||String(a.id||'').startsWith('unallocated-')){a.groupId='wbs-unallocated';a.group='Other CMIs (No Initial Estimate and Unallocated)';a.countSource='Unvalued';}if(a.groupId==='wbs-provisional'||String(a.id||'').startsWith('provisional-')){a.groupId='wbs-provisional';a.group='Provisional Sum CMIs';a.countSource='Investigated';}});
  s.records=s.records.filter(r=>r.id!=='row-86');
- s.records.forEach(r=>{if(r.registerCategory===undefined)r.registerCategory=REGISTER_CATEGORY_BY_RECORD_ID[r.id]||r.status||'';if(r.mainCategory===undefined)r.mainCategory=r.registerStatusUpdated||MAIN_CATEGORY_BY_RECORD_ID[r.id]||'';if(r.mainCategory==='CMI Team')r.mainCategory='TBS by CMI Team';if(cmiTeamScopeRecord(r))r.wasCmiTeam=true;if(r.id==='row-300'&&r.cmiKey==='00271'&&r.masterInitialEstimateVersion!=='2026-10-13'){r.initialEstimate=20000;r.masterInitialEstimateVersion='2026-10-13';}if(r.status===LEGACY_UNALLOCATED_STATUS)r.status='To be Submitted and Unallocated';if(r.status==='To be'+' Submitted')r.status='To be Submitted - Initial Review compelted';if(r.agreedAmount===undefined){const src=SOURCE.records.find(x=>x.id===r.id);r.agreedAmount=src&&src.agreedAmount!==undefined?src.agreedAmount:null;}if(r.status==='To be'+' Investigated')r.status='Provisional Sum CMI';if(r.siteResource===undefined)r.siteResource='';if(r.offsiteResource===undefined)r.offsiteResource='';if(r.inDeliveryPlan===undefined)r.inDeliveryPlan=false;if(!r.deliveryStatus)r.deliveryStatus='To be Started';if(r.deliveryValue===undefined)r.deliveryValue=null;if(r.startDate===undefined)r.startDate='';if(r.targetDate===undefined)r.targetDate='';if(r.finishDate===undefined)r.finishDate='';if(r.progressPct===undefined)r.progressPct=0;if(r.progressNotes===undefined)r.progressNotes='';if(r.isReopened===undefined)r.isReopened=false;if(r.reopenedAt===undefined)r.reopenedAt='';if(r.reopenReason===undefined)r.reopenReason='';if(r.reopenRestartActivityId===undefined)r.reopenRestartActivityId='';if(!Array.isArray(r.reopenHistory))r.reopenHistory=[];if(!Array.isArray(r.cmiActivities))r.cmiActivities=[];r.cmiActivities.forEach((a,i)=>{if(!a.id)a.id='cma-'+r.id+'-'+i;if(a.activityId===undefined)a.activityId='';if(a.activityName===undefined)a.activityName='';if(a.siteResource===undefined)a.siteResource='';if(a.offsiteResource===undefined)a.offsiteResource='';if(a.startDate===undefined)a.startDate='';if(a.targetDate===undefined)a.targetDate='';if(a.finishDate===undefined)a.finishDate='';if(a.actualStartDate===undefined)a.actualStartDate='';if(a.actualFinishDate===undefined)a.actualFinishDate=a.finishDate||'';if(!a.status)a.status='To be Started';if(a.progressPct===undefined)a.progressPct=0;if(!a.resourceProgress||typeof a.resourceProgress!=='object')a.resourceProgress={};if(a.notes===undefined)a.notes='';const d=s.meta.activityList.find(x=>x.id===a.activityId);if(d)a.activityName=d.name;});});
+ s.records.forEach(r=>{if(r.registerCategory===undefined)r.registerCategory=REGISTER_CATEGORY_BY_RECORD_ID[r.id]||r.status||'';if(r.mainCategory===undefined)r.mainCategory=r.registerStatusUpdated||MAIN_CATEGORY_BY_RECORD_ID[r.id]||'';if(r.mainCategory==='CMI Team')r.mainCategory='TBS by CMI Team';if(cmiTeamScopeRecord(r))r.wasCmiTeam=true;if(r.id==='row-300'&&r.cmiKey==='00271'&&r.masterInitialEstimateVersion!=='2026-10-13'){r.initialEstimate=20000;r.masterInitialEstimateVersion='2026-10-13';}if(r.status===LEGACY_UNALLOCATED_STATUS)r.status='To be Submitted and Unallocated';if(r.status==='To be'+' Submitted')r.status='To be Submitted - Initial Review compelted';if(r.agreedAmount===undefined){const src=SOURCE.records.find(x=>x.id===r.id);r.agreedAmount=src&&src.agreedAmount!==undefined?src.agreedAmount:null;}if(r.status==='To be'+' Investigated')r.status='Provisional Sum CMI';if(r.processingRoute!=='On-Site Only')r.processingRoute='Off-Site + On-Site';if(r.siteResource===undefined)r.siteResource='';if(r.offsiteResource===undefined)r.offsiteResource='';if(r.inDeliveryPlan===undefined)r.inDeliveryPlan=false;if(!r.deliveryStatus)r.deliveryStatus='To be Started';if(r.deliveryValue===undefined)r.deliveryValue=null;if(r.startDate===undefined)r.startDate='';if(r.targetDate===undefined)r.targetDate='';if(r.finishDate===undefined)r.finishDate='';if(r.progressPct===undefined)r.progressPct=0;if(r.progressNotes===undefined)r.progressNotes='';if(r.isReopened===undefined)r.isReopened=false;if(r.reopenedAt===undefined)r.reopenedAt='';if(r.reopenReason===undefined)r.reopenReason='';if(r.reopenRestartActivityId===undefined)r.reopenRestartActivityId='';if(!Array.isArray(r.reopenHistory))r.reopenHistory=[];if(!Array.isArray(r.cmiActivities))r.cmiActivities=[];r.cmiActivities.forEach((a,i)=>{if(!a.id)a.id='cma-'+r.id+'-'+i;if(a.activityId===undefined)a.activityId='';if(a.activityName===undefined)a.activityName='';if(a.siteResource===undefined)a.siteResource='';if(a.offsiteResource===undefined)a.offsiteResource='';if(a.startDate===undefined)a.startDate='';if(a.targetDate===undefined)a.targetDate='';if(a.finishDate===undefined)a.finishDate='';if(a.actualStartDate===undefined)a.actualStartDate='';if(a.actualFinishDate===undefined)a.actualFinishDate=a.finishDate||'';if(!a.status)a.status='To be Started';if(a.progressPct===undefined)a.progressPct=0;if(!a.resourceProgress||typeof a.resourceProgress!=='object')a.resourceProgress={};if(a.notes===undefined)a.notes='';const d=s.meta.activityList.find(x=>x.id===a.activityId);if(d)a.activityName=d.name;});});
  // Reconcile confirmed submitted register values without replacing unrelated edits.
  const submittedFixes={'row-132':276941.12834,'row-363':806.64,'row-96':106149,'row-492':1916232};
  for(const r of s.records){
@@ -2543,7 +2543,7 @@ function isCmiTeamSubmission(r){return !!r&&String(r.mainCategory||'').trim()===
 function deliveryPlanApplicable(r){return cmiTeamScopeRecord(r)}
 function deliveryWorkBucket(r){if(String(registerCategoryValue(r)||'').trim()==='Provisional Sum - To be Submitted')return 'Investigated';return calcPriority(r)==='Unvalued'?'Unvalued':calcPriority(r)}
 function hasOffsiteDeliveryAllocation(r){
- if(!r)return false;
+ if(!r||r.processingRoute==='On-Site Only')return false;
  const activeOffsite=new Set(currentOffsiteResources());
  return (r.cmiActivities||[]).some(a=>{
   if(!a||!a.offsiteResource||!activeOffsite.has(a.offsiteResource))return false;
@@ -2571,6 +2571,10 @@ const CMI_ACTIVITY_WEIGHT_FALLBACKS=Object.freeze({
 function clampProgressValue(value){return Math.max(0,Math.min(100,Number(value)||0))}
 function weightedCmiProgress(r){
  if(!r)return 0;
+ if(r.processingRoute==='On-Site Only'){
+  const applicable=['act-finalise','act-clearance','act-final-review','act-submit-dgj'];
+  return Math.round(applicable.reduce((sum,id)=>{const a=findActivityByIdOrName(r,id,CMI_ACTIVITY_WEIGHT_FALLBACKS[id]);return sum+0.25*(a?clampProgressValue(a.progressPct):0);},0));
+ }
  const total=Object.entries(CMI_ACTIVITY_WEIGHTS).reduce((sum,[activityId,weight])=>{
   const a=findActivityByIdOrName(r,activityId,CMI_ACTIVITY_WEIGHT_FALLBACKS[activityId]);
   return sum+(a?clampProgressValue(a.progressPct):0)*weight;
@@ -2779,9 +2783,9 @@ function deliveryStageMetrics(){
   clearance:findActivityByIdOrName(record,'act-clearance','technical and commercial clearance'),
   submission:findActivityByIdOrName(record,'act-submit-dgj','submission to dgj')
  }));
- const measurementCompleted=rows.filter(x=>activityProgressAt100(x.measure)).map(x=>x.record);
- const measurementInProgress=rows.filter(x=>x.measure&&!!x.measure.actualStartDate&&!activityProgressAt100(x.measure)).map(x=>x.record);
- const assessmentCommenced=rows.filter(x=>activityProgressAt100(x.measure)||(x.measure&&!!x.measure.actualStartDate)).map(x=>x.record);
+ const measurementCompleted=rows.filter(x=>x.record.processingRoute!=='On-Site Only'&&activityProgressAt100(x.measure)).map(x=>x.record);
+ const measurementInProgress=rows.filter(x=>x.record.processingRoute!=='On-Site Only'&&x.measure&&!!x.measure.actualStartDate&&!activityProgressAt100(x.measure)).map(x=>x.record);
+ const assessmentCommenced=rows.filter(x=>x.record.processingRoute==='On-Site Only'?(x.record.cmiActivities||[]).some(a=>a.activityId!=='act-measure'&&activityStarted(a)):(activityProgressAt100(x.measure)||(x.measure&&!!x.measure.actualStartDate))).map(x=>x.record);
  const clearanceCompleted=rows.filter(x=>activityProgressAt100(x.clearance)).map(x=>x.record);
  const clearancePending=rows.filter(x=>activityProgressAt100(x.measure)&&!activityProgressAt100(x.clearance)).map(x=>x.record);
  const submittedDgj=rows.filter(x=>activityProgressAt100(x.submission)).map(x=>x.record);
@@ -2986,10 +2990,28 @@ function populateFilters(){
  let es=document.getElementById('eStatus');if(es){let ev=es.value;es.innerHTML=registerCategories.map(s=>`<option>${esc(s)}</option>`).join('');if(ev)es.value=ev}
 }
 function registerFilters(){const q=document.getElementById('fSearch').value.trim().toLowerCase(),st=document.getElementById('fStatus').value,ust=document.getElementById('fMainCategory').value,p=document.getElementById('fPriority').value,a=document.getElementById('fAsset').value,pl=document.getElementById('fPlan').value,rs=document.getElementById('fResource').value;return state.records.filter(r=>{const hay=[r.cmiNo,r.reference,r.description,r.location,r.assetCode,r.remarks,r.notes].join(' ').toLowerCase();return(!q||hay.includes(q))&&(!st||registerCategoryValue(r)===st)&&(!ust||(ust==='__blank__'?!r.mainCategory:r.mainCategory===ust))&&(!p||calcPriority(r)===p)&&(!a||String(r.assetCode||'').split(/\n|,/).map(x=>x.trim()).includes(a))&&(!pl||(pl==='planned'?isInDeliveryPlanRecord(r):!isInDeliveryPlanRecord(r)))&&(!rs||resourceMatches(r,rs))})}
+function setCmiProcessingRoute(id){
+ if(!canManageDelivery())return;
+ const r=state.records.find(x=>String(x.id)===String(id));
+ if(!r||!cmiTeamScopeRecord(r))return;
+ const target=r.processingRoute==='On-Site Only'?'Off-Site + On-Site':'On-Site Only';
+ const measurement=findActivityByIdOrName(r,'act-measure','measurement works');
+ // Measurement & Valuation must never be bypassed after the off-site team has started.
+ if(target==='On-Site Only'&&measurement&&(measurement.actualStartDate||Number(measurement.progressPct)>0)){
+  alert('CMI '+r.cmiNo+' cannot be changed to On-Site Only because Measurement & Valuation has an Actual Start Date or recorded progress. The existing processing route is retained.');
+  return;
+ }
+ if(!confirm('Change CMI '+r.cmiNo+' processing route to '+target+'? Existing activity history will be preserved.'))return;
+ r.processingRoute=target;
+ r.progressPct=weightedCmiProgress(r);
+ persistStateOnly();
+ renderAll();
+}
 function registerActionButtons(r){
  const ds=derivedDeliveryStatus(r),canReopen=canAdmin()&&(ds==='Submitted'||ds==='Not Applicable');
  const reopened=r.isReopened?'<div class="tiny muted" style="margin-top:4px">Reopened</div>':'';
  return '<button class="iconbtn" onclick="openEdit(\''+r.id+'\')">Edit Register</button>'
+  +(canManageDelivery()&&cmiTeamScopeRecord(r)?'<button class="iconbtn" type="button" onclick="setCmiProcessingRoute(\''+r.id+'\')">'+(r.processingRoute==='On-Site Only'?'On-Site Only ↔ Standard':'Standard ↔ On-Site Only')+'</button>':'')
   +(canReopen?'<button class="btn good" style="margin-left:5px" type="button" onclick="reopenCmi(\''+r.id+'\')">Reopen CMI</button>':'')
   +reopened;
 }
@@ -3797,7 +3819,7 @@ function dashboardCmiActivities(r){
 }
 function dashboardWorkflowState(r){
  const a=dashboardCmiActivities(r);
- const measure100=activityProgressAt100(a.measure);
+ const measure100=r.processingRoute==='On-Site Only'||activityProgressAt100(a.measure);
  const review100=activityProgressAt100(a.review);
  const clearance100=activityProgressAt100(a.clearance);
  const final100=activityProgressAt100(a.finalReview);
