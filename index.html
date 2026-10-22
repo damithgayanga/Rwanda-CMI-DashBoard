@@ -3100,12 +3100,28 @@ async function changeCmiProcessingPath(el){
     .update({processing_path:desired}).eq('cmi_key',key).select('processing_path').single();
   if(error)throw error;
   processingPathValues.set(key,data.processing_path);
+  if(data.processing_path==='On-Site Only'){
+   const review=(rec.cmiActivities||[]).find(a=>String(a.activityName||'').toLowerCase().includes('review of valuation and compilation'));
+   const measure=findActivityByIdOrName(rec,'act-measure','measurement works');
+   const siteAssignee=String(review?.siteResource||'').trim();
+   if(!siteAssignee)console.warn('No Review of Valuation on-site resource assigned for '+(rec.cmiNo||key));
+   const {error:resourceError}=await supabaseClient.from('cmi_delivery_activities').update({offsite_resource:null}).eq('cmi_key',key);
+   if(resourceError)throw resourceError;
+   if(measure){
+    const {error:measureError}=await supabaseClient.from('cmi_delivery_activities').update({site_resource:siteAssignee||null,offsite_resource:null}).eq('cmi_key',key).eq('activity_id',measure.activityId||'act-measure');
+    if(measureError)throw measureError;
+    measure.siteResource=siteAssignee;
+   }
+   rec.offsiteResource='';
+   (rec.cmiActivities||[]).forEach(a=>{a.offsiteResource='';});
+   persistStateOnly();
+  }
  }catch(e){
   alert('Unable to change Processing Path: '+(e.message||String(e)));
  }finally{renderRegister();}
 }
 
-function renderRegister(){if(!processingPathLoaded&&!processingPathLoading)void loadProcessingPaths();filteredRegister=registerFilters();document.getElementById('registerCount').textContent=`Showing ${filteredRegister.length} of ${state.records.length} work items`;document.getElementById('registerBody').innerHTML=filteredRegister.map(r=>`<tr><td class="nowrap"><b>${esc(r.cmiNo)}</b></td><td>${esc(r.reference)}</td><td class="desc">${esc(r.description)}</td><td>${fmtDate(r.cmiDate)}</td><td>${esc(r.assetCode)}</td><td>${esc(r.location)}</td><td class="money">${money(r.initialEstimate)}</td><td class="money">${money(r.offsiteEstimate)}</td><td class="money">${money(r.submittedValue)}</td><td class="money">${money(r.agreedAmount)}</td><td>${statusPill(registerCategoryValue(r))}</td><td>${r.mainCategory?statusPill(r.mainCategory):'<span class="empty">—</span>'}</td><td>${priorityPill(calcPriority(r))}</td><td>${r.siteResource?esc(r.siteResource):'<span class="empty">—</span>'}</td><td>${r.offsiteResource?esc(r.offsiteResource):'<span class="empty">—</span>'}</td><td>${deliveryPill(derivedDeliveryStatus(r))}</td><td>${processingPathSelect(r)}</td><td>${registerActionButtons(r)}</td></tr>`).join('')}
+function renderRegister(){if(!processingPathLoaded&&!processingPathLoading)void loadProcessingPaths();filteredRegister=registerFilters();document.getElementById('registerCount').textContent=`Showing ${filteredRegister.length} of ${state.records.length} work items`;document.getElementById('registerBody').innerHTML=filteredRegister.map(r=>`<tr><td class="nowrap"><b>${esc(r.cmiNo)}</b></td><td>${esc(r.reference)}</td><td class="desc">${esc(r.description)}</td><td>${fmtDate(r.cmiDate)}</td><td>${esc(r.assetCode)}</td><td>${esc(r.location)}</td><td class="money">${money(r.initialEstimate)}</td><td class="money">${money(r.offsiteEstimate)}</td><td class="money">${money(r.submittedValue)}</td><td class="money">${money(r.agreedAmount)}</td><td>${statusPill(registerCategoryValue(r))}</td><td>${r.mainCategory?statusPill(r.mainCategory):'<span class="empty">—</span>'}</td><td>${priorityPill(calcPriority(r))}</td><td>${r.siteResource?esc(r.siteResource):'<span class="empty">—</span>'}</td><td>${(processingPathValues.get(deliveryActivityKey(r))||'Start from Off-Site')==='On-Site Only'?'N/A':(r.offsiteResource?esc(r.offsiteResource):'<span class="empty">—</span>')}</td><td>${deliveryPill(derivedDeliveryStatus(r))}</td><td>${processingPathSelect(r)}</td><td>${registerActionButtons(r)}</td></tr>`).join('')}
 
 function allocationFilters(){const q=document.getElementById('aSearch').value.trim().toLowerCase(),st=document.getElementById('aStatus').value,p=document.getElementById('aPriority').value,pl=document.getElementById('aPlan').value,sr=document.getElementById('aSite').value,or=document.getElementById('aOffsite').value;return state.records.filter(isCmiTeamSubmission).filter(r=>{const hay=[r.cmiNo,r.description,r.location,r.assetCode].join(' ').toLowerCase(),acts=r.cmiActivities||[];const sm=!sr||acts.some(a=>a.siteResource===sr)||r.siteResource===sr,om=!or||acts.some(a=>a.offsiteResource===or)||r.offsiteResource===or;return(!q||hay.includes(q))&&(!st||registerCategoryValue(r)===st)&&(!p||calcPriority(r)===p)&&(!pl||(pl==='planned'?hasOffsiteDeliveryAllocation(r):!hasOffsiteDeliveryAllocation(r)))&&sm&&om})}
 
