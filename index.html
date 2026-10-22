@@ -346,7 +346,7 @@
 #tab-register .data-table .iconbtn,#tab-register .data-table .btn{max-width:100%;white-space:normal;padding:4px 3px;font-size:9px}
 @media(max-width:1050px){#tab-register .data-table{min-width:1050px}}
 
-.measurement-path-split{display:flex;justify-content:center;align-items:flex-start;gap:8px;margin:6px 0 8px;color:var(--navy)}
+.measurement-path-split{display:flex;flex-direction:column;align-items:flex-start;gap:2px;margin:2px 0 8px;color:var(--muted);font-size:11px;font-weight:600;line-height:1.35}
 .measurement-path-group{display:flex;flex-direction:column;align-items:center;line-height:1.1}
 .measurement-path-group strong{font-size:15px;font-weight:900}
 .measurement-path-group small{font-size:9px;color:var(--muted);font-weight:700;margin-top:3px}
@@ -2721,7 +2721,7 @@ function stageKpiHtml(label,items,style='',total=null){const context=total===nul
 function measurementCompletedPathBreakdown(items){
  const onsite=items.filter(r=>(processingPathValues.get(deliveryActivityKey(r))||'Start from Off-Site')==='On-Site Only').length;
  const offsite=items.length-onsite;
- return '<div class="measurement-path-split"><span class="measurement-path-group"><strong>'+offsite+'</strong><small>(Off-Site)</small></span><span class="measurement-path-plus">+</span><span class="measurement-path-group"><strong>'+onsite+'</strong><small>(On-Site)</small></span></div>';
+ return '<div class="measurement-path-split"><div>'+offsite+' (Off-Site)</div><div>'+onsite+' (On-Site)</div></div>';
 }
 function measurementCompletedKpiHtml(items,total){
  const context='<span class="value-context">out of '+total+'</span>';
@@ -2840,7 +2840,7 @@ function assessmentCommencedFromHandoverKpiHtml(){
   return !!(measure&&(measure.actualStartDate||Number(measure.progressPct)>0));
  });
  const handed=readiness.filter(x=>!!x.actualDate);
- return `<div class="card kpi kpi-stage"><div class="label">CMI Assessment Commenced</div><div class="value">${commenced.length}<span class="value-context">out of ${handed.length}</span></div>${submissionBreakdownHtml(commenced)}</div>`;
+ return `<div class="card kpi kpi-stage"><div class="label">CMI Assessment Commenced</div><div class="value">${commenced.length}<span class="value-context">out of ${handed.length}</span></div>${measurementCompletedPathBreakdown(commenced)}${submissionBreakdownHtml(commenced)}</div>`;
 }
 function internalTeamCategoryBreakdown(items){
  const team=items.filter(cmiTeamScopeRecord),ps=team.filter(r=>String(registerCategoryValue(r)||'').trim()==='Provisional Sum - To be Submitted');
