@@ -345,6 +345,12 @@
 #tab-register .data-table th:nth-child(18){width:4%}
 #tab-register .data-table .iconbtn,#tab-register .data-table .btn{max-width:100%;white-space:normal;padding:4px 3px;font-size:9px}
 @media(max-width:1050px){#tab-register .data-table{min-width:1050px}}
+
+.measurement-path-split{display:flex;justify-content:center;align-items:flex-start;gap:8px;margin:6px 0 8px;color:var(--navy)}
+.measurement-path-group{display:flex;flex-direction:column;align-items:center;line-height:1.1}
+.measurement-path-group strong{font-size:15px;font-weight:900}
+.measurement-path-group small{font-size:9px;color:var(--muted);font-weight:700;margin-top:3px}
+.measurement-path-plus{font-weight:800;font-size:13px;line-height:17px}
 </style>
 <style id="executive-presentation-v2">
 /* Executive presentation: scoped to the management report only. */
@@ -2712,6 +2718,15 @@ function operationalStage(r){
 function submissionBreakdown(items){const rows=internalTeamCategoryBreakdown(items);return {initial:rows[0].value,provisional:rows[1].value,unallocated:rows[2].value}}
 function submissionBreakdownHtml(items){return internalTeamCategoryBreakdownHtml(items)}
 function stageKpiHtml(label,items,style='',total=null){const context=total===null||total===undefined?'':`<span class="value-context">out of ${total}</span>`;return `<div class="card kpi kpi-stage ${style}"><div class="label">${label}</div><div class="value">${items.length}${context}</div>${submissionBreakdownHtml(items)}</div>`}
+function measurementCompletedPathBreakdown(items){
+ const onsite=items.filter(r=>(processingPathValues.get(deliveryActivityKey(r))||'Start from Off-Site')==='On-Site Only').length;
+ const offsite=items.length-onsite;
+ return '<div class="measurement-path-split"><span class="measurement-path-group"><strong>'+offsite+'</strong><small>(Off-Site)</small></span><span class="measurement-path-plus">+</span><span class="measurement-path-group"><strong>'+onsite+'</strong><small>(On-Site)</small></span></div>';
+}
+function measurementCompletedKpiHtml(items,total){
+ const context='<span class="value-context">out of '+total+'</span>';
+ return '<div class="card kpi kpi-stage"><div class="label">Measurement Completed</div><div class="value">'+items.length+context+'</div>'+measurementCompletedPathBreakdown(items)+submissionBreakdownHtml(items)+'</div>';
+}
 function programmeWeekRanges(){
  const base=new Date((programmeDataDate||todayISO())+'T00:00:00');
  const day=(base.getDay()+6)%7;
@@ -2851,7 +2866,7 @@ function renderKpis(){
   `<div class="card kpi kpi-stage kpi-submit-card"><div class="label">To be Submitted by CMI Team</div><div class="value">${toSubmit.length}<span class="value-context">out of ${r.length}</span></div>${internalTeamCategoryBreakdownHtml(toSubmit)}</div>`,
   weeklyActivityPlanHtml(),
   `<div class="kpi-standard">${assessmentCommencedFromHandoverKpiHtml()}</div>`,
-  `<div class="kpi-standard">${stageKpiHtml('Measurement Completed',measurementCompleted,'',assessmentCommenced.length)}</div>`,
+  `<div class="kpi-standard">${measurementCompletedKpiHtml(measurementCompleted,assessmentCommenced.length)}</div>`,
   `<div class="kpi-rfi">${rfiDashboardKpiHtml()}</div>`,
   `<div class="kpi-standard kpi-clearance-pending">${stageKpiHtml('Tech & Com. Clearance Pending',clearancePending,'warn',measurementCompleted.length)}</div>`,
   `<div class="kpi-standard">${stageKpiHtml('Submitted to DGJ',submittedDgj,'good',clearanceCompleted.length)}</div>`
