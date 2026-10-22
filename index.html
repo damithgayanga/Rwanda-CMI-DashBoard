@@ -2730,42 +2730,46 @@ function programmeWeekRanges(){
 function activityNamePart(activityId){
  return activityId==='act-measure'?'measurement works':activityId==='act-clearance'?'technical and commercial clearance':'submission to dgj';
 }
-function plannedActivityCountForRange(activityId,start,finish){
+function plannedActivityCountForRange(activityId,start,finish,processingPath=null){
  const seen=new Set();
  state.records.forEach(r=>{
   // Weekly Activity Plan must be a direct view of the current Delivery Plan only.
   if(!deliveryPlanApplicable(r)||!isInDeliveryPlanRecord(r))return;
+  if(processingPath&&(processingPathValues.get(deliveryActivityKey(r))||'Start from Off-Site')!==processingPath)return;
   const a=findActivityByIdOrName(r,activityId,activityNamePart(activityId));
   if(!a||!a.targetDate||a.targetDate<start||a.targetDate>finish)return;
   seen.add(deliveryRecordIdentity(r));
  });
  return seen.size;
 }
-function cumulativePlannedActivityCount(activityId,throughDate){
+function cumulativePlannedActivityCount(activityId,throughDate,processingPath=null){
  const seen=new Set();
  state.records.forEach(r=>{
   // Cumulative plan uses the same Delivery Plan population as the KPI card.
   if(!deliveryPlanApplicable(r)||!isInDeliveryPlanRecord(r))return;
+  if(processingPath&&(processingPathValues.get(deliveryActivityKey(r))||'Start from Off-Site')!==processingPath)return;
   const a=findActivityByIdOrName(r,activityId,activityNamePart(activityId));
   if(!a||!a.targetDate||a.targetDate>throughDate)return;
   seen.add(deliveryRecordIdentity(r));
  });
  return seen.size;
 }
-function actualActivityCountForRange(activityId,start,finish){
+function actualActivityCountForRange(activityId,start,finish,processingPath=null){
  const seen=new Set();
  state.records.forEach(r=>{
   if(!isInDeliveryPlanRecord(r))return;
+  if(processingPath&&(processingPathValues.get(deliveryActivityKey(r))||'Start from Off-Site')!==processingPath)return;
   const a=findActivityByIdOrName(r,activityId,activityNamePart(activityId));
   if(!a||!a.actualFinishDate||a.actualFinishDate<start||a.actualFinishDate>finish)return;
   seen.add(deliveryRecordIdentity(r));
  });
  return seen.size;
 }
-function cumulativeActualActivityCount(activityId,throughDate){
+function cumulativeActualActivityCount(activityId,throughDate,processingPath=null){
  const seen=new Set();
  state.records.forEach(r=>{
   if(!isInDeliveryPlanRecord(r))return;
+  if(processingPath&&(processingPathValues.get(deliveryActivityKey(r))||'Start from Off-Site')!==processingPath)return;
   const a=findActivityByIdOrName(r,activityId,activityNamePart(activityId));
   if(!a||!a.actualFinishDate||a.actualFinishDate>throughDate)return;
   seen.add(deliveryRecordIdentity(r));
@@ -2773,22 +2777,24 @@ function cumulativeActualActivityCount(activityId,throughDate){
  return seen.size;
 }
 function weeklyActivityPlanHtml(){
+ if(!processingPathLoaded&&!processingPathLoading)void loadProcessingPaths();
  const ranges=programmeWeekRanges();
  const rows=[
-  {id:'act-measure',label:'Measurement & Valuation'},
+  {id:'act-measure',label:'Measurement & Valuation (Off-Site)',processingPath:'Start from Off-Site'},
+  {id:'act-measure',label:'Measurement & Valuation (On-Site)',processingPath:'On-Site Only'},
   {id:'act-clearance',label:'Tech & Com. Clearance'},
   {id:'act-submit-dgj',label:'Submitted to DGJ'}
  ];
  const dateLabel=r=>`${formatDateText(r.start).slice(0,6)}–${formatDateText(r.finish).slice(0,6)}`;
  const ratio=(actual,planned)=>`${actual}/${planned}`;
  const body=rows.map(row=>{
-  const lastPlan=plannedActivityCountForRange(row.id,ranges.last.start,ranges.last.finish);
-  const lastActual=actualActivityCountForRange(row.id,ranges.last.start,ranges.last.finish);
-  const currentPlan=plannedActivityCountForRange(row.id,ranges.current.start,ranges.current.finish);
-  const currentActual=actualActivityCountForRange(row.id,ranges.current.start,ranges.current.finish);
-  const cumulativePlan=cumulativePlannedActivityCount(row.id,ranges.current.finish);
-  const cumulativeActual=cumulativeActualActivityCount(row.id,ranges.current.finish);
-  const nextPlan=plannedActivityCountForRange(row.id,ranges.next.start,ranges.next.finish);
+  const lastPlan=plannedActivityCountForRange(row.id,ranges.last.start,ranges.last.finish,row.processingPath||null);
+  const lastActual=actualActivityCountForRange(row.id,ranges.last.start,ranges.last.finish,row.processingPath||null);
+  const currentPlan=plannedActivityCountForRange(row.id,ranges.current.start,ranges.current.finish,row.processingPath||null);
+  const currentActual=actualActivityCountForRange(row.id,ranges.current.start,ranges.current.finish,row.processingPath||null);
+  const cumulativePlan=cumulativePlannedActivityCount(row.id,ranges.current.finish,row.processingPath||null);
+  const cumulativeActual=cumulativeActualActivityCount(row.id,ranges.current.finish,row.processingPath||null);
+  const nextPlan=plannedActivityCountForRange(row.id,ranges.next.start,ranges.next.finish,row.processingPath||null);
   return `<div class="weekly-plan-row"><div class="weekly-plan-activity">${row.label}</div><div class="weekly-plan-value">${ratio(lastActual,lastPlan)}</div><div class="weekly-plan-value">${ratio(currentActual,currentPlan)}</div><div class="weekly-plan-value cumulative">${ratio(cumulativeActual,cumulativePlan)}</div><div class="weekly-plan-value">${nextPlan}</div></div>`;
  }).join('');
  return `<div class="card kpi weekly-activity-plan"><div class="label">Weekly Activity Plan <span class="value-context">Actual / Planned</span></div><div class="weekly-plan-head"><span>Activity</span><span>Last Week<br><span class="weekly-plan-dates">${dateLabel(ranges.last)}</span></span><span>This Week<br><span class="weekly-plan-dates">${dateLabel(ranges.current)}</span></span><span>Cumulative<br><span class="weekly-plan-dates">to ${formatDateText(ranges.current.finish)}</span></span><span>Next Week<br><span class="weekly-plan-dates">${dateLabel(ranges.next)}</span></span></div>${body}</div>`;
@@ -3036,6 +3042,7 @@ async function loadProcessingPaths(){
  finally{
   processingPathLoading=false;
   if(document.querySelector('.tabbtn.active')?.dataset.tab==='register')renderRegister();
+  else if(processingPathLoaded&&document.querySelector('.tabbtn.active')?.dataset.tab==='dashboard')renderDashboard();
  }
 }
 function processingPathSelect(r){
