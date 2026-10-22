@@ -3018,11 +3018,24 @@ async function loadProcessingPaths(){
 }
 function processingPathSelect(r){
  const key=deliveryActivityKey(r),value=processingPathValues.get(key)||'Start from Off-Site';
- const disabled=!canManageDelivery()||!processingPathLoaded;
- const safeKey=encodeURIComponent(key);
- return '<select aria-label="Processing Path for '+esc(r.cmiNo)+'" style="min-width:160px" data-processing-key="'+safeKey+'" '+(disabled?'disabled':'')+' onchange="changeCmiProcessingPath(this)">'+
- '<option value="Start from Off-Site"'+(value==='Start from Off-Site'?' selected':'')+'>Start from Off-Site</option>'+
- '<option value="On-Site Only"'+(value==='On-Site Only'?' selected':'')+'>On-Site Only</option></select>';
+ if(!canManageDelivery()||!processingPathLoaded)return '<span>'+esc(value)+'</span>';
+ return '<span class="processing-path-display" style="cursor:pointer" title="Click to edit Processing Path" role="button" tabindex="0" data-processing-key="'+encodeURIComponent(key)+'" onclick="editProcessingPathCell(this)" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();editProcessingPathCell(this)}">'+esc(value)+'</span>';
+}
+function editProcessingPathCell(span){
+ if(!canManageDelivery()||!processingPathLoaded)return;
+ const key=decodeURIComponent(span.dataset.processingKey||''),value=processingPathValues.get(key)||'Start from Off-Site';
+ const select=document.createElement('select');
+ select.setAttribute('aria-label','Edit Processing Path');
+ select.style.minWidth='160px';
+ select.dataset.processingKey=encodeURIComponent(key);
+ ['Start from Off-Site','On-Site Only'].forEach(path=>{
+  const opt=document.createElement('option');opt.value=path;opt.textContent=path;select.appendChild(opt);
+ });
+ select.value=value;
+ select.addEventListener('change',()=>changeCmiProcessingPath(select));
+ select.addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();renderRegister()}});
+ select.addEventListener('blur',()=>{if(select.isConnected)renderRegister()});
+ span.replaceWith(select);select.focus();
 }
 async function changeCmiProcessingPath(el){
  if(!canManageDelivery()){renderRegister();return;}
