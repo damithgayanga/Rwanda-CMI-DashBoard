@@ -323,6 +323,28 @@
   padding:12px 0;
   border-bottom:1px solid #e8eef3;
 }
+
+/* Compact CMI Register: fit desktop viewport, wrap classification and status values. */
+#tab-register .data-table{width:100%;min-width:0;table-layout:fixed;font-size:9px}
+#tab-register .data-table th,#tab-register .data-table td{padding:5px 3px;white-space:normal;overflow-wrap:anywhere;line-height:1.2}
+#tab-register .data-table .pill{white-space:normal;max-width:100%;padding:3px 4px;font-size:9px}
+#tab-register .data-table .nowrap{white-space:normal}
+#tab-register .data-table th:nth-child(1){width:5%}
+#tab-register .data-table th:nth-child(2){width:5%}
+#tab-register .data-table th:nth-child(3){width:12%}
+#tab-register .data-table th:nth-child(4){width:5%}
+#tab-register .data-table th:nth-child(5){width:4%}
+#tab-register .data-table th:nth-child(6){width:5%}
+#tab-register .data-table th:nth-child(n+7):nth-child(-n+10){width:5.5%}
+#tab-register .data-table th:nth-child(11){width:7.5%}
+#tab-register .data-table th:nth-child(12){width:10%}
+#tab-register .data-table th:nth-child(13){width:4%}
+#tab-register .data-table th:nth-child(14),#tab-register .data-table th:nth-child(15){width:5%}
+#tab-register .data-table th:nth-child(16){width:7.5%}
+#tab-register .data-table th:nth-child(17){width:8%}
+#tab-register .data-table th:nth-child(18){width:5%}
+#tab-register .data-table .iconbtn,#tab-register .data-table .btn{max-width:100%;white-space:normal;padding:4px 3px;font-size:9px}
+@media(max-width:1050px){#tab-register .data-table{min-width:1050px}}
 </style>
 <style id="executive-presentation-v2">
 /* Executive presentation: scoped to the management report only. */
