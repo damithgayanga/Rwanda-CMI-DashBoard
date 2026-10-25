@@ -2428,8 +2428,10 @@ const ORIGINAL_AGREED_REGISTER_ROW_IDS=new Set(["row-11","row-12","row-16","row-
 // Specific CMI entries designated Agreed - Included in other CMIs in the original register.
 const ORIGINAL_AGREED_INCLUDED_ROW_IDS=new Set(["row-20","row-41","row-42","row-49","row-68","row-69","row-81","row-91","row-98","row-99","row-107","row-175","row-177","row-194"]);
 const ORIGINAL_INCLUDED_TO_BE_SUBMITTED_ROW_IDS=new Set(["row-13","row-14","row-15","row-17","row-22","row-24","row-25","row-29","row-31","row-42","row-43","row-44","row-49","row-50","row-51","row-57","row-58","row-70","row-78","row-79","row-80","row-83","row-84","row-121","row-122","row-123","row-124","row-128","row-129","row-130","row-138","row-149","row-158","row-160","row-161","row-162","row-163","row-166","row-167","row-179","row-191","row-193","row-196","row-197","row-199","row-200","row-201","row-207","row-208","row-211","row-215","row-216","row-219","row-222","row-225","row-234","row-238","row-240","row-241","row-242","row-254","row-286","row-312","row-317","row-319","row-337","row-341","row-368","row-387","row-418","row-430","row-432","row-436","row-460","row-470","row-481","row-509","row-542"]);
+const ORIGINAL_BY_CLIENT_ROW_IDS=new Set(['row-198','row-354']);
 function originalRegisterCategoryValue(r){
  const id=String(r?.id||'');
+ if(ORIGINAL_BY_CLIENT_ROW_IDS.has(id))return 'By Client';
  if(ORIGINAL_INCLUDED_TO_BE_SUBMITTED_ROW_IDS.has(id))return 'Included in Other CMIs - To Be Submitted';
  if(ORIGINAL_AGREED_INCLUDED_ROW_IDS.has(id))return 'Agreed - Included in other CMIs';
  return ORIGINAL_AGREED_REGISTER_ROW_IDS.has(id)?'Agreed':'';
