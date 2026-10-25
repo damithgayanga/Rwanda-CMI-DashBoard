@@ -2431,8 +2431,10 @@ const ORIGINAL_INCLUDED_TO_BE_SUBMITTED_ROW_IDS=new Set(["row-13","row-14","row-
 const ORIGINAL_BY_CLIENT_ROW_IDS=new Set(['row-198','row-354']);
 const ORIGINAL_C_O_PROCUREMENT_ROW_IDS=new Set(["row-227","row-228","row-237","row-239","row-308","row-389","row-406","row-407","row-408","row-409","row-410","row-493","row-528"]);
 const ORIGINAL_NOT_AGREED_ROW_IDS=new Set(["row-131","row-157","row-250","row-284","row-285","row-352","row-361"]);
+const ORIGINAL_ON_GOING_ROW_IDS=new Set(["row-28","row-30","row-32","row-126","row-136","row-195","row-221","row-236","row-292","row-415"]);
 function originalRegisterCategoryValue(r){
  const id=String(r?.id||'');
+ if(ORIGINAL_ON_GOING_ROW_IDS.has(id))return 'On Going';
  if(ORIGINAL_NOT_AGREED_ROW_IDS.has(id))return 'Not Agreed';
  if(ORIGINAL_C_O_PROCUREMENT_ROW_IDS.has(id))return 'c/o Procurement';
  if(ORIGINAL_BY_CLIENT_ROW_IDS.has(id))return 'By Client';
