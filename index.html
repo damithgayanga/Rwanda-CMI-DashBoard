@@ -961,7 +961,7 @@
       },
       records: state.records.filter(r=>{
         const acts=r.cmiActivities||[];
-        return acts.length||hasActivityProgress(r)||r.isReopened||((r.reopenHistory||[]).length>0)||!!r.mainCategory||!!r.mainCategoryUpdatedAt;
+        return acts.length||hasActivityProgress(r)||r.isReopened||((r.reopenHistory||[]).length>0)||!!r.mainCategory||!!r.mainCategoryUpdatedAt||!!r.registerCategoryUpdatedAt;
       }).map(r=>({
         id:r.id,
         cmiKey:r.cmiKey,
@@ -3247,11 +3247,47 @@ function cmiDeliveryResponsibilityValue(r){
  // Newly created rows default to Others unless explicitly listed for the CMI Team.
  return CMI_DELIVERY_TEAM_KEYS.has(normCmi(r?.cmiKey||r?.cmiNo))?'CMI Team':'Others';
 }
+function updatedRegisterCategoryOptions(r){
+ const options=[...new Set(state.records.map(x=>String(originalRegisterCategoryValue(x)||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
+ const current=String(registerCategoryValue(r)||'').trim();
+ if(current&&!options.includes(current))options.push(current);
+ if(!options.includes('ReOpen - To Be Submitted'))options.push('ReOpen - To Be Submitted');
+ return options;
+}
+function updatedRegisterCategoryCell(r){
+ const value=registerCategoryValue(r);
+ if(!canManageDelivery())return statusPill(value);
+ return '<span class="processing-path-display" role="button" tabindex="0" style="cursor:pointer" title="Click to edit Updated Register Category" data-updated-register-id="'+encodeURIComponent(r.id)+'" onclick="editUpdatedRegisterCategory(this)" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();editUpdatedRegisterCategory(this)}">'+statusPill(value)+'</span>';
+}
+function editUpdatedRegisterCategory(span){
+ if(!canManageDelivery())return;
+ const id=decodeURIComponent(span.dataset.updatedRegisterId||'');
+ const r=state.records.find(x=>String(x.id)===id);
+ if(!r)return;
+ const select=document.createElement('select');
+ select.setAttribute('aria-label','Edit Updated Register Category');
+ select.dataset.updatedRegisterId=encodeURIComponent(id);
+ select.add(new Option('Select category',''));
+ updatedRegisterCategoryOptions(r).forEach(value=>select.add(new Option(value,value)));
+ select.value=registerCategoryValue(r);
+ select.addEventListener('change',()=>{
+  const value=select.value;
+  if(!value||!updatedRegisterCategoryOptions(r).includes(value)){renderRegister();return}
+  if(value!==registerCategoryValue(r)){
+   r.registerCategory=value;
+   r.registerCategoryUpdatedAt=new Date().toISOString();
+   saveState();
+  }else renderRegister();
+ });
+ select.addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();renderRegister()}});
+ select.addEventListener('blur',()=>{if(select.isConnected)renderRegister()});
+ span.replaceWith(select);select.focus();
+}
 function cmiDeliveryResponsibilityPill(r){
  const value=cmiDeliveryResponsibilityValue(r);
  return value?'<span class="pill cmi-responsibility '+(value==='CMI Team'?'team':'other')+'">'+esc(value)+'</span>':'';
 }
-function renderRegister(){if(!processingPathLoaded&&!processingPathLoading)void loadProcessingPaths();if(!latestResponsibilityLoaded&&!latestResponsibilityLoading)void loadLatestResponsibilities();filteredRegister=registerFilters();document.getElementById('registerCount').textContent=`Showing ${filteredRegister.length} of ${state.records.length} work items`;document.getElementById('registerBody').innerHTML=filteredRegister.map(r=>`<tr><td class="nowrap"><b>${esc(r.cmiNo)}</b></td><td>${esc(r.reference)}</td><td class="desc">${esc(r.description)}</td><td>${fmtDate(r.cmiDate)}</td><td>${esc(r.assetCode)}</td><td>${esc(r.location)}</td><td class="money">${money(r.initialEstimate)}</td><td class="money">${money(r.offsiteEstimate)}</td><td class="money">${money(r.submittedValue)}</td><td class="money">${money(r.agreedAmount)}</td><td>${priorityPill(calcPriority(r))}</td><td>${originalRegisterCategoryValue(r)?statusPill(originalRegisterCategoryValue(r)):''}</td><td>${cmiDeliveryResponsibilityPill(r)}</td><td>${statusPill(registerCategoryValue(r))}</td><td>${latestResponsibilityCell(r)}</td><td>${processingPathSelect(r)}</td><td>${r.siteResource?esc(r.siteResource):'<span class="empty">—</span>'}</td><td>${(processingPathValues.get(deliveryActivityKey(r))||'Start from Off-Site')==='On-Site Only'?'N/A':(r.offsiteResource?esc(r.offsiteResource):'<span class="empty">—</span>')}</td><td>${r.mainCategory?statusPill(r.mainCategory):'<span class="empty">—</span>'}</td><td>${deliveryPill(derivedDeliveryStatus(r))}</td><td>${registerActionButtons(r)}</td></tr>`).join('')}
+function renderRegister(){if(!processingPathLoaded&&!processingPathLoading)void loadProcessingPaths();if(!latestResponsibilityLoaded&&!latestResponsibilityLoading)void loadLatestResponsibilities();filteredRegister=registerFilters();document.getElementById('registerCount').textContent=`Showing ${filteredRegister.length} of ${state.records.length} work items`;document.getElementById('registerBody').innerHTML=filteredRegister.map(r=>`<tr><td class="nowrap"><b>${esc(r.cmiNo)}</b></td><td>${esc(r.reference)}</td><td class="desc">${esc(r.description)}</td><td>${fmtDate(r.cmiDate)}</td><td>${esc(r.assetCode)}</td><td>${esc(r.location)}</td><td class="money">${money(r.initialEstimate)}</td><td class="money">${money(r.offsiteEstimate)}</td><td class="money">${money(r.submittedValue)}</td><td class="money">${money(r.agreedAmount)}</td><td>${priorityPill(calcPriority(r))}</td><td>${originalRegisterCategoryValue(r)?statusPill(originalRegisterCategoryValue(r)):''}</td><td>${cmiDeliveryResponsibilityPill(r)}</td><td>${updatedRegisterCategoryCell(r)}</td><td>${latestResponsibilityCell(r)}</td><td>${processingPathSelect(r)}</td><td>${r.siteResource?esc(r.siteResource):'<span class="empty">—</span>'}</td><td>${(processingPathValues.get(deliveryActivityKey(r))||'Start from Off-Site')==='On-Site Only'?'N/A':(r.offsiteResource?esc(r.offsiteResource):'<span class="empty">—</span>')}</td><td>${r.mainCategory?statusPill(r.mainCategory):'<span class="empty">—</span>'}</td><td>${deliveryPill(derivedDeliveryStatus(r))}</td><td>${registerActionButtons(r)}</td></tr>`).join('')}
 
 function allocationFilters(){const q=document.getElementById('aSearch').value.trim().toLowerCase(),st=document.getElementById('aStatus').value,p=document.getElementById('aPriority').value,pl=document.getElementById('aPlan').value,sr=document.getElementById('aSite').value,or=document.getElementById('aOffsite').value;return state.records.filter(isCmiTeamSubmission).filter(r=>{const hay=[r.cmiNo,r.description,r.location,r.assetCode].join(' ').toLowerCase(),acts=r.cmiActivities||[];const sm=!sr||acts.some(a=>a.siteResource===sr)||r.siteResource===sr,om=!or||acts.some(a=>a.offsiteResource===or)||r.offsiteResource===or;return(!q||hay.includes(q))&&(!st||registerCategoryValue(r)===st)&&(!p||calcPriority(r)===p)&&(!pl||(pl==='planned'?hasOffsiteDeliveryAllocation(r):!hasOffsiteDeliveryAllocation(r)))&&sm&&om})}
 
