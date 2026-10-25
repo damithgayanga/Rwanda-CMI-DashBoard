@@ -3117,7 +3117,7 @@ function cmiCurrentStatusValue(r){
 function cmiCurrentStatusCell(r){
  const value=cmiCurrentStatusValue(r);
  if(!canManageDelivery())return statusPill(value);
- return '<span class="processing-path-display" role="button" tabindex="0" style="cursor:pointer" title="Click to edit CMI Current Status" data-current-status-id="'+encodeURIComponent(r.id)+'" onclick="editCmiCurrentStatus(this)" onkeydown="if(event.key===\\'Enter\\'||event.key===\\' \\'){event.preventDefault();editCmiCurrentStatus(this)}">'+statusPill(value)+'</span>';
+ return '<span class="processing-path-display" role="button" tabindex="0" style="cursor:pointer" title="Click to edit CMI Current Status" data-current-status-id="'+encodeURIComponent(r.id)+'" onclick="editCmiCurrentStatus(this)" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();editCmiCurrentStatus(this)}">'+statusPill(value)+'</span>';
 }
 function editCmiCurrentStatus(span){
  if(!canManageDelivery())return;
