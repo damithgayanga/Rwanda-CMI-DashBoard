@@ -2444,14 +2444,14 @@ function originalRegisterCategoryValue(r){
  if(ORIGINAL_SUBMITTED_PS_ROW_IDS.has(id))return 'Submitted - PS';
  if(ORIGINAL_UNDER_REVIEW_CMI_KEYS.has(String(r?.cmiKey||'').trim()))return 'Under Review';
  if(ORIGINAL_TO_BE_SUBMITTED_ROW_IDS.has(id))return 'To Be Submitted';
- if(ORIGINAL_TO_BE_AGREED_DGJ_NIL_ROW_IDS.has(id))return 'To Be Agreed with DGJ - Nil';
- if(ORIGINAL_TO_BE_AGREED_DGJ_ROW_IDS.has(id))return 'To Be Agreed with DGJ';
+ if(ORIGINAL_TO_BE_AGREED_DGJ_NIL_ROW_IDS.has(id))return 'Agreed';
+ if(ORIGINAL_TO_BE_AGREED_DGJ_ROW_IDS.has(id))return 'Agreed';
  if(ORIGINAL_SUBMITTED_ADD_WORKS_ROW_IDS.has(id))return 'Submitted - Add. Works';
  if(ORIGINAL_SUBMITTED_ROW_IDS.has(id))return 'Submitted';
  if(ORIGINAL_ON_GOING_ROW_IDS.has(id))return 'On Going';
  if(ORIGINAL_NOT_AGREED_ROW_IDS.has(id))return 'Not Agreed';
  if(ORIGINAL_C_O_PROCUREMENT_ROW_IDS.has(id))return 'c/o Procurement';
- if(ORIGINAL_BY_CLIENT_ROW_IDS.has(id))return 'By Client';
+ if(ORIGINAL_BY_CLIENT_ROW_IDS.has(id))return 'Agreed';
  if(ORIGINAL_INCLUDED_TO_BE_SUBMITTED_ROW_IDS.has(id))return 'Included in Other CMIs - To Be Submitted';
  if(ORIGINAL_AGREED_INCLUDED_ROW_IDS.has(id))return 'Agreed - Included in other CMIs';
  return ORIGINAL_AGREED_REGISTER_ROW_IDS.has(id)?'Agreed':'';
