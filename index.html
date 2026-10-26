@@ -4377,6 +4377,8 @@ function renderCmiTeamCommercialPanels(){
   if(!table)continue;
   const open=[...table.querySelectorAll('details[open]')].map(e=>e.dataset.group);
   const bands=bandsFor();
+  const valueField=config.status==='Submitted'?'submittedValue':'agreedAmount';
+  if(config.status==='Submitted')bands.find(b=>b.id==='missing').tableLabel='Submitted Value Not Recorded';
   // Count unique CMI numbers per status. Sum values across matching register rows.
   const grouped=new Map();
   for(const r of state.records||[]){
@@ -4387,8 +4389,8 @@ function renderCmiTeamCommercialPanels(){
    grouped.get(key).push(r);
   }
   for(const rows of grouped.values()){
-   const missing=rows.some(r=>r.agreedAmount===null||r.agreedAmount===undefined||r.agreedAmount===''||!Number.isFinite(Number(r.agreedAmount)));
-   const amount=rows.reduce((n,r)=>n+(Number(r.agreedAmount)||0),0);
+   const missing=rows.some(r=>r[valueField]===null||r[valueField]===undefined||String(r[valueField]).trim()===''||!Number.isFinite(Number(r[valueField])));
+   const amount=missing?0:rows.reduce((n,r)=>n+Number(r[valueField]),0);
    const magnitude=Math.abs(amount),level=magnitude>=500000?'high':magnitude>=100000?'medium':'low';
    const id=missing?'missing':amount===0?'zero':(amount>0?'positive-':'negative-')+level;
    const band=bands.find(b=>b.id===id);band.value++;band.amount+=amount;
@@ -4399,7 +4401,9 @@ function renderCmiTeamCommercialPanels(){
   };
   const total=[...grouped.values()].length,amount=bands.reduce((n,b)=>n+b.amount,0),zero=bands.find(b=>b.id==='zero'),missing=bands.find(b=>b.id==='missing');
   table.innerHTML='<div class="client-approved-heading"><span>Description</span><span>Count</span><span>Value (USD)</span></div>'+row(config.heading,total,amount,null,'client-approved-total')+group('positive','Positive Value CMIs')+group('negative','Negative Value CMIs')+row(zero.tableLabel,zero.value,zero.amount,zero.color)+(missing.value?row(missing.tableLabel,missing.value,missing.amount,missing.color):'');
-  renderDonut(config.pieId,clientValueGroupSlices(bands),{centerValue:format(total),centerLabel:config.center});
+  const slices=clientValueGroupSlices(bands);
+  if(config.status==='Submitted'&&missing.value)slices.push({label:'Submitted Value Not Recorded',color:missing.color,value:missing.value});
+  renderDonut(config.pieId,slices,{centerValue:format(total),centerLabel:config.center});
  }
 }
 
