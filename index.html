@@ -644,8 +644,17 @@
 }
 /* Dashboard 06: prominent total with a restrained, readable processing-path split. */
 #tab-clientdashboard #clientProcessStages .exec-measurement-kpi{
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  gap:6px;width:100%;min-width:0;
+  display:grid;grid-template-rows:40px 32px;align-items:end;justify-items:center;
+  row-gap:6px;width:100%;min-width:0;
+}
+#tab-clientdashboard #clientProcessStages .exec-measurement-total{
+  align-self:end;
+}
+#tab-clientdashboard #clientProcessStages .exec-measurement-split{
+  align-self:start;
+}
+#tab-clientdashboard #clientProcessStages .exec-measurement-split-placeholder{
+  visibility:hidden;
 }
 #tab-clientdashboard #clientProcessStages .exec-measurement-total{
   display:block;font-size:36px;font-weight:700;line-height:1.1;color:#103c59;
@@ -4506,7 +4515,7 @@ function renderClientProcessStages(){
  const labels=['CMIs Ready to Start Assessment','CMIs Commenced by Measurement Team','CMIs Completed by Measurement Team','CMIs Submitted to CM / CMI Lead','CMIs Received from CM / CMI Lead','Submitted to DGJ'];
  el.innerHTML=labels.map((label,i)=>{
   const breakdown=i===1?counts.pathBreakdowns[0]:i===2?counts.pathBreakdowns[1]:null;
-  const value=breakdown?'<div class="exec-measurement-kpi"><span class="exec-measurement-total">'+Number(counts[i]).toLocaleString('en-US')+'</span><span class="exec-measurement-split">'+Number(breakdown.offsite).toLocaleString('en-US')+' (Off-Site) + '+Number(breakdown.onsite).toLocaleString('en-US')+' (On-Site)</span></div>':Number(counts[i]).toLocaleString('en-US');
+  const value='<div class="exec-measurement-kpi"><span class="exec-measurement-total">'+Number(counts[i]).toLocaleString('en-US')+'</span>'+(breakdown?'<span class="exec-measurement-split">'+Number(breakdown.offsite).toLocaleString('en-US')+' (Off-Site) + '+Number(breakdown.onsite).toLocaleString('en-US')+' (On-Site)</span>':'<span class="exec-measurement-split exec-measurement-split-placeholder" aria-hidden="true"></span>')+'</div>';
   return '<tr><td><span>'+esc(label)+'</span></td><td>'+value+'</td></tr>';
  }).join('');
 }
