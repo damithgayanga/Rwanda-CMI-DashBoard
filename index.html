@@ -2475,7 +2475,7 @@ function clone(x){return JSON.parse(JSON.stringify(x))}
 function ensureShape(s){
  mergeMasterRegisterAdditions(s);
  // Set the explicit delivery responsibility for all existing and cached register rows.
- s.records.forEach(r=>{r.cmiDeliveryResponsibility=(['row-27','row-34','row-33','row-124','row-42','row-49'].includes(r.id))?'Others':(r.id==='row-99'||CMI_DELIVERY_TEAM_KEYS.has(normCmi(r.cmiKey||r.cmiNo))?'CMI Team':'Others');});
+ s.records.forEach(r=>{r.cmiDeliveryResponsibility=(['row-27','row-34','row-33','row-124','row-42','row-49'].includes(r.id))?'Others':(['row-99','row-69'].includes(r.id)||CMI_DELIVERY_TEAM_KEYS.has(normCmi(r.cmiKey||r.cmiNo))?'CMI Team':'Others');});
  if(!s.meta)s.meta={};
  if(!s.meta.baselineCompletedByResource)s.meta.baselineCompletedByResource={'Kosala Gamage':4};
  if(!s.meta.dataDate)s.meta.dataDate=todayISO();
