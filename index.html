@@ -4470,25 +4470,33 @@ function renderPreviouslySubmittedCmis(){
 
 function clientProcessStageCounts(records,readiness){
  const sets=Array.from({length:6},()=>new Set());
+ const paths=[new Map(),new Map()];
  for(const r of records||[]){
   if(!cmiTeamScopeRecord(r))continue;
   const key=normCmi(r.cmiKey||r.cmiNo||'');if(!key)continue;
   const a=dashboardCmiActivities(r),handover=readiness.get(String(r.id||''));
+  const path=processingPathValues.get(deliveryActivityKey(r))==='On-Site Only'?'On-Site Only':'Start from Off-Site';
   if(handover&&handover.actual_given_date)sets[0].add(key);
-  if(activityStarted(a.measure))sets[1].add(key);
-  if(activityProgressAt100(a.measure)&&a.measure.actualFinishDate)sets[2].add(key);
+  if(activityStarted(a.measure)){sets[1].add(key);paths[0].set(key,path);}
+  if(activityProgressAt100(a.measure)&&a.measure.actualFinishDate){sets[2].add(key);paths[1].set(key,path);}
   if(activityProgressAt100(a.review))sets[3].add(key);
   if(activityProgressAt100(a.clearance)&&a.clearance.actualFinishDate)sets[4].add(key);
   const submission=findActivityByIdOrName(r,'act-submit-dgj','submission to dgj');
   if(activityComplete(submission)&&afterTrackerStart(submission))sets[5].add(key);
  }
- return sets.map(x=>x.size);
+ const counts=sets.map(x=>x.size);
+ counts.pathBreakdowns=paths.map(map=>{const onsite=[...map.values()].filter(p=>p==='On-Site Only').length;return {offsite:map.size-onsite,onsite};});
+ return counts;
 }
 function renderClientProcessStages(){
  const el=document.getElementById('clientProcessStages');if(!el)return;
  const counts=clientProcessStageCounts(state.records,documentReadinessMap());
  const labels=['CMIs Ready to Start Assessment','CMIs Commenced by Measurement Team','CMIs Completed by Measurement Team','CMIs Submitted to CM / CMI Lead','CMIs Received from CM / CMI Lead','Submitted to DGJ'];
- el.innerHTML=labels.map((label,i)=>'<tr><td><span>'+esc(label)+'</span></td><td>'+Number(counts[i]).toLocaleString('en-US')+'</td></tr>').join('');
+ el.innerHTML=labels.map((label,i)=>{
+  const breakdown=i===1?counts.pathBreakdowns[0]:i===2?counts.pathBreakdowns[1]:null;
+  const value=breakdown?breakdown.offsite.toLocaleString('en-US')+' (Off-Site) + '+breakdown.onsite.toLocaleString('en-US')+' (On-Site)':Number(counts[i]).toLocaleString('en-US');
+  return '<tr><td><span>'+esc(label)+'</span></td><td>'+value+'</td></tr>';
+ }).join('');
 }
 
 function cmiTeamScopeRecord(r){
