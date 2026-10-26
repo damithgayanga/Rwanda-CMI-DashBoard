@@ -2475,7 +2475,7 @@ function clone(x){return JSON.parse(JSON.stringify(x))}
 function ensureShape(s){
  mergeMasterRegisterAdditions(s);
  // Set the explicit delivery responsibility for all existing and cached register rows.
- s.records.forEach(r=>{r.cmiDeliveryResponsibility=(['row-27','row-34','row-33','row-124'].includes(r.id))?'Others':(CMI_DELIVERY_TEAM_KEYS.has(normCmi(r.cmiKey||r.cmiNo))?'CMI Team':'Others');});
+ s.records.forEach(r=>{r.cmiDeliveryResponsibility=(['row-27','row-34','row-33','row-124','row-42','row-49'].includes(r.id))?'Others':(CMI_DELIVERY_TEAM_KEYS.has(normCmi(r.cmiKey||r.cmiNo))?'CMI Team':'Others');});
  if(!s.meta)s.meta={};
  if(!s.meta.baselineCompletedByResource)s.meta.baselineCompletedByResource={'Kosala Gamage':4};
  if(!s.meta.dataDate)s.meta.dataDate=todayISO();
@@ -3250,6 +3250,8 @@ async function loadProcessingPaths(){
  }
 }
 function processingPathSelect(r){
+ // First agreed duplicate records belong to Others; no CMI Team processing path applies.
+ if(r&&['row-42','row-49'].includes(r.id))return '<span>N/A</span>';
  const key=deliveryActivityKey(r),value=processingPathValues.get(key)||'Start from Off-Site';
  if(!canManageDelivery()||!processingPathLoaded)return '<span>'+esc(value)+'</span>';
  return '<span class="processing-path-display" style="cursor:pointer" title="Click to edit Processing Path" role="button" tabindex="0" data-processing-key="'+encodeURIComponent(key)+'" onclick="editProcessingPathCell(this)" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();editProcessingPathCell(this)}">'+esc(value)+'</span>';
