@@ -3290,6 +3290,7 @@ async function loadProcessingPaths(){
   processingPathLoading=false;
   if(document.querySelector('.tabbtn.active')?.dataset.tab==='register')renderRegister();
   else if(processingPathLoaded&&document.querySelector('.tabbtn.active')?.dataset.tab==='dashboard')renderDashboard();
+  else if(document.querySelector('.tabbtn.active')?.dataset.tab==='clientdashboard')renderClientProcessStages(false);
  }
 }
 function processingPathSelect(r){
@@ -4509,13 +4510,15 @@ function clientProcessStageCounts(records,readiness){
  counts.pathBreakdowns=paths.map(map=>{const onsite=[...map.values()].filter(p=>p==='On-Site Only').length;return {offsite:map.size-onsite,onsite};});
  return counts;
 }
-function renderClientProcessStages(){
+function renderClientProcessStages(ensureProcessingPaths=true){
  const el=document.getElementById('clientProcessStages');if(!el)return;
+ if(ensureProcessingPaths&&!processingPathLoaded&&!processingPathLoading)void loadProcessingPaths();
  const counts=clientProcessStageCounts(state.records,documentReadinessMap());
  const labels=['CMIs Ready to Start Assessment','CMIs Commenced by Measurement Team','CMIs Completed by Measurement Team','CMIs Submitted to CM / CMI Lead','CMIs Received from CM / CMI Lead','Submitted to DGJ'];
  el.innerHTML=labels.map((label,i)=>{
   const breakdown=i===1?counts.pathBreakdowns[0]:i===2?counts.pathBreakdowns[1]:null;
-  const value='<div class="exec-measurement-kpi"><span class="exec-measurement-total">'+Number(counts[i]).toLocaleString('en-US')+'</span>'+(breakdown?'<span class="exec-measurement-split">'+Number(breakdown.offsite).toLocaleString('en-US')+' (Off-Site) + '+Number(breakdown.onsite).toLocaleString('en-US')+' (On-Site)</span>':'<span class="exec-measurement-split exec-measurement-split-placeholder" aria-hidden="true"></span>')+'</div>';
+  const split=breakdown?(processingPathLoaded?Number(breakdown.offsite).toLocaleString('en-US')+' (Off-Site) + '+Number(breakdown.onsite).toLocaleString('en-US')+' (On-Site)':processingPathLoading?'Loading Processing Paths…':'Processing Paths unavailable'):'';
+  const value='<div class="exec-measurement-kpi"><span class="exec-measurement-total">'+Number(counts[i]).toLocaleString('en-US')+'</span>'+(breakdown?'<span class="exec-measurement-split">'+split+'</span>':'<span class="exec-measurement-split exec-measurement-split-placeholder" aria-hidden="true"></span>')+'</div>';
   return '<tr><td><span>'+esc(label)+'</span></td><td>'+value+'</td></tr>';
  }).join('');
 }
