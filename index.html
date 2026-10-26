@@ -1952,9 +1952,25 @@
    </div>
   </article>
  </div>
+ <div class="exec-commercial-grid">
+  <article class="exec-panel">
+   <header class="exec-panel-heading"><span class="exec-section-number" aria-hidden="true">04</span><h2>CMIs Agreed with DGJ - CMI Team</h2></header>
+   <div class="card"><div class="client-overview-layout">
+    <div id="clientTeamAgreedTable" class="client-approved-table"></div>
+    <div class="client-overview-chart"><h3>CMIs Agreed with DGJ - CMI Team — Count Breakdown</h3><div id="clientTeamAgreedPie"></div></div>
+   </div></div>
+  </article>
+  <article class="exec-panel">
+   <header class="exec-panel-heading"><span class="exec-section-number" aria-hidden="true">05</span><h2>CMIs Submitted (Yet to be Agreed) - CMI Team</h2></header>
+   <div class="card"><div class="client-overview-layout">
+    <div id="clientTeamSubmittedTable" class="client-approved-table"></div>
+    <div class="client-overview-chart"><h3>CMIs Submitted (Yet to be Agreed) - CMI Team — Count Breakdown</h3><div id="clientTeamSubmittedPie"></div></div>
+   </div></div>
+  </article>
+ </div>
 
  <article class="exec-panel exec-process-panel">
-  <header class="exec-panel-heading"><span class="exec-section-number" aria-hidden="true">04</span><h2>CMIs Actioned by CMI Team</h2></header>
+  <header class="exec-panel-heading"><span class="exec-section-number" aria-hidden="true">06</span><h2>CMIs Actioned by CMI Team</h2></header>
   <div class="card client-process-card">
    <table class="client-process-table"><thead><tr><th>Stage</th><th>Count</th></tr></thead><tbody id="clientProcessStages"></tbody></table>
    
@@ -4339,6 +4355,54 @@ function clientPreviouslyApprovedSummary(records){
  }
  return {bands,total:groups.size,amount:bands.reduce((n,x)=>n+x.amount,0)};
 }
+
+function renderCmiTeamCommercialPanels(){
+ const bandsFor=()=>[
+  {id:'positive-high',tableLabel:'High Value CMIs (USD 500,000 and above)',value:0,amount:0,color:'#315fa8'},
+  {id:'positive-medium',tableLabel:'Medium Value CMIs (USD 100,000 to below 500,000)',value:0,amount:0,color:'#4fa3d1'},
+  {id:'positive-low',tableLabel:'Low Value CMIs (above USD 0 to below 100,000)',value:0,amount:0,color:'#65ab80'},
+  {id:'negative-high',tableLabel:'High Value CMIs (USD 500,000 and above)',value:0,amount:0,color:'#7955a5'},
+  {id:'negative-medium',tableLabel:'Medium Value CMIs (USD 100,000 to below 500,000)',value:0,amount:0,color:'#cb6f53'},
+  {id:'negative-low',tableLabel:'Low Value CMIs (below USD 100,000 in absolute value)',value:0,amount:0,color:'#d6a23e'},
+  {id:'zero',tableLabel:'Zero Value CMIs',value:0,amount:0,color:'#56a7b8'},
+  {id:'missing',tableLabel:'Agreed Amount Not Recorded',value:0,amount:0,color:'#b883ae'}
+ ];
+ const format=n=>Number(n).toLocaleString('en-US');
+ const row=(label,count,amount,color,cls='')=>'<div class="client-approved-row '+cls+'"><span>'+(color?'<i class="client-approved-swatch" style="background:'+color+'"></i>':'')+esc(label)+'</span><span>'+format(count)+'</span><span>'+money(amount)+'</span></div>';
+ for(const config of [
+  {status:'Agreed',tableId:'clientTeamAgreedTable',pieId:'clientTeamAgreedPie',heading:'Agreed CMIs (Total)',center:'Total Agreed CMIs'},
+  {status:'Submitted',tableId:'clientTeamSubmittedTable',pieId:'clientTeamSubmittedPie',heading:'Submitted CMIs (Total)',center:'Total Submitted CMIs'}
+ ]){
+  const table=document.getElementById(config.tableId);
+  if(!table)continue;
+  const open=[...table.querySelectorAll('details[open]')].map(e=>e.dataset.group);
+  const bands=bandsFor();
+  // Count unique CMI numbers per status. Sum values across matching register rows.
+  const grouped=new Map();
+  for(const r of state.records||[]){
+   if(latestResponsibilityValue(r)!=='CMI Team'||cmiCurrentStatusValue(r)!==config.status)continue;
+   const key=normCmi(r.cmiKey||r.cmiNo||'');
+   if(!key)continue;
+   if(!grouped.has(key))grouped.set(key,[]);
+   grouped.get(key).push(r);
+  }
+  for(const rows of grouped.values()){
+   const missing=rows.some(r=>r.agreedAmount===null||r.agreedAmount===undefined||r.agreedAmount===''||!Number.isFinite(Number(r.agreedAmount)));
+   const amount=rows.reduce((n,r)=>n+(Number(r.agreedAmount)||0),0);
+   const magnitude=Math.abs(amount),level=magnitude>=500000?'high':magnitude>=100000?'medium':'low';
+   const id=missing?'missing':amount===0?'zero':(amount>0?'positive-':'negative-')+level;
+   const band=bands.find(b=>b.id===id);band.value++;band.amount+=amount;
+  }
+  const group=(id,label)=>{
+   const parts=bands.filter(b=>b.id.startsWith(id+'-'));
+   return '<details class="client-approved-group" data-group="'+id+'"'+(open.includes(id)?' open':'')+'><summary><span>'+esc(label)+'</span><span>'+format(parts.reduce((n,b)=>n+b.value,0))+'</span><span>'+money(parts.reduce((n,b)=>n+b.amount,0))+'</span></summary>'+parts.map(b=>row(b.tableLabel,b.value,b.amount,b.color,'client-approved-detail')).join('')+'</details>';
+  };
+  const total=[...grouped.values()].length,amount=bands.reduce((n,b)=>n+b.amount,0),zero=bands.find(b=>b.id==='zero'),missing=bands.find(b=>b.id==='missing');
+  table.innerHTML='<div class="client-approved-heading"><span>Description</span><span>Count</span><span>Value (USD)</span></div>'+row(config.heading,total,amount,null,'client-approved-total')+group('positive','Positive Value CMIs')+group('negative','Negative Value CMIs')+row(zero.tableLabel,zero.value,zero.amount,zero.color)+(missing.value?row(missing.tableLabel,missing.value,missing.amount,missing.color):'');
+  renderDonut(config.pieId,clientValueGroupSlices(bands),{centerValue:format(total),centerLabel:config.center});
+ }
+}
+
 function clientValueGroupSlices(bands){return [{id:'positive',label:'Positive Value',color:'#189D79'},{id:'negative',label:'Negative Value',color:'#FFA324'},{id:'zero',label:'Zero Value',color:'#40AFE0'}].map(c=>({label:c.label,color:c.color,value:bands.filter(b=>b.id===c.id||b.id.startsWith(c.id+'-')).reduce((n,b)=>n+b.value,0)}))}
 function renderPreviouslyApprovedCmis(){
  const table=document.getElementById('clientApprovedTable');if(!table)return;
@@ -4492,6 +4556,7 @@ function clientOverviewSummary(records){
 function renderClientDashboard(){
  renderPreviouslyApprovedCmis();
  renderPreviouslySubmittedCmis();
+ renderCmiTeamCommercialPanels();
  renderClientProcessStages();
  const body=document.getElementById('clientOverviewRows');if(!body)return;
  const summary=clientOverviewSummary(state.records);
