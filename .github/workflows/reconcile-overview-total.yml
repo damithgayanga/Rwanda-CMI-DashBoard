@@ -1,0 +1,39 @@
+name: Reconcile Overview total with exclusive category counts
+on:
+  push:
+    paths: ['.github/workflows/reconcile-overview-total.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Align total to valid categorised unique CMIs
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          anchor="const overviewDiscrepancy=summary.total-(updatedOverviewGroups.agreed+updatedOverviewGroups.submitted+updatedOverviewGroups.team);"
+          assert s.count(anchor)==1, 'reconciliation anchor not found'
+          replacement="""const overviewCategorisedTotal=updatedOverviewGroups.agreed+updatedOverviewGroups.submitted+updatedOverviewGroups.team;
+           const overviewDiscrepancy=summary.total-overviewCategorisedTotal;
+           // All three categories are mutually exclusive after latest-responsibility
+           // N/A exclusions and unique CMI priority assignment.
+           // The displayed total must use the very same categorised population.
+           summary.total=overviewCategorisedTotal;"""
+          s=s.replace(anchor,replacement,1)
+          p.write_text(s,encoding='utf-8')
+          assert s.count('summary.total=overviewCategorisedTotal;')==1
+          print('Reconciled displayed total to three exclusive Overview categories')
+          PY
+      - name: Commit dashboard fix
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "Reconcile CMI Overview headline with three exclusive categories"
+          git push
