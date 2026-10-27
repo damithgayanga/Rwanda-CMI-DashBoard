@@ -3217,7 +3217,7 @@ function registerActionButtons(r){
 // and of all Executive/Internal Dashboard calculations.
 const latestResponsibilityValues=new Map();
 let latestResponsibilityLoading=false,latestResponsibilityLoaded=false;
-const LATEST_RESPONSIBILITY_OPTIONS=['CMI Team','Others','ReOpen - CMI Team'];
+const LATEST_RESPONSIBILITY_OPTIONS=['CMI Team','Others','ReOpen - CMI Team','Duplicated - N/A'];
 function latestResponsibilityKey(r){return String(r?.id||r?.cmiKey||'').trim()}
 function latestResponsibilityValue(r){
  return latestResponsibilityValues.get(latestResponsibilityKey(r))||cmiDeliveryResponsibilityValue(r);
@@ -3416,15 +3416,21 @@ function cmiDeliveryResponsibilityPill(r){
 
 function applyDuplicateRegisterMask(){
  const body=document.getElementById('registerBody');
- if(!body)return;
- const head=document.querySelector('#tab-register .data-table thead');
- if(!head)return;
- const headers=Array.from(head.querySelectorAll('th'));
- const idx=headers.findIndex(h=>h.textContent.trim()==='Updated Register Category');
- if(idx<0)return;
+ const table=document.querySelector('#tab-register .data-table');
+ if(!body||!table)return;
+ const headers=Array.from(table.querySelectorAll('thead th')).map(h=>h.textContent.replace(/\s+/g,' ').trim());
+ const latest=headers.findIndex(h=>h.includes('CMI Delivery Responsibility - Latest'));
+ const updated=headers.findIndex(h=>h.includes('Updated Register Category'));
+ if(latest<0||updated<0)return;
  Array.from(body.rows).forEach((tr,i)=>{
-  if(registerCategoryValue(filteredRegister[i])!=='Duplicated - N/A')return;
-  for(let c=idx+1;c<tr.cells.length;c++)tr.cells[c].textContent='N/A';
+  const record=filteredRegister[i];
+  if(!record)return;
+  const isDuplicate=registerCategoryValue(record)==='Duplicated - N/A'||latestResponsibilityValue(record)==='Duplicated - N/A';
+  if(!isDuplicate)return;
+  // Mask all fields after Updated Register Category for duplicates,
+  // including the latest responsibility where it follows that column.
+  const first=registerCategoryValue(record)==='Duplicated - N/A'?updated+1:latest+1;
+  for(let col=first;col<tr.cells.length;col++)tr.cells[col].textContent='N/A';
  });
 }
 
