@@ -1,0 +1,39 @@
+name: Add Duplicated - N/A register category
+on:
+  push:
+    paths:
+      - '.github/workflows/add-duplicated-na.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  patch-category:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Add one selectable Updated Register Category
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path("index.html")
+          content=p.read_text(encoding="utf-8")
+          anchor="if(!options.includes('ReOpen - To Be Submitted'))options.push('ReOpen - To Be Submitted');"
+          insertion=anchor+"\n if(!options.includes('Duplicated - N/A'))options.push('Duplicated - N/A');"
+          if insertion in content:
+              print("Option already present")
+          else:
+              assert content.count(anchor)==1, "Expected dropdown insertion point not found exactly once"
+              content=content.replace(anchor,insertion,1)
+              p.write_text(content,encoding="utf-8")
+          assert insertion in p.read_text(encoding="utf-8")
+          PY
+      - name: Commit updated category option
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "Add Duplicated - N/A to Updated Register Category options"
+          git push
