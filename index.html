@@ -3430,7 +3430,7 @@ function applyDuplicateRegisterMask(){
   // Mask all fields after Updated Register Category for duplicates,
   // including the latest responsibility where it follows that column.
   const first=registerCategoryValue(record)==='Duplicated - N/A'?updated+1:latest+1;
-  for(let col=first;col<tr.cells.length;col++)tr.cells[col].textContent='N/A';
+  for(let col=first;col<tr.cells.length;col++){if(headers[col]==='Action')continue;tr.cells[col].textContent='N/A';}
  });
 }
 
