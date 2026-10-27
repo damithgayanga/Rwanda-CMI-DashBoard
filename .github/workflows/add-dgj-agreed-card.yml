@@ -1,0 +1,56 @@
+name: Add DGJ agreed card to Dashboard 06
+on:
+  push:
+    paths:
+      - '.github/workflows/add-dgj-agreed-card.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Add seventh count and card
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          target="const labels=['CMIs Ready to Start Assessment','CMIs Commenced by Measurement Team','CMIs Completed by Measurement Team','CMIs Submitted to CM / CMI Lead','CMIs Received from CM / CMI Lead','Submitted to DGJ'];"
+          replace=target.replace("'Submitted to DGJ'];","'Submitted to DGJ','Agreed with DGJ'];")
+          assert s.count(target)==1,'Dashboard 06 labels not found'
+          s=s.replace(target,replace,1)
+          anchor=' const counts=clientProcessStageCounts(state.records,documentReadinessMap());'
+          assert s.count(anchor)==1,'Stage counts anchor not found'
+          addition="""
+          // Latest CMI Team responsibility and Agreed current status; count each CMI number once.
+          const agreedCmiKeys=new Set();
+          for(const record of state.records||[]){
+           if(latestResponsibilityValue(record)!=='CMI Team')continue;
+           if(String(cmiCurrentStatusValue(record)||'').trim().toLowerCase()!=='agreed')continue;
+           const key=normCmi(record.cmiKey||record.cmiNo||'');
+           if(key)agreedCmiKeys.add(key);
+          }
+          counts[6]=agreedCmiKeys.size;
+          """
+          s=s.replace(anchor,anchor+'\n'+addition,1)
+          # Ensure the new seventh column remains in the same row.
+          css="""
+          /* Dashboard 06: seven equal cards in one row at desktop widths. */
+          @media(min-width:1100px){
+            #tab-clientdashboard #clientProcessStages{grid-template-columns:repeat(7,minmax(0,1fr)) !important;}
+          }
+          """
+          assert '</style>' in s
+          s=s.replace('</style>',css+'\n</style>',1)
+          p.write_text(s,encoding='utf-8')
+          PY
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "Add unique agreed DGJ count as seventh Dashboard 06 KPI"
+          git push
