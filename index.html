@@ -4806,13 +4806,28 @@ function renderClientDashboard(){
  const overviewDiscrepancy=summary.total-overviewCategorisedTotal;
  // All three categories are mutually exclusive after latest-responsibility
  // N/A exclusions and unique CMI priority assignment.
- // The displayed total must use the very same categorised population.
- summary.total=overviewCategorisedTotal;
+ // The headline is the unique eligible CMI population, not only classified CMIs.
+ // Never hide a valid CMI merely because its status is outside the three categories.
+ const allEligibleKeys=new Map();
+ for(const rec of validCmiCalculationRecords(state.records)){
+  const key=normCmi(rec.cmiKey||rec.cmiNo||'');
+  if(!key)continue;
+  if(!allEligibleKeys.has(key))allEligibleKeys.set(key,[]);
+  allEligibleKeys.get(key).push(rec);
+ }
+ const classifiedKeys=new Set([...requiredCmiTeamKeys,...submittedOthersBeforeMobilisation,...agreedOthersBeforeMobilisation]);
+ const excludedFromBands=[...allEligibleKeys.keys()].filter(key=>!classifiedKeys.has(key)).sort();
+ summary.total=allEligibleKeys.size;
+ if(excludedFromBands.length)console.warn('Unclassified valid CMI numbers',excludedFromBands.map(key=>({
+  cmi:key,
+  records:allEligibleKeys.get(key).map(r=>({id:r.id,latest:latestResponsibilityValue(r),status:cmiCurrentStatusValue(r),updatedCategory:registerCategoryValue(r)}))
+ })));
  if(overviewDiscrepancy!==0)console.warn('Overview category reconciliation exception',overviewDiscrepancy,updatedOverviewGroups.unclassifiedKeys);
 
  const teamExpanded=body.dataset.teamExpanded!=='false';
  const balanceExpanded=body.dataset.balanceExpanded!=='false';
  const items=[['Total CMIs',summary.total,summary.totalAmount],...summary.bands.map(x=>[x.label,x.value,x.id==='team'?null:x.amount,x.color])];
+ if(excludedFromBands.length)items.push(['Unclassified valid CMIs: '+excludedFromBands.join(', '),excludedFromBands.length,null,'#c47b1c']);
  const fmt=n=>Number(n).toLocaleString('en-US',{maximumFractionDigits:0});
  body.innerHTML=items.map((x,i)=>'<tr'+(i===3?' class="client-overview-team-total"':'')+'><td>'+(i===3?'<button type="button" class="client-overview-toggle" data-toggle="team" aria-expanded="'+teamExpanded+'" aria-label="'+(teamExpanded?'Collapse':'Expand')+' CMIs required to be actioned"><span class="client-overview-chevron" aria-hidden="true">▸</span></button>':'')+(x[3]?'<span class="client-overview-swatch" style="background:'+x[3]+'"></span>':'')+esc(x[0])+'</td><td style="text-align:right">'+fmt(x[1])+'</td><td style="text-align:right">'+(x[2]===null?'':money(x[2]))+'</td></tr>').join('');
  const note=document.getElementById('clientOverviewValidation');
