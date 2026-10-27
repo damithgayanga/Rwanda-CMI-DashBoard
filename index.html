@@ -4561,7 +4561,7 @@ for(const record of state.records||[]){
 }
 counts[6]=agreedCmiKeys.size;
 
- const labels=['CMIs Ready to Start Assessment','CMIs Commenced by Measurement Team','CMIs Completed by Measurement Team','CMIs Submitted to CM / CMI Lead','CMIs Received from CM / CMI Lead','Submitted to DGJ','Agreed with DGJ'];
+ const labels=['CMIs Initiated','CMIs Commenced by Measurement Team','CMIs Completed by Measurement Team','CMIs Submitted to CM / CMI Lead','CMIs Received from CM / CMI Lead','Submitted to DGJ','Agreed with DGJ'];
  el.innerHTML=labels.map((label,i)=>{
   const breakdown=i===1?counts.pathBreakdowns[0]:i===2?counts.pathBreakdowns[1]:null;
   const split=breakdown?(processingPathLoaded?Number(breakdown.offsite).toLocaleString('en-US')+' (Off-Site) + '+Number(breakdown.onsite).toLocaleString('en-US')+' (On-Site)':processingPathLoading?'Loading Processing Paths…':'Processing Paths unavailable'):'';
@@ -4587,7 +4587,7 @@ function clientOverviewSummary(records){
   if(!groups.has(key))groups.set(key,[]);groups.get(key).push(r);
  }
  const bands=[
-  {id:'agreed',label:'CMIs - Agreed with DGJ Before Mobilising CMI Team',value:0,color:'#42B74B',amount:0},
+  {id:'agreed',label:'CMIs - Agreed with DGJ (Submitted Before Mobilising CMI Team)',value:0,color:'#42B74B',amount:0},
   {id:'submitted',label:'CMIs - Submitted to DGJ (Yet to be Agreed) Before CMI Team',value:0,color:'#1684FF',amount:0},
   {id:'team',label:'CMIs - Required to be Actioned by CMI Team',value:0,color:'#095198',amount:null}
  ];
@@ -4698,25 +4698,17 @@ function overviewTeamStatusBreakdown(records){
 
 // Same eligible team scopes and current-status priority as Overview parent.
 function overviewBalanceOriginalCategorySplit(records){
- const groups=new Map();
+ const balanceKeys=new Set(),includedKeys=new Set();
  for(const r of records||[]){
-  const key=normCmi(r.cmiKey||r.cmiNo||'');
   const responsibility=String(latestResponsibilityValue(r)||'').trim();
-  if(!key||(responsibility!=='CMI Team'&&responsibility!=='ReOpen - CMI Team'))continue;
-  if(!groups.has(key))groups.set(key,[]);
-  groups.get(key).push(r);
+  if(responsibility!=='CMI Team'&&responsibility!=='ReOpen - CMI Team')continue;
+  if(String(cmiCurrentStatusValue(r)||'').trim().toLowerCase()!=='to be submitted')continue;
+  const key=normCmi(r.cmiKey||r.cmiNo||'');
+  if(!key)continue;
+  balanceKeys.add(key);
+  if(String(originalRegisterCategoryValue(r)||'').trim().toLowerCase()==='included in other cmis - to be submitted')includedKeys.add(key);
  }
- let zeroBalance=0,otherBalance=0;
- for(const rows of groups.values()){
-  const statuses=new Set(rows.map(r=>String(cmiCurrentStatusValue(r)||'').trim().toLowerCase()));
-  // Match the current four-stage precedence; only Balance is subdivided.
-  if(statuses.has('agreed')||statuses.has('submitted')||statuses.has('in progress')||statuses.has('on progress'))continue;
-  if(!statuses.has('to be submitted'))continue;
-  const isIncluded=rows.some(r=>String(originalRegisterCategoryValue(r)||'').trim().toLowerCase()==='included in other cmis - to be submitted');
-  if(isIncluded)zeroBalance++;
-  else otherBalance++;
- }
- return {zeroBalance,otherBalance};
+ return {balance:balanceKeys.size,zeroBalance:includedKeys.size,otherBalance:balanceKeys.size-includedKeys.size};
 }
 
 function renderClientDashboard(){
@@ -4766,10 +4758,11 @@ function renderClientDashboard(){
  const updatedTeamStages=overviewTeamStatusBreakdown(state.records);
 
  const balanceOriginalSplit=overviewBalanceOriginalCategorySplit(state.records);
+ updatedTeamStages.balance=balanceOriginalSplit.balance;
  summary.zeroBalance=balanceOriginalSplit.zeroBalance;
- summary.otherBalance=Math.max(0,updatedTeamStages.balance-summary.zeroBalance);
- if(summary.zeroBalance+summary.otherBalance!==updatedTeamStages.balance){
-  console.warn('Balance Overview subcategory reconciliation mismatch',balanceOriginalSplit,updatedTeamStages.balance);
+ summary.otherBalance=balanceOriginalSplit.otherBalance;
+ if(summary.zeroBalance+summary.otherBalance!==balanceOriginalSplit.balance){
+  console.warn('Balance Overview subcategory reconciliation mismatch',balanceOriginalSplit);
  }
 
  for(const stage of summary.stages){
