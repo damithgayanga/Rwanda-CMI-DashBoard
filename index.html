@@ -4718,12 +4718,11 @@ function overviewBalanceOriginalCategorySplit(records){
 // Exclude non-existent duplicate records from calculations, not from the register.
 function validCmiCalculationRecords(records){
  return (records||[]).filter(r=>{
-  const raw=r.cmiDeliveryResponsibilityLatest??r.cmi_delivery_responsibility_latest??
-   r.deliveryResponsibilityLatest??r.latestDeliveryResponsibility??
-   r.cmiResponsibilityLatest;
-  const latest=typeof cmiDeliveryResponsibilityLatestValue==='function'
-   ?cmiDeliveryResponsibilityLatestValue(r):raw;
-  return String(latest??'').trim().toUpperCase()!=='N/A';
+  // A genuine duplicate is never part of any CMI count or value calculation.
+  if(String(registerCategoryValue(r)||'').trim().toLowerCase()==='duplicated - n/a')return false;
+  // Latest Responsibility overrides take precedence over original assignment.
+  const latest=String(latestResponsibilityValue(r)||'').trim().toLowerCase();
+  return latest!=='n/a' && latest!=='duplicated - n/a';
  });
 }
 
