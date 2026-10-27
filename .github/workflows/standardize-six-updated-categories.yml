@@ -1,0 +1,54 @@
+name: Standardize six Updated Register Categories
+on:
+  push:
+    paths:
+      - '.github/workflows/standardize-six-updated-categories.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Update selected category names, options and filter
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          old="function canonicalUpdatedRegisterCategory(value){const raw=String(value??'').trim();return /^to\\s+be\\s+submitted$/i.test(raw)?'To Be Submitted':raw;}"
+          new="""const UPDATED_REGISTER_CATEGORY_OPTIONS=['Agreed - Others','Duplicated - N/A','ReOpen - To Be Submitted - CMI Team','Submitted - Others','Submitted PS- Others','To Be Submitted - CMI Team'];
+          function canonicalUpdatedRegisterCategory(value){
+           const raw=String(value??'').trim(),key=raw.replace(/\\s+/g,' ').toLowerCase();
+           const replacements={'agreed':'Agreed - Others','agreed - others':'Agreed - Others','duplicated n/a':'Duplicated - N/A','duplicated - n/a':'Duplicated - N/A','reopen - to be submitted':'ReOpen - To Be Submitted - CMI Team','reopen - to be submitted - cmi team':'ReOpen - To Be Submitted - CMI Team','submitted':'Submitted - Others','submitted - others':'Submitted - Others','submitted - ps':'Submitted PS- Others','submitted ps- others':'Submitted PS- Others','to be submitted':'To Be Submitted - CMI Team','to be submitted - cmi team':'To Be Submitted - CMI Team'};
+           return replacements[key]||raw;
+          }"""
+          assert s.count(old)==1,'Normalization anchor missing'
+          s=s.replace(old,new,1)
+          start=s.index('function updatedRegisterCategoryOptions(r){')
+          end=s.index('\nfunction updatedRegisterCategoryCell(r){',start)
+          s=s[:start]+"""function updatedRegisterCategoryOptions(r){
+           return [...UPDATED_REGISTER_CATEGORY_OPTIONS];
+          }"""+s[end:]
+          old="const registerCategories=uniq(state.records.map(r=>String(registerCategoryValue(r)||'').trim()).filter(Boolean));"
+          assert s.count(old)==1,'Filter categories anchor missing'
+          s=s.replace(old,"const registerCategories=[...UPDATED_REGISTER_CATEGORY_OPTIONS];",1)
+          # Persist converted overrides; do not touch original category.
+          old="if(/^to\\s+be\\s+submitted$/i.test(String(row.registerCategory??'').trim()))row.registerCategory='To Be Submitted';"
+          assert s.count(old)==1,'Save normalization anchor missing'
+          s=s.replace(old,"if(row.registerCategory!==undefined)row.registerCategory=canonicalUpdatedRegisterCategory(row.registerCategory);",1)
+          # When editing, use normalized value and persist it.
+          assert 'function registerCategoryValue(r){return canonicalUpdatedRegisterCategory(registerCategoryValueRaw(r));}' in s
+          assert 'const registerCategories=[...UPDATED_REGISTER_CATEGORY_OPTIONS];' in s
+          p.write_text(s,encoding='utf-8')
+          PY
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "Limit Updated Register Category to six renamed options"
+          git push
