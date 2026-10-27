@@ -3369,6 +3369,7 @@ function updatedRegisterCategoryOptions(r){
  const current=String(registerCategoryValue(r)||'').trim();
  if(current&&!options.includes(current))options.push(current);
  if(!options.includes('ReOpen - To Be Submitted'))options.push('ReOpen - To Be Submitted');
+ if(!options.includes('Duplicated - N/A'))options.push('Duplicated - N/A');
  return options;
 }
 function updatedRegisterCategoryCell(r){
