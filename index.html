@@ -4712,7 +4712,7 @@ function overviewBalanceOriginalCategorySplit(records){
   // Match the current four-stage precedence; only Balance is subdivided.
   if(statuses.has('agreed')||statuses.has('submitted')||statuses.has('in progress')||statuses.has('on progress'))continue;
   if(!statuses.has('to be submitted'))continue;
-  const isIncluded=rows.some(r=>String(originalRegisterCategoryValue(r)||'').trim().toLowerCase()==='to be submitted - included in other cmis');
+  const isIncluded=rows.some(r=>String(originalRegisterCategoryValue(r)||'').trim().toLowerCase()==='included in other cmis - to be submitted');
   if(isIncluded)zeroBalance++;
   else otherBalance++;
  }
@@ -4733,7 +4733,7 @@ function renderClientDashboard(){
 
  const balanceOriginalSplit=overviewBalanceOriginalCategorySplit(state.records);
  summary.zeroBalance=balanceOriginalSplit.zeroBalance;
- summary.otherBalance=balanceOriginalSplit.otherBalance;
+ summary.otherBalance=Math.max(0,updatedTeamStages.balance-summary.zeroBalance);
  if(summary.zeroBalance+summary.otherBalance!==updatedTeamStages.balance){
   console.warn('Balance Overview subcategory reconciliation mismatch',balanceOriginalSplit,updatedTeamStages.balance);
  }
