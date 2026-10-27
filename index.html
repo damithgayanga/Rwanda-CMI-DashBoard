@@ -4750,6 +4750,18 @@ function renderClientDashboard(){
  }
  updatedOverviewGroups.submitted=submittedOthersBeforeMobilisation.size;
 
+ // Dashboard 01: all CMIs assigned to the CMI Team, including reopened items.
+ // Count each normalized CMI number only once.
+ const requiredCmiTeamKeys=new Set();
+ for(const record of state.records||[]){
+  const responsibility=String(latestResponsibilityValue(record)||'').trim();
+  if(responsibility!=='CMI Team'&&responsibility!=='ReOpen - CMI Team')continue;
+  const key=normCmi(record.cmiKey||record.cmiNo||'');
+  if(key)requiredCmiTeamKeys.add(key);
+ }
+ updatedOverviewGroups.team=requiredCmiTeamKeys.size;
+
+
 
  const updatedTeamStages=overviewTeamStatusBreakdown(state.records);
 
