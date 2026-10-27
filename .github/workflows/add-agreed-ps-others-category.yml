@@ -1,0 +1,40 @@
+name: Add Agreed PS Others Updated Register Category
+on:
+  push:
+    paths:
+      - '.github/workflows/add-agreed-ps-others-category.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Add category to existing dropdown and filter choices
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          category='Agreed - PS - Others'
+          match=re.search(r'(const\s+UPDATED_REGISTER_CATEGORY_OPTIONS\s*=\s*\[)([^\]]*)(\])',s)
+          assert match, 'Updated Register Category options array not found'
+          options=match.group(2)
+          if category not in options:
+              separator=',' if options.strip() and not options.rstrip().endswith(',') else ''
+              options=options.rstrip()+separator+"'"+category+"'"
+              s=s[:match.start(2)]+options+s[match.end(2):]
+          assert category in s
+          assert 'const registerCategories=[...UPDATED_REGISTER_CATEGORY_OPTIONS];' in s, 'Updated Register Category filter should share the options'
+          p.write_text(s,encoding='utf-8')
+          PY
+      - name: Commit changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "Add Agreed - PS - Others Updated Register Category option"
+          git push
