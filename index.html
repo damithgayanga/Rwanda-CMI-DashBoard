@@ -4369,7 +4369,7 @@ function clientPreviouslyApprovedSummary(records){
  ];
  const groups=new Map();
  for(const r of records||[]){
-  if(String(r.mainCategory||'').trim()!=='Agreed'||MAIN_CATEGORY_BY_RECORD_ID[r.id]!=='Agreed')continue;
+  if(latestResponsibilityValue(r)!=='Others'||cmiCurrentStatusValue(r)!=='Agreed')continue;
   const key=normCmi(r.cmiKey||r.cmiNo||'');if(!key)continue;
   if(!groups.has(key))groups.set(key,[]);groups.get(key).push(r);
  }
@@ -4462,7 +4462,7 @@ function clientPreviouslySubmittedSummary(records){
  ];
  const groups=new Map();
  for(const r of records||[]){
-  if(String(r.mainCategory||'').trim()!=='Submitted')continue;
+  if(latestResponsibilityValue(r)!=='Others'||cmiCurrentStatusValue(r)!=='Submitted')continue;
   const key=normCmi(r.cmiKey||r.cmiNo||'');if(!key)continue;
   if(!groups.has(key))groups.set(key,[]);groups.get(key).push(r);
  }
