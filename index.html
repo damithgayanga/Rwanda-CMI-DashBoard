@@ -4740,6 +4740,16 @@ function renderClientDashboard(){
  }
  updatedOverviewGroups.agreed=agreedOthersBeforeMobilisation.size;
 
+ // Dashboard 01: unique CMIs submitted by Others but not yet agreed.
+ const submittedOthersBeforeMobilisation=new Set();
+ for(const record of state.records||[]){
+  if(String(latestResponsibilityValue(record)||'').trim()!=='Others')continue;
+  if(String(cmiCurrentStatusValue(record)||'').trim().toLowerCase()!=='submitted')continue;
+  const key=normCmi(record.cmiKey||record.cmiNo||'');
+  if(key)submittedOthersBeforeMobilisation.add(key);
+ }
+ updatedOverviewGroups.submitted=submittedOthersBeforeMobilisation.size;
+
 
  const updatedTeamStages=overviewTeamStatusBreakdown(state.records);
 
