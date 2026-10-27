@@ -4678,6 +4678,30 @@ function overviewTeamStatusBreakdown(records){
  return result;
 }
 
+
+// Same eligible team scopes and current-status priority as Overview parent.
+function overviewBalanceOriginalCategorySplit(records){
+ const groups=new Map();
+ for(const r of records||[]){
+  const key=normCmi(r.cmiKey||r.cmiNo||'');
+  const category=registerCategoryValue(r);
+  if(!key||!(category==='ReOpen - To Be Submitted - CMI Team'||category==='To Be Submitted - CMI Team'))continue;
+  if(!groups.has(key))groups.set(key,[]);
+  groups.get(key).push(r);
+ }
+ let zeroBalance=0,otherBalance=0;
+ for(const rows of groups.values()){
+  const statuses=new Set(rows.map(r=>String(cmiCurrentStatusValue(r)||'').trim().toLowerCase()));
+  // Match the current four-stage precedence; only Balance is subdivided.
+  if(statuses.has('agreed')||statuses.has('submitted')||statuses.has('in progress')||statuses.has('on progress'))continue;
+  if(!statuses.has('to be submitted'))continue;
+  const isIncluded=rows.some(r=>String(originalRegisterCategoryValue(r)||'').trim().toLowerCase()==='to be submitted - included in other cmis');
+  if(isIncluded)zeroBalance++;
+  else otherBalance++;
+ }
+ return {zeroBalance,otherBalance};
+}
+
 function renderClientDashboard(){
  renderPreviouslyApprovedCmis();
  renderPreviouslySubmittedCmis();
@@ -4689,6 +4713,14 @@ function renderClientDashboard(){
  const updatedOverviewGroups=overviewUpdatedCategoryReconciliation(state.records);
 
  const updatedTeamStages=overviewTeamStatusBreakdown(state.records);
+
+ const balanceOriginalSplit=overviewBalanceOriginalCategorySplit(state.records);
+ summary.zeroBalance=balanceOriginalSplit.zeroBalance;
+ summary.otherBalance=balanceOriginalSplit.otherBalance;
+ if(summary.zeroBalance+summary.otherBalance!==updatedTeamStages.balance){
+  console.warn('Balance Overview subcategory reconciliation mismatch',balanceOriginalSplit,updatedTeamStages.balance);
+ }
+
  for(const stage of summary.stages){
   if(Object.prototype.hasOwnProperty.call(updatedTeamStages,stage.id))stage.value=updatedTeamStages[stage.id];
  }
