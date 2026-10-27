@@ -1,0 +1,55 @@
+name: Normalize Updated Register Category To Be Submitted
+on:
+  push:
+    paths:
+      - '.github/workflows/normalize-updated-register-category.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  normalize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Normalize Updated Register Category display, dropdown and persistence
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          marker='// Normalize Updated Register Category capitalization; leave Original Register Category unchanged.'
+          if marker not in s:
+              old='function registerCategoryValue(r){'
+              assert s.count(old)==1, 'Expected one registerCategoryValue definition'
+              s=s.replace(old,'function registerCategoryValueRaw(r){',1)
+              wrapper=marker+"\nfunction registerCategoryValue(r){const value=registerCategoryValueRaw(r);return value==='To be Submitted'?'To Be Submitted':value;}\n"
+              s=s.replace('function registerCategoryValueRaw(r){',wrapper+'function registerCategoryValueRaw(r){',1)
+          old="String(originalRegisterCategoryValue(x)||'').trim()"
+          new="String(originalRegisterCategoryValue(x)||'').trim().replace(/^To be Submitted$/, 'To Be Submitted')"
+          if old in s:
+              s=s.replace(old,new,1)
+          assert marker in s
+          assert new in s
+          # Existing explicit overrides are standardized on each state save.
+          persist='// Canonicalize Updated Register Category overrides before saving.'
+          if persist not in s:
+              import re
+              m=re.search(r'function saveState\s*\(\s*\)\s*\{',s)
+              assert m, 'saveState declaration missing'
+              s=s[:m.end()]+"""
+           """+persist+"""
+           if(state&&Array.isArray(state.records))for(const row of state.records){
+            if(row.registerCategory==='To be Submitted')row.registerCategory='To Be Submitted';
+           }
+          """+s[m.end():]
+          assert "row.registerCategory='To Be Submitted'" in s
+          p.write_text(s,encoding='utf-8')
+          PY
+      - name: Commit change
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "Unify Updated Register Category To Be Submitted capitalization"
+          git push
