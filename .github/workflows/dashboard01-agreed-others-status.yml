@@ -1,0 +1,48 @@
+name: Dashboard 01 agreed before mobilisation category and status filter
+on:
+  push:
+    paths:
+      - '.github/workflows/dashboard01-agreed-others-status.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Count unique Agreed Others and Agreed PS Others CMIs with Agreed status
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          hook=' const updatedOverviewGroups=overviewUpdatedCategoryReconciliation(state.records);'
+          assert s.count(hook)==1, 'Expected exactly one overview category reconciliation call'
+          marker='// Dashboard 01: pre-mobilisation agreed CMIs must have agreed status.'
+          if marker not in s:
+              addition="""
+           // Dashboard 01: pre-mobilisation agreed CMIs must have agreed status.
+           // Deduplicate by normalized CMI number (including multiple register rows).
+           const agreedOthersBeforeMobilisation=new Set();
+           for(const record of state.records||[]){
+            const category=String(registerCategoryValue(record)||'').trim();
+            if(category!=='Agreed - Others'&&category!=='Agreed - PS - Others')continue;
+            if(String(cmiCurrentStatusValue(record)||'').trim().toLowerCase()!=='agreed')continue;
+            const key=normCmi(record.cmiKey||record.cmiNo||'');
+            if(key)agreedOthersBeforeMobilisation.add(key);
+           }
+           updatedOverviewGroups.agreed=agreedOthersBeforeMobilisation.size;
+          """
+              s=s.replace(hook,hook+'\n'+addition,1)
+          assert 'updatedOverviewGroups.agreed=agreedOthersBeforeMobilisation.size;' in s
+          p.write_text(s,encoding='utf-8')
+          PY
+      - name: Commit Dashboard 01 change
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "Filter Dashboard 01 agreed CMIs by both categories and Agreed status"
+          git push
