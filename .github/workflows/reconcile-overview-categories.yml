@@ -1,0 +1,77 @@
+name: Reconcile Overview unique CMI category counts
+on:
+  push:
+    paths:
+      - '.github/workflows/reconcile-overview-categories.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Update overview category counting only
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          marker='function overviewUpdatedCategoryReconciliation(records){'
+          if marker not in s:
+              helper="""
+          // One Overview assignment per unique CMI number, including partial submissions.
+          // Priority resolves mixed scopes: team work, then agreed, then submitted.
+          function overviewUpdatedCategoryReconciliation(records){
+           const byCmi=new Map();
+           for(const r of records||[]){
+            const key=normCmi(r.cmiKey||r.cmiNo||'');
+            if(!key)continue;
+            const raw=String(registerCategoryValue(r)||'').trim();
+            const cat=typeof canonicalUpdatedRegisterCategory==='function'?canonicalUpdatedRegisterCategory(raw):raw;
+            let group='';
+            if(cat==='To Be Submitted - CMI Team'||cat==='ReOpen - To Be Submitted - CMI Team')group='team';
+            else if(cat==='Agreed - Others')group='agreed';
+            else if(cat==='Submitted - Others'||cat==='Submitted - PS - Others')group='submitted';
+            else if(cat==='Duplicated - N/A')continue;
+            const priority={submitted:1,agreed:2,team:3};
+            const old=byCmi.get(key)||'';
+            if(priority[group]> (priority[old]||0))byCmi.set(key,group);
+            else if(!byCmi.has(key))byCmi.set(key,'');
+           }
+           const result={agreed:0,submitted:0,team:0,unclassified:0,unclassifiedKeys:[]};
+           for(const [key,group] of byCmi){
+            if(group)result[group]++;
+            else {result.unclassified++;result.unclassifiedKeys.push(key);}
+           }
+           return result;
+          }
+          """
+              anchor='function renderClientDashboard(){'
+              assert s.count(anchor)==1,'renderClientDashboard anchor missing'
+              s=s.replace(anchor,helper+'\n'+anchor,1)
+          anchor=' const summary=clientOverviewSummary(state.records);'
+          assert s.count(anchor)==1,'overview summary anchor missing'
+          if 'const updatedOverviewGroups=overviewUpdatedCategoryReconciliation(state.records);' not in s:
+              addition="""
+           const updatedOverviewGroups=overviewUpdatedCategoryReconciliation(state.records);
+           for(const band of summary.bands){
+            if(Object.prototype.hasOwnProperty.call(updatedOverviewGroups,band.id))band.value=updatedOverviewGroups[band.id];
+           }
+           // Keep the established 614-type unique CMI total independent of register-row duplication.
+           // An uncategorised CMI is reported as an exception, never silently allocated.
+           const overviewDiscrepancy=summary.total-(updatedOverviewGroups.agreed+updatedOverviewGroups.submitted+updatedOverviewGroups.team);
+           if(overviewDiscrepancy!==0)console.warn('Overview category reconciliation exception',overviewDiscrepancy,updatedOverviewGroups.unclassifiedKeys);
+          """
+              s=s.replace(anchor,anchor+'\n'+addition,1)
+          assert 'overviewDiscrepancy' in s
+          p.write_text(s,encoding='utf-8')
+          PY
+      - name: Commit scoped update
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "Reconcile three Overview counts by distinct CMI and updated category"
+          git push
