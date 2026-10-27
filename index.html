@@ -4751,7 +4751,18 @@ function renderClientDashboard(){
   const key=normCmi(record.cmiKey||record.cmiNo||'');
   if(key)requiredCmiTeamKeys.add(key);
  }
+ // Only Latest Responsibility determines scope; N/A is excluded.
+ // Unique CMI classification priority: CMI Team > Submitted by Others > Agreed by Others.
+ for(const key of requiredCmiTeamKeys){
+  submittedOthersBeforeMobilisation.delete(key);
+  agreedOthersBeforeMobilisation.delete(key);
+ }
+ for(const key of submittedOthersBeforeMobilisation){
+  agreedOthersBeforeMobilisation.delete(key);
+ }
  updatedOverviewGroups.team=requiredCmiTeamKeys.size;
+ updatedOverviewGroups.submitted=submittedOthersBeforeMobilisation.size;
+ updatedOverviewGroups.agreed=agreedOthersBeforeMobilisation.size;
 
 
 
