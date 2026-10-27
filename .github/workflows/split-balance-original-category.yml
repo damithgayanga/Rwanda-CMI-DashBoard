@@ -1,0 +1,68 @@
+name: Split balance CMIs by original category
+on:
+  push:
+    paths:
+      - '.github/workflows/split-balance-original-category.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Implement balance split using original category
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          marker='function overviewBalanceOriginalCategorySplit(records){'
+          anchor='function renderClientDashboard(){'
+          assert s.count(anchor)==1
+          helper="""
+          // Same eligible team scopes and current-status priority as Overview parent.
+          function overviewBalanceOriginalCategorySplit(records){
+           const groups=new Map();
+           for(const r of records||[]){
+            const key=normCmi(r.cmiKey||r.cmiNo||'');
+            const category=registerCategoryValue(r);
+            if(!key||!(category==='ReOpen - To Be Submitted - CMI Team'||category==='To Be Submitted - CMI Team'))continue;
+            if(!groups.has(key))groups.set(key,[]);
+            groups.get(key).push(r);
+           }
+           let zeroBalance=0,otherBalance=0;
+           for(const rows of groups.values()){
+            const statuses=new Set(rows.map(r=>String(cmiCurrentStatusValue(r)||'').trim().toLowerCase()));
+            // Match the current four-stage precedence; only Balance is subdivided.
+            if(statuses.has('agreed')||statuses.has('submitted')||statuses.has('in progress')||statuses.has('on progress'))continue;
+            if(!statuses.has('to be submitted'))continue;
+            const isIncluded=rows.some(r=>String(originalRegisterCategoryValue(r)||'').trim().toLowerCase()==='to be submitted - included in other cmis');
+            if(isIncluded)zeroBalance++;
+            else otherBalance++;
+           }
+           return {zeroBalance,otherBalance};
+          }
+          """
+          if marker not in s:s=s.replace(anchor,helper+'\n'+anchor,1)
+          call=' const updatedTeamStages=overviewTeamStatusBreakdown(state.records);'
+          assert s.count(call)==1
+          addition="""
+           const balanceOriginalSplit=overviewBalanceOriginalCategorySplit(state.records);
+           summary.zeroBalance=balanceOriginalSplit.zeroBalance;
+           summary.otherBalance=balanceOriginalSplit.otherBalance;
+           if(summary.zeroBalance+summary.otherBalance!==updatedTeamStages.balance){
+            console.warn('Balance Overview subcategory reconciliation mismatch',balanceOriginalSplit,updatedTeamStages.balance);
+           }
+          """
+          if 'const balanceOriginalSplit=overviewBalanceOriginalCategorySplit' not in s:s=s.replace(call,call+'\n'+addition,1)
+          p.write_text(s,encoding='utf-8')
+          PY
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "Split balance team CMIs by Original Register Category"
+          git push
