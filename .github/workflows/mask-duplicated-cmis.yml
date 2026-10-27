@@ -1,0 +1,61 @@
+name: Mask right-hand fields for duplicated CMIs
+on:
+  push:
+    paths:
+      - '.github/workflows/mask-duplicated-cmis.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Update CMI Register rendering
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          needle="function renderRegister(){"
+          assert s.count(needle)==1, 'register render function missing or duplicated'
+          next_function="\nfunction allocationFilters(){"
+          start=s.index(needle)
+          end=s.index(next_function,start)
+          segment=s[start:end]
+          hook="maskDuplicatedRegisterColumns();"
+          assert hook not in segment, 'already installed'
+          assert segment.rstrip().endswith("}"), 'unexpected register function ending'
+          segment=segment.rstrip()[:-1]+hook+"}\n"
+          s=s[:start]+segment+s[end:]
+          helper="""
+// In the register, duplicated entries are not actionable work items.
+// Mask the columns after Updated Register Category without deleting historical data.
+function maskDuplicatedRegisterColumns(){
+ const table=document.querySelector('#tab-register .data-table');
+ const body=document.getElementById('registerBody');
+ if(!table||!body)return;
+ const header=Array.from(table.querySelectorAll('thead th'));
+ const categoryIndex=header.findIndex(th=>th.textContent.trim()==='Updated Register Category');
+ if(categoryIndex<0)return;
+ Array.from(body.rows).forEach((tr,index)=>{
+  const record=filteredRegister[index];
+  if(!record||registerCategoryValue(record)!=='Duplicated - N/A')return;
+  for(let col=categoryIndex+1;col<tr.cells.length;col++){
+   tr.cells[col].textContent='N/A';
+  }
+ });
+}
+"""
+          s=s.replace(needle,helper+"\n"+needle,1)
+          assert s.count(hook)==1
+          p.write_text(s,encoding='utf-8')
+          PY
+      - name: Commit correction
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "Display N/A in all CMI Register columns after duplicated category"
+          git push
