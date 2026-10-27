@@ -4729,6 +4729,19 @@ function renderClientDashboard(){
 
  const updatedOverviewGroups=overviewUpdatedCategoryReconciliation(state.records);
 
+ // Dashboard 01: pre-mobilisation agreed CMIs must have agreed status.
+ // Deduplicate by normalized CMI number (including multiple register rows).
+ const agreedOthersBeforeMobilisation=new Set();
+ for(const record of state.records||[]){
+  const category=String(registerCategoryValue(record)||'').trim();
+  if(category!=='Agreed - Others'&&category!=='Agreed - PS - Others')continue;
+  if(String(cmiCurrentStatusValue(record)||'').trim().toLowerCase()!=='agreed')continue;
+  const key=normCmi(record.cmiKey||record.cmiNo||'');
+  if(key)agreedOthersBeforeMobilisation.add(key);
+ }
+ updatedOverviewGroups.agreed=agreedOthersBeforeMobilisation.size;
+
+
  const updatedTeamStages=overviewTeamStatusBreakdown(state.records);
 
  const balanceOriginalSplit=overviewBalanceOriginalCategorySplit(state.records);
