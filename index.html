@@ -362,6 +362,12 @@
 .measurement-path-group strong{font-size:15px;font-weight:900}
 .measurement-path-group small{font-size:9px;color:var(--muted);font-weight:700;margin-top:3px}
 .measurement-path-plus{font-weight:800;font-size:13px;line-height:17px}
+
+/* Dashboard 06: seven equal cards in one row at desktop widths. */
+@media(min-width:1100px){
+  #tab-clientdashboard #clientProcessStages{grid-template-columns:repeat(7,minmax(0,1fr)) !important;}
+}
+
 </style>
 <style id="executive-presentation-v2">
 /* Executive presentation: scoped to the management report only. */
@@ -4544,7 +4550,18 @@ function renderClientProcessStages(ensureProcessingPaths=true){
  const el=document.getElementById('clientProcessStages');if(!el)return;
  if(ensureProcessingPaths&&!processingPathLoaded&&!processingPathLoading)void loadProcessingPaths();
  const counts=clientProcessStageCounts(state.records,documentReadinessMap());
- const labels=['CMIs Ready to Start Assessment','CMIs Commenced by Measurement Team','CMIs Completed by Measurement Team','CMIs Submitted to CM / CMI Lead','CMIs Received from CM / CMI Lead','Submitted to DGJ'];
+
+// Latest CMI Team responsibility and Agreed current status; count each CMI number once.
+const agreedCmiKeys=new Set();
+for(const record of state.records||[]){
+ if(latestResponsibilityValue(record)!=='CMI Team')continue;
+ if(String(cmiCurrentStatusValue(record)||'').trim().toLowerCase()!=='agreed')continue;
+ const key=normCmi(record.cmiKey||record.cmiNo||'');
+ if(key)agreedCmiKeys.add(key);
+}
+counts[6]=agreedCmiKeys.size;
+
+ const labels=['CMIs Ready to Start Assessment','CMIs Commenced by Measurement Team','CMIs Completed by Measurement Team','CMIs Submitted to CM / CMI Lead','CMIs Received from CM / CMI Lead','Submitted to DGJ','Agreed with DGJ'];
  el.innerHTML=labels.map((label,i)=>{
   const breakdown=i===1?counts.pathBreakdowns[0]:i===2?counts.pathBreakdowns[1]:null;
   const split=breakdown?(processingPathLoaded?Number(breakdown.offsite).toLocaleString('en-US')+' (Off-Site) + '+Number(breakdown.onsite).toLocaleString('en-US')+' (On-Site)':processingPathLoading?'Loading Processing Paths…':'Processing Paths unavailable'):'';
