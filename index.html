@@ -2512,10 +2512,10 @@ function originalRegisterCategoryValue(r){
  return ORIGINAL_AGREED_REGISTER_ROW_IDS.has(id)?'Agreed':'';
 }
 // Normalize Updated Register Category capitalization; leave Original Register Category unchanged.
-const UPDATED_REGISTER_CATEGORY_OPTIONS=['Agreed - Others','Duplicated - N/A','ReOpen - To Be Submitted - CMI Team','Submitted - Others','Submitted PS- Others','To Be Submitted - CMI Team'];
+const UPDATED_REGISTER_CATEGORY_OPTIONS=['Agreed - Others','Duplicated - N/A','ReOpen - To Be Submitted - CMI Team','Submitted - Others','Submitted - PS - Others','To Be Submitted - CMI Team'];
 function canonicalUpdatedRegisterCategory(value){
  const raw=String(value??'').trim(),key=raw.replace(/\s+/g,' ').toLowerCase();
- const replacements={'agreed':'Agreed - Others','agreed - others':'Agreed - Others','duplicated n/a':'Duplicated - N/A','duplicated - n/a':'Duplicated - N/A','reopen - to be submitted':'ReOpen - To Be Submitted - CMI Team','reopen - to be submitted - cmi team':'ReOpen - To Be Submitted - CMI Team','submitted':'Submitted - Others','submitted - others':'Submitted - Others','submitted - ps':'Submitted PS- Others','submitted ps- others':'Submitted PS- Others','to be submitted':'To Be Submitted - CMI Team','to be submitted - cmi team':'To Be Submitted - CMI Team'};
+ const replacements={'agreed':'Agreed - Others','agreed - others':'Agreed - Others','duplicated n/a':'Duplicated - N/A','duplicated - n/a':'Duplicated - N/A','reopen - to be submitted':'ReOpen - To Be Submitted - CMI Team','reopen - to be submitted - cmi team':'ReOpen - To Be Submitted - CMI Team','submitted':'Submitted - Others','submitted - others':'Submitted - Others','submitted - ps':'Submitted - PS - Others','submitted ps- others':'Submitted - PS - Others','submitted - ps - others':'Submitted - PS - Others','to be submitted':'To Be Submitted - CMI Team','to be submitted - cmi team':'To Be Submitted - CMI Team'};
  return replacements[key]||raw;
 }
 function registerCategoryValue(r){return canonicalUpdatedRegisterCategory(registerCategoryValueRaw(r));}
