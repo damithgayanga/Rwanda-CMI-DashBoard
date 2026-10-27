@@ -1,0 +1,67 @@
+name: CMI Team Overview status breakdown
+on:
+  push:
+    paths: ['.github/workflows/team-overview-status-breakdown.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Change four team breakdown counts to CMI Current Status
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          anchor='function renderClientDashboard(){'
+          assert s.count(anchor)==1
+          helper="""
+          // Reconcile the four CMI Team Overview stage counts with the parent unique-CMI count.
+          function overviewTeamStatusBreakdown(records){
+           const groups=new Map();
+           for(const r of records||[]){
+            const key=normCmi(r.cmiKey||r.cmiNo||'');
+            const cat=registerCategoryValue(r);
+            if(!key||!(cat==='ReOpen - To Be Submitted - CMI Team'||cat==='To Be Submitted - CMI Team'))continue;
+            const status=String(cmiCurrentStatusValue(r)||'').trim().toLowerCase();
+            if(!groups.has(key))groups.set(key,new Set());
+            groups.get(key).add(status);
+           }
+           const result={progress:0,submitted:0,agreed:0,balance:0,unmatched:[]};
+           for(const [key,statuses] of groups){
+            // One status per unique CMI. Prefer the furthest attained stage for partial submissions.
+            if(statuses.has('agreed'))result.agreed++;
+            else if(statuses.has('submitted'))result.submitted++;
+            else if(statuses.has('in progress')||statuses.has('on progress'))result.progress++;
+            else if(statuses.has('to be submitted'))result.balance++;
+            else result.unmatched.push(key);
+           }
+           result.total=groups.size;
+           return result;
+          }
+          """
+          if 'function overviewTeamStatusBreakdown(records)' not in s:s=s.replace(anchor,helper+'\n'+anchor,1)
+          hook=' const updatedOverviewGroups=overviewUpdatedCategoryReconciliation(state.records);'
+          assert s.count(hook)==1
+          insert="""
+           const updatedTeamStages=overviewTeamStatusBreakdown(state.records);
+           for(const stage of summary.stages){
+            if(Object.prototype.hasOwnProperty.call(updatedTeamStages,stage.id))stage.value=updatedTeamStages[stage.id];
+           }
+           const teamStageSum=summary.stages.reduce((sum,stage)=>sum+stage.value,0);
+           if(teamStageSum!==updatedOverviewGroups.team)console.warn('CMI Team Overview status reconciliation mismatch', {teamStageSum,teamTotal:updatedOverviewGroups.team,unmatched:updatedTeamStages.unmatched});
+          """
+          if 'const updatedTeamStages=overviewTeamStatusBreakdown' not in s:s=s.replace(hook,hook+'\n'+insert,1)
+          p.write_text(s,encoding='utf-8')
+          PY
+      - name: Commit change
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "Use CMI Current Status for team Overview stage counts"
+          git push
