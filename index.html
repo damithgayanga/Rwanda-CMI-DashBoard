@@ -5424,5 +5424,38 @@ document.getElementById('clExport')?.addEventListener('click',exportChangeLog);
   else initExecutivePanelToggles();
 })();
 </script>
+
+<style>
+/* Dashboard 06 seven-card final single-row layout */
+@media (min-width: 1001px) {
+  #tab-clientdashboard #clientProcessStages {
+    display: grid !important;
+    grid-template-columns: repeat(7, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+  }
+  #tab-clientdashboard #clientProcessStages > tr {
+    min-width: 0 !important;
+    padding: 14px 7px !important;
+    min-height: 132px;
+  }
+  #tab-clientdashboard #clientProcessStages td:first-child {
+    min-height: 46px;
+    font-size: 10px !important;
+    line-height: 1.25 !important;
+    overflow-wrap: anywhere;
+  }
+  #tab-clientdashboard #clientProcessStages td:last-child {
+    min-width: 0 !important;
+  }
+  #tab-clientdashboard #clientProcessStages .exec-measurement-total {
+    font-size: clamp(25px, 2.4vw, 36px) !important;
+  }
+  #tab-clientdashboard #clientProcessStages .exec-measurement-split {
+    font-size: 9px !important;
+    white-space: nowrap;
+  }
+}
+</style>
+
 </body></html>
 
