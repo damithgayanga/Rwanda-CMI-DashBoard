@@ -1,0 +1,40 @@
+name: Apply Dashboard 01 Others Agreed calculation
+on:
+  push:
+    paths:
+      - '.github/workflows/apply-dashboard01-others-fix.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Replace Dashboard 01 KPI filter
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          old="""            const category=String(registerCategoryValue(record)||'').trim();
+            if(category!=='Agreed - Others'&&category!=='Agreed - PS - Others')continue;"""
+          new="""            if(String(latestResponsibilityValue(record)||'').trim()!=='Others')continue;"""
+          if old in s:
+              assert s.count(old)==1, 'Unexpected duplicate calculation'
+              s=s.replace(old,new,1)
+          else:
+              assert new in s, 'Could not locate Dashboard 01 KPI filter'
+          assert new in s
+          assert "if(String(cmiCurrentStatusValue(record)||'').trim().toLowerCase()!=='agreed')continue;" in s
+          assert 'updatedOverviewGroups.agreed=agreedOthersBeforeMobilisation.size;' in s
+          p.write_text(s,encoding='utf-8')
+          PY
+      - name: Commit corrected dashboard code
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "Dashboard 01 count distinct Others responsibility with Agreed status"
+          git push
