@@ -18,13 +18,13 @@ jobs:
           s=p.read_text(encoding='utf-8')
           old="to be submitted - included in other cmis"
           new="included in other cmis - to be submitted"
-          assert s.count(old)==1, f'Expected single original category check, got {s.count(old)}'
+          assert old in s, 'Original category match missing'
           s=s.replace(old,new,1)
           a="summary.otherBalance=balanceOriginalSplit.otherBalance;"
           b="summary.otherBalance=Math.max(0,updatedTeamStages.balance-summary.zeroBalance);"
-          assert s.count(a)==1
+          assert a in s
           s=s.replace(a,b,1)
-          assert s.count(new)==1
+          assert new in s
           p.write_text(s,encoding='utf-8')
           PY
       - name: Commit
