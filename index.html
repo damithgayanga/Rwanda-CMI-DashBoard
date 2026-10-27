@@ -4719,7 +4719,7 @@ function overviewBalanceOriginalCategorySplit(records){
 function validCmiCalculationRecords(records){
  return (records||[]).filter(r=>{
   // A genuine duplicate is never part of any CMI count or value calculation.
-  if(String(registerCategoryValue(r)||'').trim().toLowerCase()==='duplicated - n/a')return false;
+  // Eligibility comes exclusively from latest responsibility; do not filter by Updated Register Category.
   // Latest Responsibility overrides take precedence over original assignment.
   const latest=String(latestResponsibilityValue(r)||'').trim().toLowerCase();
   return latest!=='n/a' && latest!=='duplicated - n/a';
