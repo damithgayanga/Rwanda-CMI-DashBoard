@@ -4653,6 +4653,31 @@ function overviewUpdatedCategoryReconciliation(records){
  return result;
 }
 
+
+// Reconcile the four CMI Team Overview stage counts with the parent unique-CMI count.
+function overviewTeamStatusBreakdown(records){
+ const groups=new Map();
+ for(const r of records||[]){
+  const key=normCmi(r.cmiKey||r.cmiNo||'');
+  const cat=registerCategoryValue(r);
+  if(!key||!(cat==='ReOpen - To Be Submitted - CMI Team'||cat==='To Be Submitted - CMI Team'))continue;
+  const status=String(cmiCurrentStatusValue(r)||'').trim().toLowerCase();
+  if(!groups.has(key))groups.set(key,new Set());
+  groups.get(key).add(status);
+ }
+ const result={progress:0,submitted:0,agreed:0,balance:0,unmatched:[]};
+ for(const [key,statuses] of groups){
+  // One status per unique CMI. Prefer the furthest attained stage for partial submissions.
+  if(statuses.has('agreed'))result.agreed++;
+  else if(statuses.has('submitted'))result.submitted++;
+  else if(statuses.has('in progress')||statuses.has('on progress'))result.progress++;
+  else if(statuses.has('to be submitted'))result.balance++;
+  else result.unmatched.push(key);
+ }
+ result.total=groups.size;
+ return result;
+}
+
 function renderClientDashboard(){
  renderPreviouslyApprovedCmis();
  renderPreviouslySubmittedCmis();
@@ -4662,6 +4687,14 @@ function renderClientDashboard(){
  const summary=clientOverviewSummary(state.records);
 
  const updatedOverviewGroups=overviewUpdatedCategoryReconciliation(state.records);
+
+ const updatedTeamStages=overviewTeamStatusBreakdown(state.records);
+ for(const stage of summary.stages){
+  if(Object.prototype.hasOwnProperty.call(updatedTeamStages,stage.id))stage.value=updatedTeamStages[stage.id];
+ }
+ const teamStageSum=summary.stages.reduce((sum,stage)=>sum+stage.value,0);
+ if(teamStageSum!==updatedOverviewGroups.team)console.warn('CMI Team Overview status reconciliation mismatch', {teamStageSum,teamTotal:updatedOverviewGroups.team,unmatched:updatedTeamStages.unmatched});
+
  for(const band of summary.bands){
   if(Object.prototype.hasOwnProperty.call(updatedOverviewGroups,band.id))band.value=updatedOverviewGroups[band.id];
  }
