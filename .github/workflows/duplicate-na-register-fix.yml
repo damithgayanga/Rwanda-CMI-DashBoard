@@ -1,0 +1,57 @@
+name: Apply duplicate CMI register N/A display
+on:
+  push:
+    paths:
+      - '.github/workflows/duplicate-na-register-fix.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Mask columns after Updated Register Category for duplicate rows
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          f=Path('index.html')
+          s=f.read_text(encoding='utf-8')
+          anchor="function renderRegister(){"
+          assert anchor in s
+          if 'function applyDuplicateRegisterMask(){' not in s:
+              fn="""
+          function applyDuplicateRegisterMask(){
+           const body=document.getElementById('registerBody');
+           if(!body)return;
+           const head=document.querySelector('#tab-register .data-table thead');
+           if(!head)return;
+           const headers=Array.from(head.querySelectorAll('th'));
+           const idx=headers.findIndex(h=>h.textContent.trim()==='Updated Register Category');
+           if(idx<0)return;
+           Array.from(body.rows).forEach((tr,i)=>{
+            if(registerCategoryValue(filteredRegister[i])!=='Duplicated - N/A')return;
+            for(let c=idx+1;c<tr.cells.length;c++)tr.cells[c].textContent='N/A';
+           });
+          }
+          """
+              s=s.replace(anchor,fn+'\n'+anchor,1)
+          start=s.index(anchor)
+          end=s.index('\nfunction allocationFilters(){',start)
+          block=s[start:end]
+          if 'applyDuplicateRegisterMask();' not in block:
+              close=block.rfind('}')
+              assert close!=-1
+              block=block[:close]+';applyDuplicateRegisterMask();'+block[close:]
+              s=s[:start]+block+s[end:]
+          assert 'applyDuplicateRegisterMask();' in s
+          f.write_text(s,encoding='utf-8')
+          PY
+      - name: Commit change
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "Apply N/A masking to duplicate CMI register rows"
+          git push
