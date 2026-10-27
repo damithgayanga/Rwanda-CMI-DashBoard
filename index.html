@@ -4733,8 +4733,7 @@ function renderClientDashboard(){
  // Deduplicate by normalized CMI number (including multiple register rows).
  const agreedOthersBeforeMobilisation=new Set();
  for(const record of state.records||[]){
-  const category=String(registerCategoryValue(record)||'').trim();
-  if(category!=='Agreed - Others'&&category!=='Agreed - PS - Others')continue;
+  if(String(latestResponsibilityValue(record)||'').trim()!=='Others')continue;
   if(String(cmiCurrentStatusValue(record)||'').trim().toLowerCase()!=='agreed')continue;
   const key=normCmi(record.cmiKey||record.cmiNo||'');
   if(key)agreedOthersBeforeMobilisation.add(key);
