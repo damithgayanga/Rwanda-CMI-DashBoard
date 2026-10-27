@@ -1,0 +1,42 @@
+name: Deduplicate Updated Register Category filter
+on:
+  push:
+    paths:
+      - '.github/workflows/fix-updated-category-filter.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Canonicalize To Be Submitted variants
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          old="function registerCategoryValue(r){const value=registerCategoryValueRaw(r);return value==='To be Submitted'?'To Be Submitted':value;}"
+          new="function canonicalUpdatedRegisterCategory(value){const raw=String(value??'').trim();return /^to\\s+be\\s+submitted$/i.test(raw)?'To Be Submitted':raw;}\nfunction registerCategoryValue(r){return canonicalUpdatedRegisterCategory(registerCategoryValueRaw(r));}"
+          assert s.count(old)==1, 'Previous normalization function was not found'
+          s=s.replace(old,new,1)
+          old_options="String(originalRegisterCategoryValue(x)||'').trim().replace(/^To be Submitted$/, 'To Be Submitted')"
+          new_options="canonicalUpdatedRegisterCategory(originalRegisterCategoryValue(x))"
+          assert s.count(old_options)==1, 'Category options expression was not found'
+          s=s.replace(old_options,new_options,1)
+          old_save="if(row.registerCategory==='To be Submitted')row.registerCategory='To Be Submitted';"
+          new_save="if(/^to\\s+be\\s+submitted$/i.test(String(row.registerCategory??'').trim()))row.registerCategory='To Be Submitted';"
+          assert s.count(old_save)==1, 'State normalization was not found'
+          s=s.replace(old_save,new_save,1)
+          assert s.count('canonicalUpdatedRegisterCategory(')>=3
+          p.write_text(s,encoding='utf-8')
+          PY
+      - name: Commit fixed filter
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "Deduplicate To Be Submitted Updated Register Category variants"
+          git push
