@@ -2512,7 +2512,12 @@ function originalRegisterCategoryValue(r){
  return ORIGINAL_AGREED_REGISTER_ROW_IDS.has(id)?'Agreed':'';
 }
 // Normalize Updated Register Category capitalization; leave Original Register Category unchanged.
-function canonicalUpdatedRegisterCategory(value){const raw=String(value??'').trim();return /^to\s+be\s+submitted$/i.test(raw)?'To Be Submitted':raw;}
+const UPDATED_REGISTER_CATEGORY_OPTIONS=['Agreed - Others','Duplicated - N/A','ReOpen - To Be Submitted - CMI Team','Submitted - Others','Submitted PS- Others','To Be Submitted - CMI Team'];
+function canonicalUpdatedRegisterCategory(value){
+ const raw=String(value??'').trim(),key=raw.replace(/\s+/g,' ').toLowerCase();
+ const replacements={'agreed':'Agreed - Others','agreed - others':'Agreed - Others','duplicated n/a':'Duplicated - N/A','duplicated - n/a':'Duplicated - N/A','reopen - to be submitted':'ReOpen - To Be Submitted - CMI Team','reopen - to be submitted - cmi team':'ReOpen - To Be Submitted - CMI Team','submitted':'Submitted - Others','submitted - others':'Submitted - Others','submitted - ps':'Submitted PS- Others','submitted ps- others':'Submitted PS- Others','to be submitted':'To Be Submitted - CMI Team','to be submitted - cmi team':'To Be Submitted - CMI Team'};
+ return replacements[key]||raw;
+}
 function registerCategoryValue(r){return canonicalUpdatedRegisterCategory(registerCategoryValueRaw(r));}
 function registerCategoryValueRaw(r){return r.registerCategory===undefined?(REGISTER_CATEGORY_BY_RECORD_ID[r.id]||r.status||''):r.registerCategory;}
 let state=loadState();let programmeDataDate=todayISO();state.meta.dataDate=programmeDataDate;let filteredRegister=[];let selectedAllocation=new Set();let expandedHighLevelActivities=new Set();let collapsedHighLevelGroups=new Set();let deliveryRootCollapsed=false;let expandedDeliverySummaryActivities=new Set();let expandedDeliverySummaryResources=new Set();let expandedCmiActivities=new Set();let expandedDeliveryCmis=new Set();let expandedDeliveryActivities=new Set();
@@ -2588,7 +2593,7 @@ function loadState(){try{const raw=localStorage.getItem(STORAGE_KEY);if(raw){con
 function saveState(){
  // Canonicalize Updated Register Category overrides before saving.
  if(state&&Array.isArray(state.records))for(const row of state.records){
-  if(/^to\s+be\s+submitted$/i.test(String(row.registerCategory??'').trim()))row.registerCategory='To Be Submitted';
+  if(row.registerCategory!==undefined)row.registerCategory=canonicalUpdatedRegisterCategory(row.registerCategory);
  }
 try{localStorage.setItem(STORAGE_KEY,JSON.stringify(state))}catch(e){}queueSharedStateSync();renderAll()}
 function money(v){if(v===null||v===undefined||v==='')return '<span class="empty">—</span>';const n=Number(v);if(!Number.isFinite(n))return '<span class="empty">—</span>';const a=Math.abs(n).toLocaleString('en-US',{maximumFractionDigits:0});return n<0?'($'+a+')':'$'+a}
@@ -3108,7 +3113,7 @@ function populateFilters(){
  if(registerDeliveryStatusFilter){const previous=registerDeliveryStatusFilter.value;registerDeliveryStatusFilter.replaceChildren(new Option('All CMI Current Statuses',''));CMI_CURRENT_STATUS_OPTIONS.forEach(status=>registerDeliveryStatusFilter.add(new Option(status,status)));registerDeliveryStatusFilter.value=CMI_CURRENT_STATUS_OPTIONS.includes(previous)?previous:'';}
 
  const standardStatuses=['Agreed','Submitted','To be Submitted - Initial Review compelted','To be Submitted and Unallocated','Included in Other CMIs','Provisional Sum CMI'];
- const registerCategories=uniq(state.records.map(r=>String(registerCategoryValue(r)||'').trim()).filter(Boolean));
+ const registerCategories=[...UPDATED_REGISTER_CATEGORY_OPTIONS];
  const originalRegisterCategories=uniq(state.records.map(r=>String(originalRegisterCategoryValue(r)||'').trim()).filter(Boolean));
  const statuses=uniq(state.records.map(r=>String(r.status||'').trim()).filter(Boolean).concat(standardStatuses)),assets=uniq(state.records.flatMap(r=>String(r.assetCode||'').split(/\n|,/).map(x=>x.trim()).filter(Boolean)));
  const populateStatusSelect=(id,label,filterFn=null)=>{
@@ -3373,12 +3378,7 @@ function cmiDeliveryResponsibilityValue(r){
  return CMI_DELIVERY_TEAM_KEYS.has(normCmi(r?.cmiKey||r?.cmiNo))?'CMI Team':'Others';
 }
 function updatedRegisterCategoryOptions(r){
- const options=[...new Set(state.records.map(x=>canonicalUpdatedRegisterCategory(originalRegisterCategoryValue(x))).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
- const current=String(registerCategoryValue(r)||'').trim();
- if(current&&!options.includes(current))options.push(current);
- if(!options.includes('ReOpen - To Be Submitted'))options.push('ReOpen - To Be Submitted');
- if(!options.includes('Duplicated - N/A'))options.push('Duplicated - N/A');
- return options;
+ return [...UPDATED_REGISTER_CATEGORY_OPTIONS];
 }
 function updatedRegisterCategoryCell(r){
  const value=registerCategoryValue(r);
