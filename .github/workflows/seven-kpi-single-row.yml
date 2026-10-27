@@ -1,0 +1,64 @@
+name: Force seven Dashboard 06 KPI cards in one desktop row
+on:
+  push:
+    paths: ['.github/workflows/seven-kpi-single-row.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fix final executive KPI grid
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          marker='/* Dashboard 06 seven-card final single-row layout */'
+          assert marker not in s
+          css="""
+          <style>
+          /* Dashboard 06 seven-card final single-row layout */
+          @media (min-width: 1001px) {
+            #tab-clientdashboard #clientProcessStages {
+              display: grid !important;
+              grid-template-columns: repeat(7, minmax(0, 1fr)) !important;
+              gap: 10px !important;
+            }
+            #tab-clientdashboard #clientProcessStages > tr {
+              min-width: 0 !important;
+              padding: 14px 7px !important;
+              min-height: 132px;
+            }
+            #tab-clientdashboard #clientProcessStages td:first-child {
+              min-height: 46px;
+              font-size: 10px !important;
+              line-height: 1.25 !important;
+              overflow-wrap: anywhere;
+            }
+            #tab-clientdashboard #clientProcessStages td:last-child {
+              min-width: 0 !important;
+            }
+            #tab-clientdashboard #clientProcessStages .exec-measurement-total {
+              font-size: clamp(25px, 2.4vw, 36px) !important;
+            }
+            #tab-clientdashboard #clientProcessStages .exec-measurement-split {
+              font-size: 9px !important;
+              white-space: nowrap;
+            }
+          }
+          </style>
+          """
+          assert s.count('</body>')==1
+          s=s.replace('</body>',css+'\n</body>',1)
+          p.write_text(s,encoding='utf-8')
+          PY
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git commit -m "Keep all seven Dashboard 06 KPI cards in one desktop row"
+          git push
