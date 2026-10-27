@@ -3246,7 +3246,9 @@ async function loadLatestResponsibilities(){
  }catch(e){console.error('Unable to load latest delivery responsibilities',e)}
  finally{
   latestResponsibilityLoading=false;
-  if(document.querySelector('.tabbtn.active')?.dataset.tab==='register')renderRegister();
+  const activeTab=document.querySelector('.tabbtn.active')?.dataset.tab;
+  if(activeTab==='register')renderRegister();
+  else if(activeTab==='clientdashboard')renderClientDashboard();
  }
 }
 function latestResponsibilityCell(r){
@@ -4727,6 +4729,13 @@ function validCmiCalculationRecords(records){
 }
 
 function renderClientDashboard(){
+ // Reconcile against authoritative Latest Responsibility overrides before displaying Dashboard 01.
+ if(!latestResponsibilityLoaded){
+  if(!latestResponsibilityLoading)void loadLatestResponsibilities();
+  const overviewBody=document.getElementById('clientOverviewRows');
+  if(overviewBody)overviewBody.innerHTML='<tr><td colspan="3">Loading latest CMI responsibilities for reconciliation...</td></tr>';
+  return;
+ }
  renderPreviouslyApprovedCmis();
  renderPreviouslySubmittedCmis();
  renderCmiTeamCommercialPanels();
