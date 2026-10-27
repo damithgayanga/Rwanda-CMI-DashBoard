@@ -4803,7 +4803,12 @@ function renderClientDashboard(){
  }
  // Keep the established 614-type unique CMI total independent of register-row duplication.
  // An uncategorised CMI is reported as an exception, never silently allocated.
- const overviewDiscrepancy=summary.total-(updatedOverviewGroups.agreed+updatedOverviewGroups.submitted+updatedOverviewGroups.team);
+ const overviewCategorisedTotal=updatedOverviewGroups.agreed+updatedOverviewGroups.submitted+updatedOverviewGroups.team;
+ const overviewDiscrepancy=summary.total-overviewCategorisedTotal;
+ // All three categories are mutually exclusive after latest-responsibility
+ // N/A exclusions and unique CMI priority assignment.
+ // The displayed total must use the very same categorised population.
+ summary.total=overviewCategorisedTotal;
  if(overviewDiscrepancy!==0)console.warn('Overview category reconciliation exception',overviewDiscrepancy,updatedOverviewGroups.unclassifiedKeys);
 
  const teamExpanded=body.dataset.teamExpanded!=='false';
