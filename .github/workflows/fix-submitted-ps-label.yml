@@ -1,0 +1,39 @@
+name: Correct Submitted PS Others category label
+on:
+  push:
+    paths:
+      - '.github/workflows/fix-submitted-ps-label.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Correct Updated Register Category label
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          text=p.read_text(encoding='utf-8')
+          old="'Submitted PS- Others'"
+          new="'Submitted - PS - Others'"
+          assert text.count(old)>=2, f'Expected label in options and mapping, found {text.count(old)}'
+          text=text.replace(old,new)
+          # Older records and the previously-deployed intermediate spelling
+          # must both resolve to the canonical label.
+          old_key="'submitted ps- others':'Submitted - PS - Others'"
+          assert old_key in text
+          text=text.replace(old_key,"'submitted ps- others':'Submitted - PS - Others','submitted - ps - others':'Submitted - PS - Others'")
+          assert "'submitted - ps':'Submitted - PS - Others'" in text
+          p.write_text(text,encoding='utf-8')
+          PY
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "Correct Submitted - PS - Others Updated Register Category"
+          git push
