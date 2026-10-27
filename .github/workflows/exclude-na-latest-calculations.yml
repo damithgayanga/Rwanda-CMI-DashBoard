@@ -1,4 +1,4 @@
-name: Exclude N/A latest responsibility from CMI calculations
+name: Exclude genuine duplicate CMI register rows from dashboard calculations
 on:
   push:
     paths: ['.github/workflows/exclude-na-latest-calculations.yml']
@@ -10,60 +10,38 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Apply global calculation exclusion
+      - name: Exclude duplicated records before counting or value calculations
         run: |
           python3 - <<'PY'
           from pathlib import Path
-          import re
           p=Path('index.html')
           s=p.read_text(encoding='utf-8')
-          helper="""
-          // Exclude non-existent duplicate records from calculations, not from the register.
-          function validCmiCalculationRecords(records){
-           return (records||[]).filter(r=>{
-            const raw=r.cmiDeliveryResponsibilityLatest??r.cmi_delivery_responsibility_latest??
-             r.deliveryResponsibilityLatest??r.latestDeliveryResponsibility??
-             r.cmiResponsibilityLatest;
-            const latest=typeof cmiDeliveryResponsibilityLatestValue==='function'
-             ?cmiDeliveryResponsibilityLatestValue(r):raw;
-            return String(latest??'').trim().toUpperCase()!=='N/A';
-           });
-          }
-          """
-          if 'function validCmiCalculationRecords(records)' not in s:
-           anchor='function renderClientDashboard(){'
-           assert s.count(anchor)==1, 'dashboard anchor not found'
-           s=s.replace(anchor,helper+'\n'+anchor,1)
-          names=['clientOverviewSummary','overviewUpdatedCategoryReconciliation','overviewTeamStatusBreakdown']
-          for name in names:
-           pat=r'(function\s+'+name+r'\s*\(\s*records\s*\)\s*\{)'
-           matches=list(re.finditer(pat,s))
-           assert len(matches)==1,(name,len(matches))
-           m=matches[0]
-           insert='\n records=validCmiCalculationRecords(records);'
-           if s[m.end():m.end()+len(insert)]!=insert:
-            s=s[:m.end()]+insert+s[m.end():]
-          # Render-time calculations must also receive filtered records, leaving register intact.
-          for name in ['renderClientDashboard']:
-           m=re.search(r'function\s+'+name+r'\s*\(\s*\)\s*\{',s)
-           assert m
-           depth=1;i=m.end()
-           while i<len(s) and depth:
-            if s[i]=='{':depth+=1
-            elif s[i]=='}':depth-=1
-            i+=1
-           block=s[m.end():i-1]
-           block=block.replace('state.records','validCmiCalculationRecords(state.records)')
-           s=s[:m.end()]+block+s[i-1:]
-          assert 'records=validCmiCalculationRecords(records)' in s
+          start=s.index('function validCmiCalculationRecords(records){')
+          end=s.index('\nfunction renderClientDashboard(){',start)
+          fix="""function validCmiCalculationRecords(records){
+ return (records||[]).filter(r=>{
+  // Updated Register Category is authoritative for genuine duplicates.
+  if(String(registerCategoryValue(r)||'').trim().toLowerCase()==='duplicated - n/a')return false;
+  // Preserve the separately agreed Latest Responsibility N/A exclusion.
+  const latest=String(latestResponsibilityValue(r)||'').trim().toLowerCase();
+  return latest!=='n/a' && latest!=='duplicated - n/a';
+ });
+}
+"""
+          s=s[:start]+fix+s[end:]
+          # A single valid CMI number may have multiple legitimate scope rows.
+          # The three category sets are already deduplicated by normalized number
+          # with team > submitted > agreed priority; keep those rules intact.
+          assert 'summary.total=overviewCategorisedTotal;' in s
+          assert s.count("if(String(registerCategoryValue(r)||'').trim().toLowerCase()==='duplicated - n/a')return false;")==1
           p.write_text(s,encoding='utf-8')
-          print('Exclusion rule injected into',names,'and executive render calculations')
+          print('Exclusion now uses the actual Updated Register Category and Latest Responsibility.')
           PY
-      - name: Commit patched dashboard
+      - name: Commit fix
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add index.html
           if git diff --cached --quiet; then exit 0; fi
-          git commit -m "Exclude N/A latest responsibility from CMI dashboard calculations"
+          git commit -m "Exclude Duplicated - N/A rows from all Overview calculations"
           git push
