@@ -4581,6 +4581,7 @@ function cmiTeamAgreedRecord(r){
  return r.mainCategory==='Agreed - CMI Team'||(cmiTeamScopeRecord(r)&&known&&(r.mainCategory==='Agreed'||String(registerCategoryValue(r)).trim()==='Agreed'||r.status==='Agreed'));
 }
 function clientOverviewSummary(records){
+ records=validCmiCalculationRecords(records);
  const groups=new Map();
  for(const r of records||[]){
   const key=normCmi(r.cmiKey||r.cmiNo||'');if(!key)continue;
@@ -4646,6 +4647,7 @@ function clientOverviewSummary(records){
 // One Overview assignment per unique CMI number, including partial submissions.
 // Priority resolves mixed scopes: team work, then agreed, then submitted.
 function overviewUpdatedCategoryReconciliation(records){
+ records=validCmiCalculationRecords(records);
  const byCmi=new Map();
  for(const r of records||[]){
   const key=normCmi(r.cmiKey||r.cmiNo||'');
@@ -4673,6 +4675,7 @@ function overviewUpdatedCategoryReconciliation(records){
 
 // Reconcile the four CMI Team Overview stage counts with the parent unique-CMI count.
 function overviewTeamStatusBreakdown(records){
+ records=validCmiCalculationRecords(records);
  const groups=new Map();
  for(const r of records||[]){
   const key=normCmi(r.cmiKey||r.cmiNo||'');
@@ -4711,20 +4714,33 @@ function overviewBalanceOriginalCategorySplit(records){
  return {balance:balanceKeys.size,zeroBalance:includedKeys.size,otherBalance:balanceKeys.size-includedKeys.size};
 }
 
+
+// Exclude non-existent duplicate records from calculations, not from the register.
+function validCmiCalculationRecords(records){
+ return (records||[]).filter(r=>{
+  const raw=r.cmiDeliveryResponsibilityLatest??r.cmi_delivery_responsibility_latest??
+   r.deliveryResponsibilityLatest??r.latestDeliveryResponsibility??
+   r.cmiResponsibilityLatest;
+  const latest=typeof cmiDeliveryResponsibilityLatestValue==='function'
+   ?cmiDeliveryResponsibilityLatestValue(r):raw;
+  return String(latest??'').trim().toUpperCase()!=='N/A';
+ });
+}
+
 function renderClientDashboard(){
  renderPreviouslyApprovedCmis();
  renderPreviouslySubmittedCmis();
  renderCmiTeamCommercialPanels();
  renderClientProcessStages();
  const body=document.getElementById('clientOverviewRows');if(!body)return;
- const summary=clientOverviewSummary(state.records);
+ const summary=clientOverviewSummary(validCmiCalculationRecords(state.records));
 
- const updatedOverviewGroups=overviewUpdatedCategoryReconciliation(state.records);
+ const updatedOverviewGroups=overviewUpdatedCategoryReconciliation(validCmiCalculationRecords(state.records));
 
  // Dashboard 01: pre-mobilisation agreed CMIs must have agreed status.
  // Deduplicate by normalized CMI number (including multiple register rows).
  const agreedOthersBeforeMobilisation=new Set();
- for(const record of state.records||[]){
+ for(const record of validCmiCalculationRecords(state.records)||[]){
   if(String(latestResponsibilityValue(record)||'').trim()!=='Others')continue;
   if(String(cmiCurrentStatusValue(record)||'').trim().toLowerCase()!=='agreed')continue;
   const key=normCmi(record.cmiKey||record.cmiNo||'');
@@ -4734,7 +4750,7 @@ function renderClientDashboard(){
 
  // Dashboard 01: unique CMIs submitted by Others but not yet agreed.
  const submittedOthersBeforeMobilisation=new Set();
- for(const record of state.records||[]){
+ for(const record of validCmiCalculationRecords(state.records)||[]){
   if(String(latestResponsibilityValue(record)||'').trim()!=='Others')continue;
   if(String(cmiCurrentStatusValue(record)||'').trim().toLowerCase()!=='submitted')continue;
   const key=normCmi(record.cmiKey||record.cmiNo||'');
@@ -4745,7 +4761,7 @@ function renderClientDashboard(){
  // Dashboard 01: all CMIs assigned to the CMI Team, including reopened items.
  // Count each normalized CMI number only once.
  const requiredCmiTeamKeys=new Set();
- for(const record of state.records||[]){
+ for(const record of validCmiCalculationRecords(state.records)||[]){
   const responsibility=String(latestResponsibilityValue(record)||'').trim();
   if(responsibility!=='CMI Team'&&responsibility!=='ReOpen - CMI Team')continue;
   const key=normCmi(record.cmiKey||record.cmiNo||'');
@@ -4766,9 +4782,9 @@ function renderClientDashboard(){
 
 
 
- const updatedTeamStages=overviewTeamStatusBreakdown(state.records);
+ const updatedTeamStages=overviewTeamStatusBreakdown(validCmiCalculationRecords(state.records));
 
- const balanceOriginalSplit=overviewBalanceOriginalCategorySplit(state.records);
+ const balanceOriginalSplit=overviewBalanceOriginalCategorySplit(validCmiCalculationRecords(state.records));
  updatedTeamStages.balance=balanceOriginalSplit.balance;
  summary.zeroBalance=balanceOriginalSplit.zeroBalance;
  summary.otherBalance=balanceOriginalSplit.otherBalance;
