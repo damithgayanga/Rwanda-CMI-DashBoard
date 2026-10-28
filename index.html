@@ -3296,6 +3296,8 @@ async function saveLatestResponsibility(select){
   },{onConflict:'cmi_key'}).select('latest_responsibility').single();
   if(error)throw error;
   latestResponsibilityValues.set(id,data.latest_responsibility);
+  renderClientDashboard();
+  liveCmiBroadcast('saved');
  }catch(e){alert('Unable to update Latest Delivery Responsibility: '+(e.message||String(e)))}
  finally{renderRegister()}
 }
