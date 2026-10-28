@@ -4790,6 +4790,20 @@ function renderClientDashboard(){
  for(const stage of summary.stages){
   if(Object.prototype.hasOwnProperty.call(updatedTeamStages,stage.id))stage.value=updatedTeamStages[stage.id];
  }
+ // CMI Team stage values: sum each eligible register row, including duplicates.
+ let submittedTeamAmount=0,agreedTeamAmount=0;
+ for(const record of validCmiCalculationRecords(state.records)){
+  const responsibility=String(latestResponsibilityValue(record)||'').trim();
+  if(responsibility!=='CMI Team'&&responsibility!=='ReOpen - CMI Team')continue;
+  const status=String(cmiCurrentStatusValue(record)||'').trim().toLowerCase();
+  if(status==='submitted')submittedTeamAmount+=Number(record.submittedValue)||0;
+  else if(status==='agreed')agreedTeamAmount+=Number(record.agreedAmount)||0;
+ }
+ for(const stage of summary.stages){
+  if(stage.id==='submitted')stage.amount=submittedTeamAmount;
+  else if(stage.id==='agreed')stage.amount=agreedTeamAmount;
+ }
+
  const teamStageSum=summary.stages.reduce((sum,stage)=>sum+stage.value,0);
  if(teamStageSum!==updatedOverviewGroups.team)console.warn('CMI Team Overview status reconciliation mismatch', {teamStageSum,teamTotal:updatedOverviewGroups.team,unmatched:updatedTeamStages.unmatched});
 
