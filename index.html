@@ -1893,6 +1893,8 @@
         await loadDocumentReadinessFromSupabase();
         if(document.getElementById('tab-readiness')?.classList.contains('active'))renderReadiness();
         if(document.getElementById('tab-dashboard')?.classList.contains('active'))renderDashboardOperationalTables();
+        if(document.getElementById('tab-register')?.classList.contains('active'))renderRegister();
+        if(document.getElementById('tab-clientdashboard')?.classList.contains('active'))renderClientProcessStages();
       })
       .subscribe(status=>{
         if(status==='CHANNEL_ERROR'||status==='TIMED_OUT')console.error('Document readiness realtime subscription status:',status);
