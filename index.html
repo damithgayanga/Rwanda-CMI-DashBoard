@@ -979,6 +979,11 @@
   let rfiInformationRows = [];
   let rfiEditingId = null;
   let sharedStateLoaded = false;
+  let liveCmiChannel=null, liveCmiRefreshTimer=null, liveCmiSaving=false, liveCmiRefreshing=false;
+  function liveCmiBroadcast(event){ if(liveCmiChannel)void liveCmiChannel.send({type:'broadcast',event,payload:{at:new Date().toISOString()}}).catch(e=>console.warn(e)); }
+  function liveCmiRefresh(){clearTimeout(liveCmiRefreshTimer);liveCmiRefreshTimer=setTimeout(async()=>{if(liveCmiSaving||sharedStateSyncTimer||liveCmiRefreshing)return;liveCmiRefreshing=true;try{await loadSharedDashboardState();latestResponsibilityLoaded=false;await loadLatestResponsibilities();renderAll()}catch(e){console.error(e)}finally{liveCmiRefreshing=false}},150)}
+  function startLiveCmiSync(){if(liveCmiChannel)return;liveCmiChannel=supabaseClient.channel('rwanda-cmi-dashboard-sync').on('broadcast',{event:'saved'},liveCmiRefresh).subscribe();setInterval(()=>{if(!document.hidden)liveCmiRefresh()},15000);window.addEventListener('focus',liveCmiRefresh);}
+
 
   function compactSharedState() {
     return {
