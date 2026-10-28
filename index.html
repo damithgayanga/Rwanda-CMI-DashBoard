@@ -2972,10 +2972,16 @@ function assessmentCommencedFromHandoverKpiHtml(){
  return `<div class="card kpi kpi-stage"><div class="label">CMI Assessment Commenced</div><div class="value">${commenced.length}<span class="value-context">out of ${handed.length}</span></div>${measurementCompletedPathBreakdown(commenced)}${submissionBreakdownHtml(commenced)}</div>`;
 }
 function internalTeamCategoryBreakdown(items){
- const team=items,ps=team.filter(r=>String(registerCategoryValue(r)||'').trim()==='Provisional Sum - To be Submitted');
- const isPs=r=>String(registerCategoryValue(r)||'').trim()==='Provisional Sum - To be Submitted';
- const initial=team.filter(r=>!isPs(r)&&r.initialEstimate!==null&&r.initialEstimate!==undefined&&r.initialEstimate!==''&&Number.isFinite(Number(r.initialEstimate)));
- return [{label:'Initial Review Completed',value:initial.length},{label:'Provisional Sum CMIs',value:ps.length},{label:'Other CMIs',value:team.length-initial.length-ps.length}];
+ // Items are already scoped to CMI Team / ReOpen - CMI Team by latest responsibility.
+ // Each register row counts independently, including duplicated CMI numbers.
+ const provisional=items.filter(r=>String(originalRegisterCategoryValue(r)||'').trim().toLowerCase()==='c/o procurement');
+ const provisionalIds=new Set(provisional.map(r=>r.id));
+ const remaining=items.filter(r=>!provisionalIds.has(r.id));
+ const initial=remaining.filter(r=>{
+  const v=r.initialEstimate;
+  return v===null||v===undefined||String(v).trim()===''||!Number.isFinite(Number(String(v).replace(/,/g,'')));
+ });
+ return [{label:'Initial Review Completed',value:initial.length},{label:'Provisional Sum CMIs',value:provisional.length},{label:'Other CMIs',value:remaining.length-initial.length}];
 }
 function internalTeamCategoryBreakdownHtml(items){
  const colourClasses=['initial','provisional','unallocated'];
