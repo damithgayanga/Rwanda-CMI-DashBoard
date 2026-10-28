@@ -3206,10 +3206,26 @@ function editCmiCurrentStatus(span){
  select.value=cmiCurrentStatusValue(r);
  select.addEventListener('change',()=>{
   const value=select.value;
+  const previousStatus=cmiCurrentStatusValue(r);
   const rule=cmiCurrentStatusRule(r);
   const submittedByTeam=latestResponsibilityValue(r)==='CMI Team'&&activityComplete(findActivityByIdOrName(r,'act-submit-dgj','submission to dgj'));
   if(rule==='On Progress'||(submittedByTeam&&!['Submitted','Agreed'].includes(value))){
    alert('This CMI status is controlled by Delivery Plan progress.');renderRegister();return;
+  }
+  // Explicitly collect the Agreed Amount before Submitted can become Agreed.
+  // An agreed amount of zero is valid; an empty or invalid amount is not.
+  if(previousStatus==='Submitted'&&value==='Agreed'){
+   const existing=r.agreedAmount===null||r.agreedAmount===undefined?'':String(r.agreedAmount);
+   const entered=window.prompt('Enter the Agreed Amount (USD) for CMI '+(r.cmiNo||r.cmiKey||'')+' before changing its status to Agreed:',existing);
+   if(entered===null){renderRegister();return;}
+   const clean=entered.trim().replace(/,/g,'');
+   const amount=Number(clean);
+   if(!clean||!Number.isFinite(amount)){
+    alert('A valid Agreed Amount is mandatory. The CMI status has not been changed.');
+    renderRegister();return;
+   }
+   r.agreedAmount=amount;
+   r.masterValuesUpdatedAt=new Date().toISOString();
   }
   r.cmiCurrentStatus=value;
   r.cmiCurrentStatusUpdatedAt=new Date().toISOString();
