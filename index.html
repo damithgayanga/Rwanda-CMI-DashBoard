@@ -936,6 +936,7 @@
     startDeliveryRealtimeSubscription();
     startReadinessRealtimeSubscription();
     startRfiRealtimeSubscription();
+    startLiveCmiSync();
 
     // Every authenticated opening starts at today's Data Date and with the
     // first two programme WBS levels visible. User changes remain session-only.
@@ -1140,6 +1141,7 @@
   }
 
   async function saveSharedDashboardState(skipRemoteMerge=false) {
+    liveCmiSaving=true;
     try{
       if(!canManageDelivery())return;
       if(!skipRemoteMerge){
@@ -1153,12 +1155,14 @@
       const payload=compactSharedState();
       const {error}=await supabaseClient.rpc('dashboard_save_shared_state',{p_payload:payload});
       if(error)console.error('Unable to update shared dashboard state:',error);
+      else liveCmiBroadcast('saved');
     }catch(e){console.error('Shared dashboard state save failed:',e)}
+    finally{liveCmiSaving=false}
   }
 
   function queueSharedStateSync() {
     if(sharedStateSyncTimer)clearTimeout(sharedStateSyncTimer);
-    sharedStateSyncTimer=setTimeout(()=>{saveSharedDashboardState()},250);
+    sharedStateSyncTimer=setTimeout(()=>{sharedStateSyncTimer=null;void saveSharedDashboardState()},250);
   }
 
   const DELIVERY_ACTIVITY_TABLE = 'cmi_delivery_activities';
