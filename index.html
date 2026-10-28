@@ -2874,51 +2874,41 @@ function programmeWeekRanges(){
 function activityNamePart(activityId){
  return activityId==='act-measure'?'measurement works':activityId==='act-clearance'?'technical and commercial clearance':'submission to dgj';
 }
-function plannedActivityCountForRange(activityId,start,finish,processingPath=null){
+// The weekly report uses the same stable Delivery Plan record identity as its progress tracker.
+// Processing Path comes from the CMI Register and is keyed to each register row (including duplicates).
+function weeklyActivityEligible(r,processingPath=null){
+ if(!deliveryPlanApplicable(r)||!isInDeliveryPlanRecord(r))return false;
+ if(!processingPath)return true;
+ return (processingPathValues.get(deliveryActivityKey(r))||'Start from Off-Site')===processingPath;
+}
+function weeklyActivityRecord(r,activityId){
+ return findActivityByIdOrName(r,activityId,activityNamePart(activityId));
+}
+function weeklyActivityCount(activityId,mode,start,finish,processingPath=null){
  const seen=new Set();
  state.records.forEach(r=>{
-  // Weekly Activity Plan must be a direct view of the current Delivery Plan only.
-  if(!deliveryPlanApplicable(r)||!isInDeliveryPlanRecord(r))return;
-  if(processingPath&&(processingPathValues.get(deliveryActivityKey(r))||'Start from Off-Site')!==processingPath)return;
-  const a=findActivityByIdOrName(r,activityId,activityNamePart(activityId));
-  if(!a||!a.targetDate||a.targetDate<start||a.targetDate>finish)return;
+  if(!weeklyActivityEligible(r,processingPath))return;
+  const a=weeklyActivityRecord(r,activityId);
+  if(!a)return;
+  // A finish date without confirmed 100% progress is not a completed activity.
+  if(mode==='actual'&&!activityComplete(a))return;
+  const date=mode==='actual'?a.actualFinishDate:a.targetDate;
+  if(!date||date<start||(finish&&date>finish))return;
   seen.add(deliveryRecordIdentity(r));
  });
  return seen.size;
+}
+function plannedActivityCountForRange(activityId,start,finish,processingPath=null){
+ return weeklyActivityCount(activityId,'planned',start,finish,processingPath);
 }
 function cumulativePlannedActivityCount(activityId,throughDate,processingPath=null){
- const seen=new Set();
- state.records.forEach(r=>{
-  // Cumulative plan uses the same Delivery Plan population as the KPI card.
-  if(!deliveryPlanApplicable(r)||!isInDeliveryPlanRecord(r))return;
-  if(processingPath&&(processingPathValues.get(deliveryActivityKey(r))||'Start from Off-Site')!==processingPath)return;
-  const a=findActivityByIdOrName(r,activityId,activityNamePart(activityId));
-  if(!a||!a.targetDate||a.targetDate>throughDate)return;
-  seen.add(deliveryRecordIdentity(r));
- });
- return seen.size;
+ return weeklyActivityCount(activityId,'planned','0000-01-01',throughDate,processingPath);
 }
 function actualActivityCountForRange(activityId,start,finish,processingPath=null){
- const seen=new Set();
- state.records.forEach(r=>{
-  if(!isInDeliveryPlanRecord(r))return;
-  if(processingPath&&(processingPathValues.get(deliveryActivityKey(r))||'Start from Off-Site')!==processingPath)return;
-  const a=findActivityByIdOrName(r,activityId,activityNamePart(activityId));
-  if(!a||!a.actualFinishDate||a.actualFinishDate<start||a.actualFinishDate>finish)return;
-  seen.add(deliveryRecordIdentity(r));
- });
- return seen.size;
+ return weeklyActivityCount(activityId,'actual',start,finish,processingPath);
 }
 function cumulativeActualActivityCount(activityId,throughDate,processingPath=null){
- const seen=new Set();
- state.records.forEach(r=>{
-  if(!isInDeliveryPlanRecord(r))return;
-  if(processingPath&&(processingPathValues.get(deliveryActivityKey(r))||'Start from Off-Site')!==processingPath)return;
-  const a=findActivityByIdOrName(r,activityId,activityNamePart(activityId));
-  if(!a||!a.actualFinishDate||a.actualFinishDate>throughDate)return;
-  seen.add(deliveryRecordIdentity(r));
- });
- return seen.size;
+ return weeklyActivityCount(activityId,'actual','0000-01-01',throughDate,processingPath);
 }
 function weeklyActivityPlanHtml(){
  if(!processingPathLoaded&&!processingPathLoading)void loadProcessingPaths();
