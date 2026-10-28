@@ -3101,11 +3101,14 @@ function renderBars(){
   {label:'To Be Submitted',value:statusCounts.pending,color:'#a5b2bd'}
  ],{centerValue:latestResponsibilityLoaded?String(teamRecords.length):'…',centerLabel:latestResponsibilityLoaded?'CMIs allocated to CMI Team':'Loading allocation data'});
  const known=v=>v!==null&&v!==undefined&&v!==''&&Number.isFinite(Number(v));
- const agreedSubmitted=sum(agreed.map(r=>r.submittedValue)),agreedAmount=sum(agreed.map(r=>r.agreedAmount));
+ // Compare both financial amounts for the SAME CMIs whose current status is Agreed.
+ // Count each eligible register row for value summation, including separately valued duplicate rows.
+ const agreedCurrentRecords=validCmiCalculationRecords(all).filter(r=>String(cmiCurrentStatusValue(r)||'').trim().toLowerCase()==='agreed');
+ const agreedSubmitted=sum(agreedCurrentRecords.map(r=>r.submittedValue)),agreedAmount=sum(agreedCurrentRecords.map(r=>r.agreedAmount));
  renderDonut('agreedComparisonPie',[
   {label:'Submitted Value',value:agreedSubmitted,color:'#2563a8'},
   {label:'Agreed Amount',value:agreedAmount,color:'#18835d'}
- ],{valueType:'money',useMagnitude:true,centerValue:String(agreed.length),centerLabel:'Agreed work items'});
+ ],{valueType:'money',useMagnitude:true,centerValue:String(agreedCurrentRecords.length),centerLabel:'Agreed work items'});
  const portfolio=internalPortfolioValueSplit(all,state.meta);
  renderDonut('portfolioValuePie',portfolio.slices,{valueType:'money',useMagnitude:true,centerValue:portfolioMoney(portfolio.netTotal),centerLabel:'Net portfolio total'});
  const unallocated=document.getElementById('unallocatedPortfolioAllowanceInput'),ps=document.getElementById('provisionalPortfolioAllowanceInput');if(unallocated)unallocated.value=portfolio.otherPlaceholder;if(ps)ps.value=portfolio.provisionalPlaceholder;
