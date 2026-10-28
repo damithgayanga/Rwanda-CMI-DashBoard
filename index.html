@@ -2027,7 +2027,7 @@
  <div class="grid dashboard-pie-grid">
   <div class="card pie-card"><h3>CMI Status Split</h3><div id="statusPie"></div></div>
   <div class="card pie-card"><h3>CMI Team — Work Portfolio Breakdown</h3><div id="priorityPie"></div></div>
-  <div class="card pie-card"><h3>Agreed CMIs — Submitted vs Agreed Value</h3><div id="agreedComparisonPie"></div></div>
+  <div class="card pie-card"><h3>CMI Portfolio — Value by Current Status</h3><div id="agreedComparisonPie"></div><div class="assumption-box"><div class="assumption-title">Additional allowance for Other CMIs</div><div class="assumption-grid"><div class="field"><label>Other CMIs — additional value ($)</label><input id="statusOtherAllowanceInput" type="number" step="1000"></div><button class="btn primary" type="button" onclick="saveStatusOtherAllowance()">Save</button></div><div class="assumption-note">Added to the unvalued / estimated Other CMIs category. Estimates use Off-Site Estimate first, then Initial Estimate.</div></div></div>
   <div class="card pie-card"><h3>Total Portfolio Value Split</h3><div id="portfolioValuePie"></div>
    <div class="assumption-box">
     <div class="assumption-title">Editable value assumptions</div>
@@ -3100,20 +3100,45 @@ function renderBars(){
   {label:'In Progress',value:statusCounts.progress,color:'#23adc8'},
   {label:'To Be Submitted',value:statusCounts.pending,color:'#a5b2bd'}
  ],{centerValue:latestResponsibilityLoaded?String(teamRecords.length):'…',centerLabel:latestResponsibilityLoaded?'CMIs allocated to CMI Team':'Loading allocation data'});
- const known=v=>v!==null&&v!==undefined&&v!==''&&Number.isFinite(Number(v));
- // Compare both financial amounts for the SAME CMIs whose current status is Agreed.
- // Count each eligible register row for value summation, including separately valued duplicate rows.
- const agreedCurrentRecords=validCmiCalculationRecords(all).filter(r=>String(cmiCurrentStatusValue(r)||'').trim().toLowerCase()==='agreed');
- const agreedSubmitted=sum(agreedCurrentRecords.map(r=>r.submittedValue)),agreedAmount=sum(agreedCurrentRecords.map(r=>r.agreedAmount));
+ const known=v=>v!==null&&v!==undefined&&String(v).trim()!==''&&Number.isFinite(Number(v));
+ const amount=v=>known(v)?Number(v):0;
+ const statusValues={agreed:0,submitted:0,progress:0,pending:0};
+ // Current Status determines which financial field is authoritative for each eligible register row.
+ validCmiCalculationRecords(all).forEach(r=>{
+  const status=String(cmiCurrentStatusValue(r)||'').trim().toLowerCase();
+  if(status==='agreed')statusValues.agreed+=amount(r.agreedAmount);
+  else if(status==='submitted')statusValues.submitted+=amount(r.submittedValue);
+  else {
+   const estimate=known(r.offsiteEstimate)?amount(r.offsiteEstimate):amount(r.initialEstimate);
+   if(status==='on progress'||status==='in progress')statusValues.progress+=estimate;
+   else statusValues.pending+=estimate;
+  }
+ });
+ const otherAllowance=Number(state.meta.statusOtherAllowance)||0;
  renderDonut('agreedComparisonPie',[
-  {label:'Submitted Value',value:agreedSubmitted,color:'#2563a8'},
-  {label:'Agreed Amount',value:agreedAmount,color:'#18835d'}
- ],{valueType:'money',useMagnitude:true,centerValue:String(agreedCurrentRecords.length),centerLabel:'Agreed work items'});
+  {label:'Agreed — Agreed Amount',value:statusValues.agreed,color:'#18835d'},
+  {label:'Submitted — Submitted Value',value:statusValues.submitted,color:'#2563a8'},
+  {label:'In Progress — Estimate',value:statusValues.progress,color:'#23adc8'},
+  {label:'To Be Submitted — Estimate',value:statusValues.pending,color:'#bc7410'},
+  {label:'Other CMIs — Additional Allowance',value:otherAllowance,color:'#6b4cb5'}
+ ],{valueType:'money',useMagnitude:true,centerValue:portfolioMoney(Object.values(statusValues).reduce((a,b)=>a+b,0)+otherAllowance),centerLabel:'Total portfolio value'});
+ const statusAllowanceInput=document.getElementById('statusOtherAllowanceInput');
+ if(statusAllowanceInput&&document.activeElement!==statusAllowanceInput)statusAllowanceInput.value=otherAllowance;
  const portfolio=internalPortfolioValueSplit(all,state.meta);
  renderDonut('portfolioValuePie',portfolio.slices,{valueType:'money',useMagnitude:true,centerValue:portfolioMoney(portfolio.netTotal),centerLabel:'Net portfolio total'});
  const unallocated=document.getElementById('unallocatedPortfolioAllowanceInput'),ps=document.getElementById('provisionalPortfolioAllowanceInput');if(unallocated)unallocated.value=portfolio.otherPlaceholder;if(ps)ps.value=portfolio.provisionalPlaceholder;
 }
 
+function saveStatusOtherAllowance(){
+ if(!canManageDelivery())return;
+ const input=document.getElementById('statusOtherAllowanceInput');
+ if(!input)return;
+ const value=Number(input.value);
+ if(!Number.isFinite(value)){alert('Enter a valid numeric allowance.');return;}
+ state.meta.statusOtherAllowance=value;
+ persistStateOnly();
+ renderBars();
+}
 function savePortfolioAssumptions(){
  const unallocated=document.getElementById('unallocatedPortfolioAllowanceInput'),ps=document.getElementById('provisionalPortfolioAllowanceInput');if(!unallocated||!ps)return;
  const u=Number(unallocated.value),p=Number(ps.value);
