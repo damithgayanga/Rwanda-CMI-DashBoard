@@ -4613,11 +4613,19 @@ function clientProcessStageCounts(records,readiness){
  }
  const sets=Array.from({length:6},()=>new Set());
  const paths=[new Map(),new Map()];
+ // Initiated follows CMI Readiness for Measurement (Handed Over), then applies
+ // Dashboard 01's latest-responsibility exclusion and unique-CMI team priority.
+ const eligibleRecordIds=new Set();
+ for(const rows of teamRowsByKey.values())for(const r of rows)eligibleRecordIds.add(String(r.id||''));
+ for(const item of documentReadinessItems()){
+  if(item.status!=='Handed Over'||!item.actualDate||!eligibleRecordIds.has(String(item.cmiRecordId||'')))continue;
+  const key=normCmi(item.r.cmiKey||item.r.cmiNo||'');
+  if(key&&allocation.get(key)==='team')sets[0].add(key);
+ }
  for(const [key,rows] of teamRowsByKey){
   for(const r of rows){
-   const a=dashboardCmiActivities(r),handover=readiness.get(String(r.id||''));
+   const a=dashboardCmiActivities(r);
    const path=processingPathValues.get(deliveryActivityKey(r))==='On-Site Only'?'On-Site Only':'Start from Off-Site';
-   if(handover&&handover.actual_given_date)sets[0].add(key);
    if(activityStarted(a.measure)){
     sets[1].add(key);
     // If duplicates differ, On-Site Only takes precedence for the one counted CMI.
