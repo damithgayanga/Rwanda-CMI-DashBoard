@@ -3127,12 +3127,11 @@ function renderBars(){
  const statusAllowanceInput=document.getElementById('statusOtherAllowanceInput');
  if(statusAllowanceInput&&document.activeElement!==statusAllowanceInput)statusAllowanceInput.value=otherAllowance;
  const agreedRows=validCmiCalculationRecords(all).filter(r=>String(cmiCurrentStatusValue(r)||'').trim().toLowerCase()==='agreed');
- const amount=v=>v!==null&&v!==undefined&&String(v).trim()!==''&&Number.isFinite(Number(v))?Number(v):0;
- const submitted=agreedRows.reduce((t,r)=>t+amount(r.submittedValue),0);
+ const submittedTotal=agreedRows.reduce((t,r)=>t+amount(r.submittedValue),0);
  const agreedValue=agreedRows.reduce((t,r)=>t+amount(r.agreedAmount),0);
- renderDonut('portfolioValuePie',[{label:'Submitted Amount',value:submitted,color:'#2563a8'},{label:'Agreed Amount',value:agreedValue,color:'#18835d'}],{valueType:'money',useMagnitude:true,centerValue:String(agreedRows.length),centerLabel:'Agreed CMI records'});
+ renderDonut('portfolioValuePie',[{label:'Submitted Amount',value:submittedTotal,color:'#2563a8'},{label:'Agreed Amount',value:agreedValue,color:'#18835d'}],{valueType:'money',useMagnitude:true,centerValue:String(agreedRows.length),centerLabel:'Agreed CMI records'});
  const el=document.getElementById('agreedVsSubmittedSummary');
- if(el){const money=n=>(n<0?'-':'')+'$'+Math.abs(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});el.innerHTML='<div class="metric-line"><span>Submitted Amount</span><b>'+money(submitted)+'</b></div><div class="metric-line"><span>Agreed Amount</span><b>'+money(agreedValue)+'</b></div><div class="metric-line"><span>Difference (Agreed - Submitted)</span><b>'+money(agreedValue-submitted)+'</b></div><div class="metric-line"><span>Agreement Percentage</span><b>'+(submitted===0?'N/A':(agreedValue/submitted*100).toFixed(2)+'%')+'</b></div>';}
+ if(el){const money=n=>(n<0?'-':'')+'$'+Math.abs(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});el.innerHTML='<div class="metric-line"><span>Submitted Amount</span><b>'+money(submittedTotal)+'</b></div><div class="metric-line"><span>Agreed Amount</span><b>'+money(agreedValue)+'</b></div><div class="metric-line"><span>Difference (Agreed - Submitted)</span><b>'+money(agreedValue-submittedTotal)+'</b></div><div class="metric-line"><span>Agreement Percentage</span><b>'+(submittedTotal===0?'N/A':(agreedValue/submittedTotal*100).toFixed(2)+'%')+'</b></div>';}
 
 }
 
