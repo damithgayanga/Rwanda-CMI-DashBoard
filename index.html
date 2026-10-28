@@ -982,7 +982,7 @@
   let sharedStateLoaded = false;
   let liveCmiChannel=null, liveCmiRefreshTimer=null, liveCmiSaving=false, liveCmiRefreshing=false;
   function liveCmiBroadcast(event){ if(liveCmiChannel)void liveCmiChannel.send({type:'broadcast',event,payload:{at:new Date().toISOString()}}).catch(e=>console.warn(e)); }
-  function liveCmiRefresh(){clearTimeout(liveCmiRefreshTimer);liveCmiRefreshTimer=setTimeout(async()=>{if(liveCmiSaving||sharedStateSyncTimer||liveCmiRefreshing)return;liveCmiRefreshing=true;try{await loadSharedDashboardState();latestResponsibilityLoaded=false;await loadLatestResponsibilities();renderAll()}catch(e){console.error(e)}finally{liveCmiRefreshing=false}},150)}
+  function liveCmiRefresh(){clearTimeout(liveCmiRefreshTimer);liveCmiRefreshTimer=setTimeout(async()=>{if(liveCmiSaving||sharedStateSyncTimer||liveCmiRefreshing)return;liveCmiRefreshing=true;try{await loadSharedDashboardState();latestResponsibilityLoaded=false;await loadLatestResponsibilities();await loadDeliveryActivitiesFromSupabase();renderAll()}catch(e){console.error(e)}finally{liveCmiRefreshing=false}},150)}
   function startLiveCmiSync(){if(liveCmiChannel)return;liveCmiChannel=supabaseClient.channel('rwanda-cmi-dashboard-sync').on('broadcast',{event:'saved'},liveCmiRefresh).subscribe();setInterval(()=>{if(!document.hidden)liveCmiRefresh()},15000);window.addEventListener('focus',liveCmiRefresh);}
 
 
@@ -3161,9 +3161,10 @@ function populateFilters(){
  let es=document.getElementById('eStatus');if(es){let ev=es.value;es.innerHTML=registerCategories.map(s=>`<option>${esc(s)}</option>`).join('');if(ev)es.value=ev}
 }
 const CMI_CURRENT_STATUS_OPTIONS=['Agreed','Submitted','On Progress','To Be Submitted'];
+function isSystemControlledCmi(r){return ['CMI Team','ReOpen - CMI Team'].includes(latestResponsibilityValue(r))}
 function cmiCurrentStatusRule(r){
  const owner=latestResponsibilityValue(r);
- if(owner==='CMI Team'){
+ if(isSystemControlledCmi(r)){
   const submission=findActivityByIdOrName(r,'act-submit-dgj','submission to dgj');
   if(activityComplete(submission))return 'Submitted';
   const measure=findActivityByIdOrName(r,'act-measure','measurement');
@@ -3171,7 +3172,7 @@ function cmiCurrentStatusRule(r){
  }
  if(registerCategoryValue(r)==='Agreed')return 'Agreed';
  const original=String(originalRegisterCategoryValue(r)||'').toLowerCase();
- if(owner!=='CMI Team'){
+ if(!isSystemControlledCmi(r)){
   if(original==='agreed')return 'Agreed';
   if(original.startsWith('submitted'))return 'Submitted';
  }
@@ -3181,12 +3182,14 @@ function cmiCurrentStatusValue(r){
  const rule=cmiCurrentStatusRule(r);
  // In-progress activities are authoritative; a completed submission is initially
  // Submitted, but may subsequently be manually advanced to Agreed.
- if(rule==='On Progress')return rule;
- if(rule==='Submitted'&&latestResponsibilityValue(r)==='CMI Team'&&
+ if(isSystemControlledCmi(r)&&r.cmiCurrentStatus==='Agreed'&&r.cmiCurrentStatusUpdatedAt&&r.agreedAmount!==null&&r.agreedAmount!==undefined&&r.agreedAmount!==''&&Number.isFinite(Number(r.agreedAmount)))return 'Agreed';
+  if(rule==='On Progress')return rule;
+ if(rule==='Submitted'&&isSystemControlledCmi(r)&&
     activityComplete(findActivityByIdOrName(r,'act-submit-dgj','submission to dgj'))){
   return r.cmiCurrentStatus==='Agreed'?'Agreed':'Submitted';
  }
- if(r.cmiCurrentStatusUpdatedAt&&CMI_CURRENT_STATUS_OPTIONS.includes(r.cmiCurrentStatus))return r.cmiCurrentStatus;
+ if(isSystemControlledCmi(r))return rule;
+  if(r.cmiCurrentStatusUpdatedAt&&CMI_CURRENT_STATUS_OPTIONS.includes(r.cmiCurrentStatus))return r.cmiCurrentStatus;
  return rule;
 }
 function cmiCurrentStatusCell(r){
@@ -3202,14 +3205,21 @@ function editCmiCurrentStatus(span){
  const select=document.createElement('select');
  select.setAttribute('aria-label','Edit CMI Current Status');
  select.dataset.currentStatusId=encodeURIComponent(id);
- CMI_CURRENT_STATUS_OPTIONS.forEach(v=>select.add(new Option(v,v)));
- select.value=cmiCurrentStatusValue(r);
+ const managed=isSystemControlledCmi(r);
+  const current=cmiCurrentStatusValue(r);
+  const allowed=managed?(current==='Submitted'?['Submitted','Agreed']:[current]):CMI_CURRENT_STATUS_OPTIONS;
+  allowed.forEach(v=>select.add(new Option(v,v)));
+  select.value=current;
+  if(managed&&current!=='Submitted'){select.disabled=true;select.title='Status controlled by Delivery Plan and CMI Progress Updates';}
  select.addEventListener('change',()=>{
   const value=select.value;
   const previousStatus=cmiCurrentStatusValue(r);
   const rule=cmiCurrentStatusRule(r);
-  const submittedByTeam=latestResponsibilityValue(r)==='CMI Team'&&activityComplete(findActivityByIdOrName(r,'act-submit-dgj','submission to dgj'));
-  if(rule==='On Progress'||(submittedByTeam&&!['Submitted','Agreed'].includes(value))){
+  const submittedByTeam=isSystemControlledCmi(r)&&activityComplete(findActivityByIdOrName(r,'act-submit-dgj','submission to dgj'));
+  if(isSystemControlledCmi(r)&&(value!=='Agreed'||previousStatus!=='Submitted'||!submittedByTeam)){
+    alert('Status is controlled by Delivery Plan. Only Submitted to Agreed is editable after submission is complete.');renderRegister();return;
+   }
+   if(!isSystemControlledCmi(r)&&(rule==='On Progress'||(submittedByTeam&&!['Submitted','Agreed'].includes(value)))){
    alert('This CMI status is controlled by Delivery Plan progress.');renderRegister();return;
   }
   // Explicitly collect the Agreed Amount before Submitted can become Agreed.
