@@ -2026,7 +2026,7 @@
  <div class="section-title"><h2>Commercial Portfolio Overview</h2></div>
  <div class="grid dashboard-pie-grid">
   <div class="card pie-card"><h3>CMI Status Split</h3><div id="statusPie"></div></div>
-  <div class="card pie-card"><h3>To be Submitted — Category and Priority Split</h3><div id="priorityPie"></div></div>
+  <div class="card pie-card"><h3>CMI Team — Work Portfolio Breakdown</h3><div id="priorityPie"></div></div>
   <div class="card pie-card"><h3>Agreed CMIs — Submitted vs Agreed Value</h3><div id="agreedComparisonPie"></div></div>
   <div class="card pie-card"><h3>Total Portfolio Value Split</h3><div id="portfolioValuePie"></div>
    <div class="assumption-box">
@@ -3084,8 +3084,22 @@ function renderBars(){
  const all=state.records,team=all.filter(isCmiTeamSubmission),agreed=all.filter(r=>['Agreed','Agreed - CMI Team'].includes(r.mainCategory)),submitted=all.filter(r=>r.mainCategory==='Submitted');
  const statusSplit=internalStatusSplit(all);
  renderDonut('statusPie',statusSplit.slices,{centerValue:String(all.length),centerLabel:'CMI work items'});
- const prioritySplit=internalSubmissionPrioritySplit(all);
- renderDonut('priorityPie',prioritySplit.slices,{centerValue:String(prioritySplit.total),centerLabel:'CMIs requiring submission to DGJ'});
+ if(!latestResponsibilityLoaded&&!latestResponsibilityLoading)void loadLatestResponsibilities();
+ const teamRecords=latestResponsibilityLoaded?validCmiCalculationRecords(all).filter(r=>['CMI Team','ReOpen - CMI Team'].includes(String(latestResponsibilityValue(r)||'').trim())):[];
+ const statusCounts={agreed:0,submitted:0,progress:0,pending:0};
+ teamRecords.forEach(r=>{
+  const status=String(cmiCurrentStatusValue(r)||'').trim().toLowerCase();
+  if(status==='agreed')statusCounts.agreed++;
+  else if(status==='submitted')statusCounts.submitted++;
+  else if(status==='on progress'||status==='in progress')statusCounts.progress++;
+  else statusCounts.pending++;
+ });
+ renderDonut('priorityPie',[
+  {label:'Agreed',value:statusCounts.agreed,color:'#18835d'},
+  {label:'Submitted',value:statusCounts.submitted,color:'#2563a8'},
+  {label:'In Progress',value:statusCounts.progress,color:'#23adc8'},
+  {label:'To Be Submitted',value:statusCounts.pending,color:'#a5b2bd'}
+ ],{centerValue:latestResponsibilityLoaded?String(teamRecords.length):'…',centerLabel:latestResponsibilityLoaded?'CMIs allocated to CMI Team':'Loading allocation data'});
  const known=v=>v!==null&&v!==undefined&&v!==''&&Number.isFinite(Number(v));
  const agreedSubmitted=sum(agreed.map(r=>r.submittedValue)),agreedAmount=sum(agreed.map(r=>r.agreedAmount));
  renderDonut('agreedComparisonPie',[
