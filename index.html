@@ -4796,6 +4796,19 @@ function renderClientDashboard(){
  for(const band of summary.bands){
   if(Object.prototype.hasOwnProperty.call(updatedOverviewGroups,band.id))band.value=updatedOverviewGroups[band.id];
  }
+ // Dashboard 01 monetary values are row-based, independent of unique-CMI count priority.
+ // Valid duplicate records each contribute their own applicable amount.
+ let agreedOthersAmount=0,submittedOthersAmount=0;
+ for(const record of validCmiCalculationRecords(state.records)){
+  if(String(latestResponsibilityValue(record)||'').trim()!=='Others')continue;
+  const currentStatus=String(cmiCurrentStatusValue(record)||'').trim().toLowerCase();
+  if(currentStatus==='agreed')agreedOthersAmount+=Number(record.agreedAmount)||0;
+  else if(currentStatus==='submitted')submittedOthersAmount+=Number(record.submittedValue)||0;
+ }
+ for(const band of summary.bands){
+  if(band.id==='agreed')band.amount=agreedOthersAmount;
+  else if(band.id==='submitted')band.amount=submittedOthersAmount;
+ }
  // Keep the established 614-type unique CMI total independent of register-row duplication.
  // An uncategorised CMI is reported as an exception, never silently allocated.
  const overviewCategorisedTotal=updatedOverviewGroups.agreed+updatedOverviewGroups.submitted+updatedOverviewGroups.team;
