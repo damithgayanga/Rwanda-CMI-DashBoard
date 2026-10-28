@@ -2028,17 +2028,7 @@
   <div class="card pie-card"><h3>CMI Status Split</h3><div id="statusPie"></div></div>
   <div class="card pie-card"><h3>CMI Team — Work Portfolio Breakdown</h3><div id="priorityPie"></div></div>
   <div class="card pie-card"><h3>CMI Portfolio — Value by Current Status</h3><div id="agreedComparisonPie"></div><div class="assumption-box"><div class="assumption-title">Additional allowance for Other CMIs</div><div class="assumption-grid"><div class="field"><label>Other CMIs — additional value ($)</label><input id="statusOtherAllowanceInput" type="number" step="1000"></div><button class="btn primary" type="button" onclick="saveStatusOtherAllowance()">Save</button></div><div class="assumption-note">Added to the unvalued / estimated Other CMIs category. Estimates use Off-Site Estimate first, then Initial Estimate.</div></div></div>
-  <div class="card pie-card"><h3>Total Portfolio Value Split</h3><div id="portfolioValuePie"></div>
-   <div class="assumption-box">
-    <div class="assumption-title">Editable value assumptions</div>
-    <div class="assumption-grid">
-     <div class="field"><label>Other CMIs (Under Review) — placeholder ($)</label><input type="number" min="0" step="100000" id="unallocatedPortfolioAllowanceInput"></div>
-     <div class="field"><label>Provisional Sums — placeholder ($)</label><input type="number" min="0" step="100000" id="provisionalPortfolioAllowanceInput"></div>
-     <button class="btn primary" id="savePortfolioAssumptionsBtn" type="button">Save</button>
-    </div>
-    <div class="assumption-note">Placeholders are totals for each category, not amounts per CMI. Recorded off-site estimates are added to the respective placeholder. Applies only to TBS by CMI Team items. Existing saved placeholder values are retained.</div>
-   </div>
-  </div>
+  <div class="card pie-card"><h3>Agreed vs Submitted — CMIs Agreed with DGJ</h3><div id="portfolioValuePie"></div><div id="agreedVsSubmittedSummary" class="assumption-box"></div></div>
  </div>
  <div class="dashboard-delivery-performance">
   <div>
@@ -3124,9 +3114,14 @@ function renderBars(){
  ],{valueType:'money',useMagnitude:true,centerValue:portfolioMoney(Object.values(statusValues).reduce((a,b)=>a+b,0)+otherAllowance),centerLabel:'Total portfolio value'});
  const statusAllowanceInput=document.getElementById('statusOtherAllowanceInput');
  if(statusAllowanceInput&&document.activeElement!==statusAllowanceInput)statusAllowanceInput.value=otherAllowance;
- const portfolio=internalPortfolioValueSplit(all,state.meta);
- renderDonut('portfolioValuePie',portfolio.slices,{valueType:'money',useMagnitude:true,centerValue:portfolioMoney(portfolio.netTotal),centerLabel:'Net portfolio total'});
- const unallocated=document.getElementById('unallocatedPortfolioAllowanceInput'),ps=document.getElementById('provisionalPortfolioAllowanceInput');if(unallocated)unallocated.value=portfolio.otherPlaceholder;if(ps)ps.value=portfolio.provisionalPlaceholder;
+ const agreedRows=validCmiCalculationRecords(all).filter(r=>String(cmiCurrentStatusValue(r)||'').trim().toLowerCase()==='agreed');
+ const amount=v=>v!==null&&v!==undefined&&String(v).trim()!==''&&Number.isFinite(Number(v))?Number(v):0;
+ const submitted=agreedRows.reduce((t,r)=>t+amount(r.submittedValue),0);
+ const agreedValue=agreedRows.reduce((t,r)=>t+amount(r.agreedAmount),0);
+ renderDonut('portfolioValuePie',[{label:'Submitted Amount',value:submitted,color:'#2563a8'},{label:'Agreed Amount',value:agreedValue,color:'#18835d'}],{valueType:'money',useMagnitude:true,centerValue:String(agreedRows.length),centerLabel:'Agreed CMI records'});
+ const el=document.getElementById('agreedVsSubmittedSummary');
+ if(el){const money=n=>(n<0?'-':'')+'$'+Math.abs(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});el.innerHTML='<div class="metric-line"><span>Submitted Amount</span><b>'+money(submitted)+'</b></div><div class="metric-line"><span>Agreed Amount</span><b>'+money(agreedValue)+'</b></div><div class="metric-line"><span>Difference (Agreed - Submitted)</span><b>'+money(agreedValue-submitted)+'</b></div><div class="metric-line"><span>Agreement Percentage</span><b>'+(submitted===0?'N/A':(agreedValue/submitted*100).toFixed(2)+'%')+'</b></div>';}
+
 }
 
 function saveStatusOtherAllowance(){
