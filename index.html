@@ -4199,6 +4199,9 @@ function syncHighLevelProgressFromActivities(){
 }
 function renderProgress(){
  const body=document.getElementById('progressActivityBody');if(!body)return;
+ // Live database refreshes must not replace a progress form during editing.
+ // Retain the user's unsaved values until Submit or a different CMI is searched.
+ if(body.dataset.unsavedEdit==='true'||body.contains(document.activeElement))return;
  const input=document.getElementById('progressCmiSearch'),raw=(input?.value||'').trim(),btn=document.getElementById('submitProgressUpdateBtn'),status=document.getElementById('progressSubmitStatus');
  if(status)status.textContent='';
  if(!raw){body.innerHTML='<tr><td colspan="5" class="muted">Enter a CMI No. above.</td></tr>';if(btn)btn.disabled=true;return}
@@ -4325,6 +4328,7 @@ async function submitProgressUpdate(){
  touched.forEach(id=>{const r=state.records.find(x=>x.id===id);if(r){r.inDeliveryPlan=true;rollupCmiActivityPlan(r);r.inDeliveryPlan=true;rollupCmiProgress(r);r.deliveryStatus=derivedDeliveryStatus(r)}});
  syncHighLevelProgressFromActivities();
  try{localStorage.setItem(STORAGE_KEY,JSON.stringify(state))}catch(e){}
+ delete body.dataset.unsavedEdit;
  renderAll();
  const key=progressSearchRecords()[0]?.cmiKey||normCmi(document.getElementById('progressCmiSearch')?.value||'');
  const msg='Progress update saved to Supabase for CMI '+key+'. The shared Delivery Plan, submission classification and CMI values have been updated.';
@@ -5565,7 +5569,9 @@ const readinessDetailBodyEl=document.getElementById('readinessDetailBody');if(re
 const rfiCmiSelectEl=document.getElementById('rfiCmiSelect');if(rfiCmiSelectEl)rfiCmiSelectEl.addEventListener('change',syncRfiSelectedCmi);
 const saveRfiBtnEl=document.getElementById('saveRfiBtn');if(saveRfiBtnEl)saveRfiBtnEl.addEventListener('click',saveRfiInformation);
 ['rfiSearch','rfiStatusFilter','rfiResponsibleFilter'].forEach(id=>{const el=document.getElementById(id);if(el)el.addEventListener('input',renderRfiTracker)});
-const progressCmiSearchEl=document.getElementById('progressCmiSearch');if(progressCmiSearchEl)progressCmiSearchEl.addEventListener('input',renderProgress);
+const progressCmiSearchEl=document.getElementById('progressCmiSearch');if(progressCmiSearchEl)progressCmiSearchEl.addEventListener('input',()=>{const body=document.getElementById('progressActivityBody');if(body)delete body.dataset.unsavedEdit;renderProgress()});
+const progressActivityEditBody=document.getElementById('progressActivityBody');
+if(progressActivityEditBody)progressActivityEditBody.addEventListener('input',e=>{if(e.target.matches('[data-progress-field]'))progressActivityEditBody.dataset.unsavedEdit='true'});
 const applyDataDateBtn=document.getElementById('applyDataDateBtn');if(applyDataDateBtn)applyDataDateBtn.addEventListener('click',applyDataDate);
 const resetDataDateBtn=document.getElementById('resetDataDateBtn');if(resetDataDateBtn)resetDataDateBtn.addEventListener('click',resetDataDate);
 const dataDateInputEl=document.getElementById('dataDateInput');if(dataDateInputEl)dataDateInputEl.addEventListener('change',applyDataDate);
