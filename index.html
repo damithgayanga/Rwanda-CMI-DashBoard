@@ -3013,22 +3013,34 @@ function renderDonut(id,slices,opt={}){
  let lastGroup='';const legend=clean.map((x,i)=>{const share=totalWeight?weights[i]/totalWeight*100:0;const val=opt.valueType==='money'?portfolioMoney(x.value):Number(x.value).toLocaleString('en-US');const group=x.group&&x.group!==lastGroup?`<div class="pie-legend-group">${esc(x.group)}</div>`:'';if(x.group)lastGroup=x.group;return `${group}<div class="pie-legend-row"><span class="pie-swatch" style="background:${x.color}"></span><div class="pie-legend-label">${esc(x.label)}<div class="pie-legend-share">${share.toFixed(1)}% of ${opt.useMagnitude?'chart magnitude':'total'}</div></div><div class="pie-legend-value">${val}</div></div>`}).join('');
  el.innerHTML=`<div class="pie-layout"><div class="donut-wrap"><div class="donut" style="background:conic-gradient(${parts.join(',')})"><div class="donut-center"><b>${esc(centerValue)}</b>${opt.hideCenterLabel?'':`<span>${esc(centerLabel)}</span>`}</div></div></div><div class="pie-legend">${legend}</div></div>${opt.note?`<div class="badge-note" style="margin-top:10px">${opt.note}</div>`:''}`;
 }
+function commercialStatusGroups(records){
+ const groups={agreed:[],submitted:[],provisional:[],initial:[],other:[]};
+ (records||[]).forEach(r=>{
+  const status=String(cmiCurrentStatusValue(r)||'').trim().toLowerCase();
+  if(status==='agreed'){groups.agreed.push(r);return;}
+  if(status==='submitted'){groups.submitted.push(r);return;}
+  const original=String(originalRegisterCategoryValue(r)||'').trim().toLowerCase();
+  if(original==='c/o procurement'){groups.provisional.push(r);return;}
+  const estimate=r.initialEstimate;
+  if(estimate!==null&&estimate!==undefined&&String(estimate).trim()!==''&&Number.isFinite(Number(estimate))){
+   groups.initial.push(r);return;
+  }
+  groups.other.push(r);
+ });
+ return groups;
+}
 function internalStatusSplit(records){
- const normalise=v=>String(v||'').trim().replace(/\s+/g,' ').toLowerCase();
- const agreed=records.filter(r=>['agreed','agreed - cmi team'].includes(normalise(r.mainCategory))),submitted=records.filter(r=>normalise(r.mainCategory)==='submitted'),team=records.filter(r=>normalise(r.mainCategory)==='tbs by cmi team');
- const defs=[
-  {label:'Initial review completed',category:'to be submitted',color:'#bc7410'},
-  {label:'Provisional Sums',category:'provisional sum - to be submitted',color:'#b62d25'},
-  {label:'Included in other CMIs',category:'included in other cmis - to be submitted',color:'#75899b'},
-  {label:'Others',category:'under review - to be submitted',color:'#6b4cb5'}
+ const groups=commercialStatusGroups(records);
+ const totalToSubmit=groups.provisional.length+groups.initial.length+groups.other.length;
+ const group='To be Submitted — '+totalToSubmit.toLocaleString('en-US');
+ const slices=[
+  {label:'Agreed',value:groups.agreed.length,color:'#18835d'},
+  {label:'Submitted - to be Agreed',value:groups.submitted.length,color:'#2563a8'},
+  {group,label:'Provisional Sums',value:groups.provisional.length,color:'#b62d25'},
+  {group,label:'Initial Review Completed',value:groups.initial.length,color:'#bc7410'},
+  {group,label:'Other CMIs',value:groups.other.length,color:'#23adc8'}
  ];
- const group='To be Submitted — '+team.length.toLocaleString('en-US');
- const slices=[{label:'Agreed',value:agreed.length,color:'#18835d'},{label:'Submitted - to be Agreed',value:submitted.length,color:'#2563a8'},...defs.map(d=>({group,label:d.label,value:team.filter(r=>normalise(registerCategoryValue(r))===d.category).length,color:d.color}))];
- const unmatched=team.filter(r=>!defs.some(d=>normalise(registerCategoryValue(r))===d.category));
- if(unmatched.length)slices.push({group,label:'Unmapped Register Category',value:unmatched.length,color:'#23adc8'});
- const unknown=records.filter(r=>!['agreed','agreed - cmi team','submitted','tbs by cmi team'].includes(normalise(r.mainCategory)));
- if(unknown.length)slices.push({label:'Unmapped Submission Classification',value:unknown.length,color:'#a5b2bd'});
- return {slices,teamTotal:team.length,unmatched:unmatched.length+unknown.length};
+ return {slices,teamTotal:totalToSubmit,unmatched:0};
 }
 function internalSubmissionPrioritySplit(records){
  const normalise=v=>String(v||'').trim().replace(/\s+/g,' ').toLowerCase();
