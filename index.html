@@ -4404,6 +4404,32 @@ function renderDashboardOperationalTables(){
 }
 
 
+// Shared Dashboard 01/02/03 count allocation: N/A rows are excluded individually.
+// A CMI Team or ReOpen row takes priority over Others; for Others, Submitted
+// takes priority over Agreed. Monetary totals remain independent of this allocation.
+function executiveOverviewCountAllocation(records){
+ const grouped=new Map();
+ for(const record of validCmiCalculationRecords(records)){
+  const key=normCmi(record.cmiKey||record.cmiNo||'');
+  if(!key)continue;
+  if(!grouped.has(key))grouped.set(key,[]);
+  grouped.get(key).push(record);
+ }
+ const allocation=new Map();
+ for(const [key,rows] of grouped){
+  const owners=rows.map(r=>String(latestResponsibilityValue(r)||'').trim());
+  if(owners.some(owner=>owner==='CMI Team'||owner==='ReOpen - CMI Team')){
+   allocation.set(key,'team');continue;
+  }
+  const statuses=rows.filter(r=>String(latestResponsibilityValue(r)||'').trim()==='Others')
+   .map(r=>String(cmiCurrentStatusValue(r)||'').trim().toLowerCase());
+  if(statuses.includes('submitted'))allocation.set(key,'submitted');
+  else if(statuses.includes('agreed'))allocation.set(key,'agreed');
+  else allocation.set(key,'unclassified');
+ }
+ return allocation;
+}
+
 function clientPreviouslyApprovedSummary(records){
  const bands=[
   {id:'positive-ps',label:'Positive Value — PS',tableLabel:'PS',value:0,amount:0,color:'#008f8c'},
@@ -4416,21 +4442,24 @@ function clientPreviouslyApprovedSummary(records){
   {id:'zero',label:'Zero Value CMIs',tableLabel:'Zero Value CMIs',value:0,amount:0,color:'#56a7b8'},
   {id:'missing',label:'Agreed Amount Not Recorded',tableLabel:'Agreed Amount Not Recorded',value:0,amount:0,color:'#b883ae'}
  ];
+ const countAllocation=executiveOverviewCountAllocation(records);
  const groups=new Map();
  for(const r of records||[]){
   if(latestResponsibilityValue(r)!=='Others'||cmiCurrentStatusValue(r)!=='Agreed')continue;
   const key=normCmi(r.cmiKey||r.cmiNo||'');if(!key)continue;
   if(!groups.has(key))groups.set(key,[]);groups.get(key).push(r);
  }
- for(const rows of groups.values()){
+ for(const [key,rows] of groups){
+  const counted=countAllocation.get(key)==='agreed';
   const missing=rows.some(r=>r.agreedAmount===null||r.agreedAmount===undefined||r.agreedAmount===''||!Number.isFinite(Number(r.agreedAmount)));
   const amount=rows.reduce((n,r)=>n+(Number(r.agreedAmount)||0),0);
   const ps=rows.some(r=>/provisional\s+sum|\bPS\b/i.test((r.description||'')+' '+(r.notes||'')));
   const magnitude=Math.abs(amount),level=magnitude>=500000?'high':magnitude>=100000?'medium':'low';
   const id=amount===0?'zero':amount>0?(ps?'positive-ps':'positive-'+level):'negative-'+level;
-  const band=bands.find(x=>x.id===id);band.value++;band.amount+=amount;
+  const band=bands.find(x=>x.id===id);if(counted)band.value++;
+  band.amount+=amount;
  }
- return {bands,total:groups.size,amount:bands.reduce((n,x)=>n+x.amount,0)};
+ return {bands,total:[...groups.keys()].filter(key=>countAllocation.get(key)==='agreed').length,amount:bands.reduce((n,x)=>n+x.amount,0)};
 }
 
 function renderCmiTeamCommercialPanels(){
@@ -4509,21 +4538,24 @@ function clientPreviouslySubmittedSummary(records){
   {id:'zero',label:'Zero Value CMIs',tableLabel:'Zero Value CMIs',value:0,amount:0,color:'#56a7b8'},
   {id:'missing',label:'Submitted Value Not Recorded',tableLabel:'Submitted Value Not Recorded',value:0,amount:0,color:'#b883ae'}
  ];
+ const countAllocation=executiveOverviewCountAllocation(records);
  const groups=new Map();
  for(const r of records||[]){
   if(latestResponsibilityValue(r)!=='Others'||cmiCurrentStatusValue(r)!=='Submitted')continue;
   const key=normCmi(r.cmiKey||r.cmiNo||'');if(!key)continue;
   if(!groups.has(key))groups.set(key,[]);groups.get(key).push(r);
  }
- for(const rows of groups.values()){
+ for(const [key,rows] of groups){
+  const counted=countAllocation.get(key)==='submitted';
   const missing=rows.some(r=>r.submittedValue===null||r.submittedValue===undefined||r.submittedValue===''||!Number.isFinite(Number(r.submittedValue)));
   const amount=missing?0:rows.reduce((n,r)=>n+(Number(r.submittedValue)||0),0);
   const ps=rows.some(r=>/provisional\s+sum|\bPS\b/i.test((r.description||'')+' '+(r.notes||'')));
   const magnitude=Math.abs(amount),level=magnitude>=500000?'high':magnitude>=100000?'medium':'low';
   const id=missing?'missing':amount===0?'zero':amount>0?(ps?'positive-ps':'positive-'+level):'negative-'+level;
-  const band=bands.find(x=>x.id===id);band.value++;band.amount+=amount;
+  const band=bands.find(x=>x.id===id);if(counted)band.value++;
+  band.amount+=amount;
  }
- return {bands,total:groups.size,amount:bands.reduce((n,x)=>n+x.amount,0)};
+ return {bands,total:[...groups.keys()].filter(key=>countAllocation.get(key)==='submitted').length,amount:bands.reduce((n,x)=>n+x.amount,0)};
 }
 function renderPreviouslySubmittedCmis(){
  const table=document.getElementById('clientSubmittedTable');if(!table)return;
