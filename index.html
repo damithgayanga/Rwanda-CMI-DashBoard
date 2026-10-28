@@ -4572,23 +4572,46 @@ function renderPreviouslySubmittedCmis(){
 
 
 function clientProcessStageCounts(records,readiness){
+ // Match Dashboard 01: N/A register rows are individually excluded, and a
+ // unique CMI is allocated to the CMI Team if any eligible row has latest
+ // responsibility CMI Team / ReOpen - CMI Team.
+ const allocation=executiveOverviewCountAllocation(records);
+ const teamRowsByKey=new Map();
+ for(const r of validCmiCalculationRecords(records)){
+  const key=normCmi(r.cmiKey||r.cmiNo||'');
+  if(!key||allocation.get(key)!=='team')continue;
+  const owner=String(latestResponsibilityValue(r)||'').trim();
+  if(owner!=='CMI Team'&&owner!=='ReOpen - CMI Team')continue;
+  if(!teamRowsByKey.has(key))teamRowsByKey.set(key,[]);
+  teamRowsByKey.get(key).push(r);
+ }
  const sets=Array.from({length:6},()=>new Set());
  const paths=[new Map(),new Map()];
- for(const r of records||[]){
-  if(!cmiTeamScopeRecord(r))continue;
-  const key=normCmi(r.cmiKey||r.cmiNo||'');if(!key)continue;
-  const a=dashboardCmiActivities(r),handover=readiness.get(String(r.id||''));
-  const path=processingPathValues.get(deliveryActivityKey(r))==='On-Site Only'?'On-Site Only':'Start from Off-Site';
-  if(handover&&handover.actual_given_date)sets[0].add(key);
-  if(activityStarted(a.measure)){sets[1].add(key);paths[0].set(key,path);}
-  if(activityProgressAt100(a.measure)&&a.measure.actualFinishDate){sets[2].add(key);paths[1].set(key,path);}
-  if(activityProgressAt100(a.review))sets[3].add(key);
-  if(activityProgressAt100(a.clearance)&&a.clearance.actualFinishDate)sets[4].add(key);
-  const submission=findActivityByIdOrName(r,'act-submit-dgj','submission to dgj');
-  if(activityComplete(submission)&&afterTrackerStart(submission))sets[5].add(key);
+ for(const [key,rows] of teamRowsByKey){
+  for(const r of rows){
+   const a=dashboardCmiActivities(r),handover=readiness.get(String(r.id||''));
+   const path=processingPathValues.get(deliveryActivityKey(r))==='On-Site Only'?'On-Site Only':'Start from Off-Site';
+   if(handover&&handover.actual_given_date)sets[0].add(key);
+   if(activityStarted(a.measure)){
+    sets[1].add(key);
+    // If duplicates differ, On-Site Only takes precedence for the one counted CMI.
+    if(!paths[0].has(key)||path==='On-Site Only')paths[0].set(key,path);
+   }
+   if(activityProgressAt100(a.measure)&&a.measure.actualFinishDate){
+    sets[2].add(key);
+    if(!paths[1].has(key)||path==='On-Site Only')paths[1].set(key,path);
+   }
+   if(activityProgressAt100(a.review))sets[3].add(key);
+   if(activityProgressAt100(a.clearance)&&a.clearance.actualFinishDate)sets[4].add(key);
+   const submission=findActivityByIdOrName(r,'act-submit-dgj','submission to dgj');
+   if(activityComplete(submission)&&afterTrackerStart(submission))sets[5].add(key);
+  }
  }
  const counts=sets.map(x=>x.size);
- counts.pathBreakdowns=paths.map(map=>{const onsite=[...map.values()].filter(p=>p==='On-Site Only').length;return {offsite:map.size-onsite,onsite};});
+ counts.pathBreakdowns=paths.map(map=>{
+  const onsite=[...map.values()].filter(p=>p==='On-Site Only').length;
+  return {offsite:map.size-onsite,onsite};
+ });
  return counts;
 }
 function renderClientProcessStages(ensureProcessingPaths=true){
@@ -4597,12 +4620,13 @@ function renderClientProcessStages(ensureProcessingPaths=true){
  const counts=clientProcessStageCounts(state.records,documentReadinessMap());
 
 // Latest CMI Team responsibility and Agreed current status; count each CMI number once.
+const teamAllocation=executiveOverviewCountAllocation(state.records);
 const agreedCmiKeys=new Set();
-for(const record of state.records||[]){
- if(latestResponsibilityValue(record)!=='CMI Team')continue;
- if(String(cmiCurrentStatusValue(record)||'').trim().toLowerCase()!=='agreed')continue;
+for(const record of validCmiCalculationRecords(state.records)){
  const key=normCmi(record.cmiKey||record.cmiNo||'');
- if(key)agreedCmiKeys.add(key);
+ if(!key||teamAllocation.get(key)!=='team')continue;
+ if(!['CMI Team','ReOpen - CMI Team'].includes(String(latestResponsibilityValue(record)||'').trim()))continue;
+ if(String(cmiCurrentStatusValue(record)||'').trim().toLowerCase()==='agreed')agreedCmiKeys.add(key);
 }
 counts[6]=agreedCmiKeys.size;
 
