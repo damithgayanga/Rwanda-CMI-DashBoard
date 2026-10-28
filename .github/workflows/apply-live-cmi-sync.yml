@@ -1,0 +1,83 @@
+name: Apply live CMI dashboard synchronization
+on:
+  push:
+    paths:
+      - .github/workflows/apply-live-cmi-sync.yml
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Add shared-state live updates
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text()
+          def change(old,new):
+              global s
+              assert s.count(old)==1, ('match count',s.count(old),old[:80])
+              s=s.replace(old,new,1)
+          change("  let sharedStateLoaded = false;", """  let sharedStateLoaded = false;
+  let sharedDashboardLiveChannel=null,sharedDashboardRefreshTimer=null,sharedDashboardPollTimer=null;
+  let sharedDashboardSaving=false,sharedDashboardRefreshing=false,sharedDashboardLastSavedAt='';
+  function broadcastSharedDashboardUpdate(event){
+    if(!sharedDashboardLiveChannel)return;
+    void sharedDashboardLiveChannel.send({type:'broadcast',event,payload:{at:new Date().toISOString()}})
+      .catch(e=>console.warn('Dashboard live notification failed:',e));
+  }
+  function queueSharedDashboardRefresh(){
+    if(sharedDashboardRefreshTimer)clearTimeout(sharedDashboardRefreshTimer);
+    sharedDashboardRefreshTimer=setTimeout(async()=>{
+      sharedDashboardRefreshTimer=null;
+      if(sharedDashboardSaving||sharedStateSyncTimer||sharedDashboardRefreshing)return;
+      sharedDashboardRefreshing=true;
+      try{
+        const {data,error}=await supabaseClient.rpc('dashboard_get_shared_state');
+        if(error)throw error;
+        if(data){
+          const payload=typeof data==='string'?JSON.parse(data):data;
+          if(payload.savedAt!==sharedDashboardLastSavedAt){
+            mergeSharedState(payload);
+            sharedDashboardLastSavedAt=payload.savedAt||'';
+          }
+        }
+        latestResponsibilityLoaded=false;
+        await loadLatestResponsibilities();
+        renderAll();
+      }catch(e){console.error('Dashboard shared state refresh failed:',e)}
+      finally{sharedDashboardRefreshing=false}
+    },200);
+  }
+  function startSharedDashboardLiveSync(){
+    if(sharedDashboardLiveChannel)return;
+    sharedDashboardLiveChannel=supabaseClient.channel('rwanda-cmi-dashboard-shared')
+      .on('broadcast',{event:'shared-state-saved'},queueSharedDashboardRefresh)
+      .on('broadcast',{event:'responsibility-saved'},queueSharedDashboardRefresh)
+      .subscribe(status=>{
+        if(status==='CHANNEL_ERROR'||status==='TIMED_OUT')
+          console.warn('Shared Dashboard realtime connection:',status);
+      });
+    if(!sharedDashboardPollTimer)sharedDashboardPollTimer=setInterval(()=>{
+      if(!document.hidden)queueSharedDashboardRefresh();
+    },15000);
+    window.addEventListener('focus',queueSharedDashboardRefresh);
+  }""")
+          change("     startRfiRealtimeSubscription();","     startRfiRealtimeSubscription();\n     startSharedDashboardLiveSync();")
+          change("      const loaded=mergeSharedState(payload);\n      sharedStateLoaded=!!loaded;","      const loaded=mergeSharedState(payload);\n      sharedStateLoaded=!!loaded;\n      if(loaded)sharedDashboardLastSavedAt=payload.savedAt||'';")
+          change("  async function saveSharedDashboardState(skipRemoteMerge=false) {\n    try{","  async function saveSharedDashboardState(skipRemoteMerge=false) {\n    sharedDashboardSaving=true;\n    try{")
+          change("      if(error)console.error('Unable to update shared dashboard state:',error);\n    }catch(e){console.error('Shared dashboard state save failed:',e)}","      if(error)console.error('Unable to update shared dashboard state:',error);\n      else {sharedDashboardLastSavedAt=payload.savedAt;broadcastSharedDashboardUpdate('shared-state-saved')}\n    }catch(e){console.error('Shared dashboard state save failed:',e)}\n    finally{sharedDashboardSaving=false}")
+          change("     sharedStateSyncTimer=setTimeout(()=>{saveSharedDashboardState()},250);","     sharedStateSyncTimer=setTimeout(()=>{sharedStateSyncTimer=null;void saveSharedDashboardState()},250);")
+          change("   latestResponsibilityValues.set(id,data.latest_responsibility);\n  }catch(e)","   latestResponsibilityValues.set(id,data.latest_responsibility);\n   renderClientDashboard();\n   broadcastSharedDashboardUpdate('responsibility-saved');\n  }catch(e)")
+          p.write_text(s)
+          print('Live-sync patch applied',len(s))
+          PY
+          git diff --check
+          git add index.html
+          git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m 'Refresh CMI dashboard after shared status and responsibility saves'
+          git push
