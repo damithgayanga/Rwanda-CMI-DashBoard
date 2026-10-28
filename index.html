@@ -818,25 +818,35 @@
     }
   }
 
+  function loginTimeout(promise,ms,label){
+    let timer;
+    return Promise.race([
+      Promise.resolve(promise),
+      new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error(label+' timed out. Please retry.')),ms)})
+    ]).finally(()=>clearTimeout(timer));
+  }
   async function signInDashboard(){
-    const u=(document.getElementById('loginUsername')?.value||'').trim();
-    const p=document.getElementById('loginPassword')?.value||'';
-    const err=document.getElementById('loginError');if(err)err.textContent='';
-    if(!u||!p){if(err)err.textContent='Enter both username and password.';return}
-    const btn=document.getElementById('loginBtn');if(btn)btn.disabled=true;
+    const email=(document.getElementById('loginUsername')?.value||'').trim().toLowerCase();
+    const password=document.getElementById('loginPassword')?.value||'';
+    const err=document.getElementById('loginError');
+    const btn=document.getElementById('loginBtn');
+    if(err)err.textContent='';
+    if(!email||!password){if(err)err.textContent='Enter both username and password.';return}
+    if(btn)btn.disabled=true;
     try{
-      const email=u.toLowerCase();
-      const {error:loginError}=await supabaseClient.auth.signInWithPassword({email,password:p});
-      if(loginError){
-        console.error('Supabase sign-in failed:',loginError);
-        throw new Error('Supabase login failed: '+(loginError.message||'Unknown authentication error.'));
-      }
-      currentDashboardUser=await fetchDashboardProfile();
-      if(!currentDashboardUser)throw new Error('Login succeeded, but this dashboard account is inactive or has no access profile.');
+      if(err)err.textContent='Signing in…';
+      const {data,error}=await loginTimeout(supabaseClient.auth.signInWithPassword({email,password}),20000,'Sign in');
+      if(error)throw new Error(error.message||'Authentication failed.');
+      if(!data?.user?.id)throw new Error('Authentication did not return a user.');
+      if(err)err.textContent='Checking account access…';
+      currentDashboardUser=await loginTimeout(fetchDashboardProfile(data.user.id),15000,'Account lookup');
+      if(!currentDashboardUser)throw new Error('This account has no active dashboard access profile.');
+      if(err)err.textContent='Opening dashboard…';
       await startAuthenticatedDashboard();
     }catch(e){
-      await supabaseClient.auth.signOut();
-      if(err)err.textContent=e.message||'Unable to sign in.';
+      console.error('Dashboard login error:',e);
+      if(err)err.textContent=e.message||'Unable to sign in. Please retry.';
+      if(!currentDashboardUser)void supabaseClient.auth.signOut().catch(x=>console.warn('Session cleanup:',x));
     }finally{if(btn)btn.disabled=false}
   }
 
@@ -922,24 +932,11 @@
   async function startAuthenticatedDashboard(){
     const authScreen=document.getElementById('authScreen');
     const dashboardApp=document.getElementById('dashboardApp');
-
-    // Keep the application hidden until the authenticated shared state is ready.
-    // This prevents users landing on an empty Executive Dashboard while the
-    // Supabase-backed state, delivery activities and resources are still loading.
     applyRoleAccess();
     restoreNavigationState(false);
-    await loadSharedDashboardState();
-    await loadDeliveryActivitiesFromSupabase();
-    await loadResourcesFromSupabase();
-    await loadDocumentReadinessFromSupabase();
-    await loadRfiInformationFromSupabase();
-    startDeliveryRealtimeSubscription();
-    startReadinessRealtimeSubscription();
-    startRfiRealtimeSubscription();
-    startLiveCmiSync();
-
-    // Every authenticated opening starts at today's Data Date and with the
-    // first two programme WBS levels visible. User changes remain session-only.
+    try{
+      await loginTimeout(loadSharedDashboardState(),12000,'Shared dashboard data');
+    }catch(e){console.warn('Shared dashboard state load delayed:',e)}
     programmeDataDate=todayISO();
     state.meta.dataDate=programmeDataDate;
     expandedDeliverySummaryActivities.clear();
@@ -947,27 +944,42 @@
     expandedHighLevelActivities.clear();
     collapsedHighLevelGroups=new Set((state.meta.highLevelPlan||[]).map(a=>a.groupId||`${a.group}|${a.countSource}`));
     deliveryRootCollapsed=false;
-
-    // Populate all dashboard content before revealing the application.
     renderAll();
-
     authScreen?.classList.add('auth-hidden');
     dashboardApp?.classList.remove('auth-hidden');
-
-    // Render again after the visible layout has been painted. This guarantees
-    // the Executive Dashboard is fully populated immediately on login and also
-    // covers any layout-sensitive content.
-    await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
-    restoreNavigationState(true);
-    renderAll();
-    const restoredTab=document.querySelector('.tabbtn.active')?.dataset.tab||'dashboard';
-    if(restoredTab==='process')requestAnimationFrame(resizeProcessFlow);
-    if(restoredTab==='organisation')requestAnimationFrame(resizeOrganisationTab);
-
-    // Load audit history only if its tab is restored.
-    if(restoredTab==='changes' && canViewChanges())await loadChangesLog();
-    if(restoredTab==='audit' && canAdmin())await loadAuditLog();
-    if(canAdmin())await loadDashboardUsers();
+    requestAnimationFrame(()=>{
+      restoreNavigationState(true);
+      renderAll();
+      const tab=document.querySelector('.tabbtn.active')?.dataset.tab||'dashboard';
+      if(tab==='process')requestAnimationFrame(resizeProcessFlow);
+      if(tab==='organisation')requestAnimationFrame(resizeOrganisationTab);
+    });
+    // Secondary data must never block the sign-in window from closing.
+    void (async()=>{
+      const tasks=[
+        ['Delivery activities',loadDeliveryActivitiesFromSupabase],
+        ['Resources',loadResourcesFromSupabase],
+        ['Document readiness',loadDocumentReadinessFromSupabase],
+        ['RFI information',loadRfiInformationFromSupabase]
+      ];
+      for(const [label,fn] of tasks){
+        try{await loginTimeout(fn(),15000,label);renderAll()}
+        catch(e){console.error(label+' loading failed:',e)}
+      }
+      for(const [label,fn] of [
+        ['Delivery updates',startDeliveryRealtimeSubscription],
+        ['Readiness updates',startReadinessRealtimeSubscription],
+        ['RFI updates',startRfiRealtimeSubscription],
+        ['CMI synchronization',startLiveCmiSync]
+      ]){try{fn()}catch(e){console.error(label+' startup failed:',e)}}
+      const tab=document.querySelector('.tabbtn.active')?.dataset.tab||'dashboard';
+      for(const [enabled,label,fn] of [
+        [tab==='changes'&&canViewChanges(),'Changes history',loadChangesLog],
+        [tab==='audit'&&canAdmin(),'Audit history',loadAuditLog],
+        [canAdmin(),'Dashboard users',loadDashboardUsers]
+      ])if(enabled){try{await loginTimeout(fn(),15000,label)}catch(e){console.error(label+' failed:',e)}}
+      renderAll();
+    })();
   }
 
   const SHARED_STATE_RESOURCE_NAME = '__CMI_DASHBOARD_SHARED_STATE__';
@@ -5621,13 +5633,17 @@ document.getElementById('clMore')?.addEventListener('click',()=>loadChangeLog(fa
 document.getElementById('clExport')?.addEventListener('click',exportChangeLog);
 
 (async function bootstrapDashboard(){
- const {data:{session}}=await supabaseClient.auth.getSession();
- if(session?.user?.id)currentDashboardUser=await fetchDashboardProfile(session.user.id);
- if(currentDashboardUser){
-   await startAuthenticatedDashboard();
-   return;
+ try{
+   const {data:{session},error}=await loginTimeout(supabaseClient.auth.getSession(),15000,'Session check');
+   if(error)throw error;
+   if(session?.user?.id)currentDashboardUser=await loginTimeout(fetchDashboardProfile(session.user.id),15000,'Profile lookup');
+   if(currentDashboardUser){await startAuthenticatedDashboard();return}
+   if(session)void supabaseClient.auth.signOut().catch(e=>console.warn('Session cleanup:',e));
+ }catch(e){
+   console.error('Dashboard bootstrap error:',e);
+   const err=document.getElementById('loginError');
+   if(err)err.textContent='Unable to restore session: '+(e.message||'Please sign in again.');
  }
- if(session)await supabaseClient.auth.signOut();
  document.getElementById('authScreen')?.classList.remove('auth-hidden');
  document.getElementById('dashboardApp')?.classList.add('auth-hidden');
 })();
