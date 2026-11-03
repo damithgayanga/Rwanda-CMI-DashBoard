@@ -368,6 +368,17 @@
   #tab-clientdashboard #clientProcessStages{grid-template-columns:repeat(7,minmax(0,1fr)) !important;}
 }
 
+
+.register-multi-filter{position:relative;min-width:0}
+.register-multi-filter summary{list-style:none;cursor:pointer;border:1px solid #c8d4df;border-radius:7px;background:white;padding:8px 25px 8px 9px;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.register-multi-filter summary::-webkit-details-marker{display:none}
+.register-multi-filter summary:after{content:'▾';position:absolute;right:9px}
+.register-multi-filter[open]{z-index:25}
+.register-multi-menu{position:absolute;top:calc(100% + 4px);left:0;width:330px;max-width:80vw;max-height:300px;overflow:auto;background:white;border:1px solid #c8d4df;border-radius:8px;padding:8px;box-shadow:var(--shadow)}
+.register-multi-menu label{display:flex;align-items:flex-start;gap:8px;padding:7px 3px;font-size:11px;cursor:pointer}
+.register-multi-menu label:hover{background:var(--soft)}
+.filters .register-multi-menu input[type=checkbox]{width:15px;height:15px;flex-shrink:0;margin:0;accent-color:var(--blue)}
+.register-multi-menu .btn{width:100%;margin-bottom:5px}
 </style>
 <style id="executive-presentation-v2">
 /* Executive presentation: scoped to the management report only. */
@@ -3223,6 +3234,7 @@ function populateFilters(){
  for(const id of ['aOffsite','pOffsite']){let e=document.getElementById(id);if(!e)continue;let x=e.value;e.innerHTML='<option value="">All off-site resources</option>'+offsiteResources.map(n=>`<option>${esc(n)}</option>`).join('');e.value=x}
  let ds=document.getElementById('pDeliveryStatus');if(ds){let dv=ds.value;ds.innerHTML='<option value="">All delivery statuses</option>'+DELIVERY_STATUSES.map(x=>`<option>${x}</option>`).join('');ds.value=dv}
  let es=document.getElementById('eStatus');if(es){let ev=es.value;es.innerHTML=registerCategories.map(s=>`<option>${esc(s)}</option>`).join('');if(ev)es.value=ev}
+ refreshRegisterMultiFilters();
 }
 const CMI_CURRENT_STATUS_OPTIONS=['Agreed','Submitted','On Progress','To Be Submitted'];
 function isSystemControlledCmi(r){return ['CMI Team','ReOpen - CMI Team'].includes(latestResponsibilityValue(r))}
@@ -3309,7 +3321,71 @@ function editCmiCurrentStatus(span){
  select.addEventListener('blur',()=>{if(select.isConnected)renderRegister()});
  span.replaceWith(select);select.focus();
 }
-function registerFilters(){const q=document.getElementById('fSearch').value.trim().toLowerCase(),originalStatus=document.getElementById('fOriginalStatus').value,st=document.getElementById('fStatus').value,assignment=document.getElementById('fDeliveryResponsibility').value,latestAssignment=document.getElementById('fLatestResponsibility').value,deliveryStatus=document.getElementById('fDeliveryStatus').value,readiness=document.getElementById('fReadiness').value,p=document.getElementById('fPriority').value,a=document.getElementById('fAsset').value,pl=document.getElementById('fPlan').value,rs=document.getElementById('fResource').value;return state.records.filter(r=>{const hay=[r.cmiNo,r.reference,r.description,r.location,r.assetCode,r.remarks,r.notes].join(' ').toLowerCase();return(!q||hay.includes(q))&&(!originalStatus||(originalStatus==='__blank__'?!originalRegisterCategoryValue(r):originalRegisterCategoryValue(r)===originalStatus))&&(!st||registerCategoryValue(r)===st)&&(!assignment||cmiDeliveryResponsibilityValue(r)===(assignment==='team'?'CMI Team':'Others'))&&(!latestAssignment||latestResponsibilityValue(r)===latestAssignment)&&(!deliveryStatus||cmiCurrentStatusValue(r)===deliveryStatus)&&(!readiness||cmiReadinessForMeasurements(r)===readiness)&&(!p||calcPriority(r)===p)&&(!a||String(r.assetCode||'').split(/\n|,/).map(x=>x.trim()).includes(a))&&(!pl||(pl==='planned'?isInDeliveryPlanRecord(r):!isInDeliveryPlanRecord(r)))&&(!rs||resourceMatches(r,rs))})}
+
+const registerMultiSelections=Object.create(null);
+function registerFilterMatches(id,predicate){
+ const values=registerMultiSelections[id]||[];
+ return !values.length||values.some(predicate);
+}
+function refreshRegisterMultiFilters(){
+ document.querySelectorAll('#tab-register .filters select').forEach(select=>{
+  let wrapper=select.parentElement;
+  if(!wrapper.classList.contains('register-multi-filter')){
+   wrapper=document.createElement('details');wrapper.className='register-multi-filter';
+   const summary=document.createElement('summary');
+   const menu=document.createElement('div');menu.className='register-multi-menu';
+   select.before(wrapper);wrapper.append(summary,menu,select);select.hidden=true;
+   wrapper.addEventListener('keydown',event=>{if(event.key==='Escape'){wrapper.open=false;summary.focus()}});
+   wrapper.addEventListener('toggle',()=>{if(wrapper.open)document.querySelectorAll('.register-multi-filter[open]').forEach(other=>{if(other!==wrapper)other.open=false})});
+  }
+  const options=Array.from(select.options).filter(option=>option.value);
+  const values=(registerMultiSelections[select.id]||[]).filter(value=>options.some(option=>option.value===value));
+  registerMultiSelections[select.id]=values;
+  const summary=wrapper.querySelector('summary'),menu=wrapper.querySelector('.register-multi-menu');
+  const allLabel=select.options[0]?.textContent||'All';
+  const label=select.getAttribute('aria-label')||allLabel.replace(/^All /i,'');
+  const selectedLabels=options.filter(option=>values.includes(option.value)).map(option=>option.textContent);
+  summary.textContent=values.length?label+': '+selectedLabels.join(', '):allLabel;
+  summary.title=summary.textContent;summary.setAttribute('aria-label',summary.textContent);
+  menu.replaceChildren();
+  const clear=document.createElement('button');clear.type='button';clear.className='btn';clear.textContent='Clear selection / Show all';
+  clear.addEventListener('click',()=>{registerMultiSelections[select.id]=[];refreshRegisterMultiFilters();renderRegister()});
+  menu.append(clear);
+  options.forEach(option=>{
+   const row=document.createElement('label'),checkbox=document.createElement('input'),text=document.createElement('span');
+   checkbox.type='checkbox';checkbox.value=option.value;checkbox.checked=values.includes(option.value);text.textContent=option.textContent;
+   checkbox.addEventListener('change',()=>{
+    const next=new Set(registerMultiSelections[select.id]||[]);
+    if(checkbox.checked)next.add(option.value);else next.delete(option.value);
+    registerMultiSelections[select.id]=Array.from(next);
+    const labels=options.filter(item=>next.has(item.value)).map(item=>item.textContent);
+    summary.textContent=next.size?label+': '+labels.join(', '):allLabel;summary.title=summary.textContent;summary.setAttribute('aria-label',summary.textContent);
+    renderRegister();
+   });
+   row.append(checkbox,text);menu.append(row);
+  });
+ });
+}
+document.addEventListener('click',event=>{
+ document.querySelectorAll('.register-multi-filter[open]').forEach(wrapper=>{if(!wrapper.contains(event.target))wrapper.open=false});
+});
+function registerFilters(){
+ const q=document.getElementById('fSearch').value.trim().toLowerCase();
+ return state.records.filter(r=>{
+  const hay=[r.cmiNo,r.reference,r.description,r.location,r.assetCode,r.remarks,r.notes].join(' ').toLowerCase();
+  return (!q||hay.includes(q))
+   &&registerFilterMatches('fOriginalStatus',v=>v==='__blank__'?!originalRegisterCategoryValue(r):originalRegisterCategoryValue(r)===v)
+   &&registerFilterMatches('fStatus',v=>registerCategoryValue(r)===v)
+   &&registerFilterMatches('fDeliveryResponsibility',v=>cmiDeliveryResponsibilityValue(r)===(v==='team'?'CMI Team':'Others'))
+   &&registerFilterMatches('fLatestResponsibility',v=>latestResponsibilityValue(r)===v)
+   &&registerFilterMatches('fDeliveryStatus',v=>cmiCurrentStatusValue(r)===v)
+   &&registerFilterMatches('fReadiness',v=>cmiReadinessForMeasurements(r)===v)
+   &&registerFilterMatches('fPriority',v=>calcPriority(r)===v)
+   &&registerFilterMatches('fAsset',v=>String(r.assetCode||'').split(/\n|,/).map(x=>x.trim()).includes(v))
+   &&registerFilterMatches('fPlan',v=>v==='planned'?isInDeliveryPlanRecord(r):!isInDeliveryPlanRecord(r))
+   &&registerFilterMatches('fResource',v=>resourceMatches(r,v));
+ });
+}
 function registerActionButtons(r){
  const ds=derivedDeliveryStatus(r),canReopen=canAdmin()&&(ds==='Submitted'||ds==='Not Applicable');
  const reopened=r.isReopened?'<div class="tiny muted" style="margin-top:4px">Reopened</div>':'';
