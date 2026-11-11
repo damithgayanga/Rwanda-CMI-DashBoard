@@ -25,6 +25,14 @@ jobs:
               print('\n-- L',i+1,'--')
               for j in range(max(0,i-7),min(len(lines),i+10)):
                 report.append(f'{j+1}: {lines[j][:400]}')
+          for start,end in [(3730,3848)]:
+            report.append('\\n### FULL SOURCE '+str(start)+'-'+str(end))
+            report.extend(f'{i+1}: {lines[i][:1300]}' for i in range(start-1,min(len(lines),end)))
+          for term in ['autoSyncCmiActivityPlan(', 'renderAllocation();', 'loadSharedDashboardState(', 'refreshShared', 'syncFromSupabase', 'data-cmia-field', 'setInterval(']:
+            hits=[i for i,line in enumerate(lines) if term in line]
+            report.append('\\n### USE '+term+' '+str(len(hits)))
+            for i in hits[:18]:
+              report.extend(f'{j+1}: {lines[j][:500]}' for j in range(max(0,i-2),min(len(lines),i+3)))
           Path('.github/activity-allocation-inspection.txt').write_text('\\n'.join(report),encoding='utf-8')
           PY
       - name: Save inspection in repository
