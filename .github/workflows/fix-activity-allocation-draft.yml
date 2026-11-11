@@ -33,6 +33,16 @@ jobs:
             report.append('\\n### USE '+term+' '+str(len(hits)))
             for i in hits[:18]:
               report.extend(f'{j+1}: {lines[j][:500]}' for j in range(max(0,i-2),min(len(lines),i+3)))
+          report=[]
+          for start,end in [(1000,1011),(3720,3845)]:
+            report.append('=== LINES '+str(start)+'-'+str(end)+' ===')
+            for i in range(start-1,min(len(lines),end)):
+              report.append(f'{i+1}: {lines[i]}')
+          for term in ['autoSyncCmiActivityPlan(', 'renderAllocation();', 'liveCmiRefresh(', 'addEventListener(\'change\'', 'addEventListener(\'input\'', 'function saveCmiActivityPlan', 'loadSharedDashboardState']:
+            report.append('=== REFERENCES '+term+' ===')
+            for i,line in enumerate(lines):
+              if term in line:
+                report.append(f'{i+1}: {line[:7000]}')
           Path('.github/activity-allocation-inspection.txt').write_text('\\n'.join(report),encoding='utf-8')
           PY
       - name: Save inspection in repository
