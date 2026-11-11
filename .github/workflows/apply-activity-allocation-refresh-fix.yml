@@ -1,0 +1,48 @@
+name: Fix Activity Allocation Draft Refresh
+on:
+  push:
+    paths:
+      - '.github/workflows/apply-activity-allocation-refresh-fix.yml'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prevent live refresh from discarding unsaved activity edits
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          old='let liveCmiChannel=null, liveCmiRefreshTimer=null, liveCmiSaving=false, liveCmiRefreshing=false;'
+          new=old+'\n  let allocationDraftDirty=false; // Protect unsaved allocation inputs from realtime reload.'
+          assert s.count(old)==1, 'Live refresh state anchor not unique'
+          s=s.replace(old,new,1)
+          old='if(liveCmiSaving||sharedStateSyncTimer||liveCmiRefreshing)return;'
+          new='if(allocationDraftDirty||liveCmiSaving||sharedStateSyncTimer||liveCmiRefreshing)return;'
+          assert s.count(old)==1, 'Live refresh guard anchor not unique'
+          s=s.replace(old,new,1)
+          old='function autoSyncCmiActivityPlan(id){\n  const r=state.records.find(x=>x.id===id);if(!r)return;'
+          new=old+'\n  allocationDraftDirty=true;'
+          assert s.count(old)==1, 'Draft change handler anchor not unique'
+          s=s.replace(old,new,1)
+          old='alert(`${r.cmiNo} activity plan saved to Supabase. The Dashboard and Delivery Plan are now updated immediately.`);'
+          new='allocationDraftDirty=false;\n   '+old+'\n   liveCmiRefresh(); // Resume background updates after successful save.'
+          assert s.count(old)==1, 'Successful save anchor not unique'
+          s=s.replace(old,new,1)
+          p.write_text(s,encoding='utf-8')
+          assert 'if(allocationDraftDirty||liveCmiSaving' in s
+          assert 'allocationDraftDirty=true;' in s
+          assert 'allocationDraftDirty=false;' in s
+          print('PASS: unsaved activity allocation changes block live 15s refresh; successful save resumes sync')
+          PY
+      - name: Commit patch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          if git diff --cached --quiet; then echo 'No changes'; exit 0; fi
+          git commit -m "Protect unsaved CMI Activity Allocation from background refresh"
+          git push
