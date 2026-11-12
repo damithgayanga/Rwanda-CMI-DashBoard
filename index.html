@@ -1004,9 +1004,10 @@
   let rfiEditingId = null;
   let sharedStateLoaded = false;
   let liveCmiChannel=null, liveCmiRefreshTimer=null, liveCmiSaving=false, liveCmiRefreshing=false;
+  let allocationDraftDirty=false; // Protect unsaved allocation inputs from realtime reload.
   function liveCmiBroadcast(event){ if(liveCmiChannel)void liveCmiChannel.send({type:'broadcast',event,payload:{at:new Date().toISOString()}}).catch(e=>console.warn(e)); }
-  function liveCmiRefresh(){clearTimeout(liveCmiRefreshTimer);liveCmiRefreshTimer=setTimeout(async()=>{if(liveCmiSaving||sharedStateSyncTimer||liveCmiRefreshing)return;liveCmiRefreshing=true;try{await loadSharedDashboardState();latestResponsibilityLoaded=false;await loadLatestResponsibilities();await loadDeliveryActivitiesFromSupabase();renderAll()}catch(e){console.error(e)}finally{liveCmiRefreshing=false}},150)}
-  function startLiveCmiSync(){if(liveCmiChannel)return;liveCmiChannel=supabaseClient.channel('rwanda-cmi-dashboard-sync').on('broadcast',{event:'saved'},liveCmiRefresh).subscribe();setInterval(()=>{if(!document.hidden)liveCmiRefresh()},15000);window.addEventListener('focus',liveCmiRefresh);}
+  function liveCmiRefresh(){clearTimeout(liveCmiRefreshTimer);liveCmiRefreshTimer=setTimeout(async()=>{if(allocationDraftDirty||liveCmiSaving||sharedStateSyncTimer||liveCmiRefreshing)return;liveCmiRefreshing=true;try{await loadSharedDashboardState();latestResponsibilityLoaded=false;await loadLatestResponsibilities();await loadDeliveryActivitiesFromSupabase();renderAll()}catch(e){console.error(e)}finally{liveCmiRefreshing=false}},150)}
+  window.addEventListener('beforeunload',e=>{if(allocationDraftDirty){e.preventDefault();e.returnValue='';}});\n  function startLiveCmiSync(){if(liveCmiChannel)return;liveCmiChannel=supabaseClient.channel('rwanda-cmi-dashboard-sync').on('broadcast',{event:'saved'},liveCmiRefresh).subscribe();setInterval(()=>{if(!document.hidden)liveCmiRefresh()},15000);window.addEventListener('focus',liveCmiRefresh);}
 
 
   function compactSharedState() {
@@ -3763,6 +3764,7 @@ function refreshAllocationPlanState(r){
  const cell=document.querySelector(`[data-allocation-plan-state="${r.id}"]`);if(cell)cell.innerHTML=allocationPlanStateHtml(r);
 }
 function autoSyncCmiActivityPlan(id){
+  allocationDraftDirty=true;
  const r=state.records.find(x=>x.id===id);if(!r)return;
  readCmiActivityPanel(r);
  rollupCmiActivityPlan(r);
@@ -3812,7 +3814,9 @@ async function saveCmiActivityPlan(id){
   // Run it asynchronously so it cannot block or regress the live dashboard.
   saveSharedDashboardState(true).catch(e=>console.error('Unable to update shared metadata snapshot:',e));
 
-  alert(`${r.cmiNo} activity plan saved to Supabase. The Dashboard and Delivery Plan are now updated immediately.`);
+  allocationDraftDirty=false;
+   alert(`${r.cmiNo} activity plan saved to Supabase. The Dashboard and Delivery Plan are now updated immediately.`);
+   liveCmiRefresh(); // Resume background updates after successful save.
  }catch(e){
   console.error('Unable to save CMI Activity Plan to Supabase:',e);
   alert('The activity plan could not be saved to Supabase. No shared Delivery Plan update was confirmed. '+(e.message||''));
@@ -5663,7 +5667,7 @@ const clearDetailedCmiFilterBtn=document.getElementById('clearDetailedCmiFilterB
 document.getElementById('saveHighLevelPlanBtn').addEventListener('click',saveHighLevelAllocation);const savePortfolioAssumptionsBtn=document.getElementById('savePortfolioAssumptionsBtn');if(savePortfolioAssumptionsBtn)savePortfolioAssumptionsBtn.addEventListener('click',savePortfolioAssumptions);
 const highLevelAllocationBodyEl=document.getElementById('highLevelAllocationBody');if(highLevelAllocationBodyEl)highLevelAllocationBodyEl.addEventListener('change',e=>{if(e.target.matches('[data-hl-field],[data-hl-resource]'))autoSyncHighLevelAllocation()});
 const submitProgressUpdateBtn=document.getElementById('submitProgressUpdateBtn');if(submitProgressUpdateBtn)submitProgressUpdateBtn.addEventListener('click',submitProgressUpdate);
-const allocationBodyEl=document.getElementById('allocationBody');if(allocationBodyEl)allocationBodyEl.addEventListener('change',e=>{if(!e.target.matches('[data-cmia-field]'))return;const panel=e.target.closest('.activity-plan-panel');if(panel)autoSyncCmiActivityPlan(panel.dataset.cmiPlan)});
+const allocationBodyEl=document.getElementById('allocationBody');if(allocationBodyEl){allocationBodyEl.addEventListener('input',e=>{if(e.target.matches('[data-cmia-field]'))allocationDraftDirty=true});allocationBodyEl.addEventListener('change',e=>{if(!e.target.matches('[data-cmia-field]'))return;const panel=e.target.closest('.activity-plan-panel');if(panel)autoSyncCmiActivityPlan(panel.dataset.cmiPlan)});}
 document.getElementById('addActivityMasterBtn').addEventListener('click',addActivityMaster);
 const addResourceMasterBtn=document.getElementById('addResourceMasterBtn');if(addResourceMasterBtn)addResourceMasterBtn.addEventListener('click',addResourceMaster);
 document.getElementById('addCmiBtn').addEventListener('click',openAdd);document.getElementById('modalClose').addEventListener('click',closeModal);document.getElementById('modalCancel').addEventListener('click',closeModal);document.getElementById('modalSave').addEventListener('click',saveEdit);document.getElementById('editModal').addEventListener('click',e=>{if(e.target.id==='editModal')closeModal()});
