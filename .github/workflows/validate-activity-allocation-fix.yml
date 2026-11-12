@@ -1,0 +1,65 @@
+name: Validate and Repair Activity Allocation Fix
+on:
+  push:
+    paths:
+      - '.github/workflows/validate-activity-allocation-fix.yml'
+permissions:
+  contents: write
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Repair newline and verify script syntax
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          bad="e.returnValue='';}});"+chr(92)+"n  function startLiveCmiSync()"
+          good="e.returnValue='';}});"+chr(10)+"  function startLiveCmiSync()"
+          assert s.count(bad)==1, 'Expected malformed newline not present'
+          s=s.replace(bad,good,1)
+          # Prevent previously started background fetches from overwriting a new draft.
+          old='await loadDeliveryActivitiesFromSupabase();renderAll()}catch(e){console.error(e)}finally{liveCmiRefreshing=false}'
+          # The active sync is already blocked at start; a later draft is guarded before rendering.
+          # Avoid changing other asynchronous data loaders in this targeted repair.
+          assert s.count(old)==1
+          s=s.replace(old,'await loadDeliveryActivitiesFromSupabase();if(!allocationDraftDirty)renderAll()}catch(e){console.error(e)}finally{liveCmiRefreshing=false}',1)
+          assert bad not in s
+          p.write_text(s,encoding='utf-8')
+          PY
+          python3 - <<'PY'
+          from html.parser import HTMLParser
+          from pathlib import Path
+          import subprocess, tempfile
+          class Scripts(HTMLParser):
+            def __init__(self):
+              super().__init__();self.inside=False;self.scripts=[]
+            def handle_starttag(self,tag,attrs):
+              if tag=='script':
+                attrs=dict(attrs);self.inside='src' not in attrs
+                if self.inside:self.scripts.append('')
+            def handle_endtag(self,tag):
+              if tag=='script':self.inside=False
+            def handle_data(self,data):
+              if self.inside:self.scripts[-1]+=data
+          parser=Scripts();parser.feed(Path('index.html').read_text(encoding='utf-8'))
+          for i,js in enumerate(parser.scripts):
+            if not js.strip():continue
+            with tempfile.NamedTemporaryFile(suffix='.js',mode='w',delete=True) as f:
+              f.write(js);f.flush()
+              r=subprocess.run(['node','--check',f.name],capture_output=True,text=True)
+              if r.returncode:
+                print('SCRIPT',i,r.stderr)
+                raise SystemExit(1)
+          print('PASS: all inline Javascript syntax checks; allocation draft guard present')
+          PY
+      - name: Commit repair
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git diff --cached --quiet && exit 0
+          git commit -m "Repair Activity Allocation refresh guard syntax"
+          git push
