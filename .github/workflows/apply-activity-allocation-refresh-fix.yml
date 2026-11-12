@@ -24,7 +24,7 @@ jobs:
           new='if(allocationDraftDirty||liveCmiSaving||sharedStateSyncTimer||liveCmiRefreshing)return;'
           assert s.count(old)==1, 'Live refresh guard anchor not unique'
           s=s.replace(old,new,1)
-          old='function autoSyncCmiActivityPlan(id){\n  const r=state.records.find(x=>x.id===id);if(!r)return;'
+          old='function autoSyncCmiActivityPlan(id){'
           new=old+'\n  allocationDraftDirty=true;'
           assert s.count(old)==1, 'Draft change handler anchor not unique'
           s=s.replace(old,new,1)
@@ -32,6 +32,20 @@ jobs:
           new='allocationDraftDirty=false;\n   '+old+'\n   liveCmiRefresh(); // Resume background updates after successful save.'
           assert s.count(old)==1, 'Successful save anchor not unique'
           s=s.replace(old,new,1)
+          # Mark the draft dirty as soon as a user interacts with a field; do not
+          # wait for a change/blur event, which could occur after a refresh.
+          old="const allocationBodyEl=document.getElementById('allocationBody');if(allocationBodyEl)allocationBodyEl.addEventListener('change'"
+          new="const allocationBodyEl=document.getElementById('allocationBody');if(allocationBodyEl){allocationBodyEl.addEventListener('input',e=>{if(e.target.matches('[data-cmia-field]'))allocationDraftDirty=true});allocationBodyEl.addEventListener('change'"
+          assert s.count(old)==1, 'Allocation change event anchor not unique'
+          s=s.replace(old,new,1)
+          old="if(panel)autoSyncCmiActivityPlan(panel.dataset.cmiPlan)});"
+          new="if(panel)autoSyncCmiActivityPlan(panel.dataset.cmiPlan)});}"
+          assert s.count(old)==1, 'Allocation listener close anchor not unique'
+          s=s.replace(old,new,1)
+          # Native browser warning guards unsaved work on a manual reload or navigation.
+          anchor="  function startLiveCmiSync(){"
+          assert s.count(anchor)==1, 'Live sync function anchor not unique'
+          s=s.replace(anchor,"  window.addEventListener('beforeunload',e=>{if(allocationDraftDirty){e.preventDefault();e.returnValue='';}});\\n"+anchor,1)
           p.write_text(s,encoding='utf-8')
           assert 'if(allocationDraftDirty||liveCmiSaving' in s
           assert 'allocationDraftDirty=true;' in s
